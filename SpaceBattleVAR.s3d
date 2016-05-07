@@ -4,6 +4,7 @@
 #include <Xwing.s3d>
 #include <TieFighter.s3d>
 #include <EscapePod.s3d>
+#include <Networker.s3d>
 
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
@@ -11,6 +12,7 @@ SET SCENE_NEAR = 0.5;
 SET SCENE_FAR  = 1000;
 
 var myXwing;
+var networkController;
 var enemiesFighter;
 
 var TieObj;
@@ -30,6 +32,9 @@ function OnDownload()
 
 function OnInit(params)
 {
+	networkController = Networker();
+	networkController.init();
+	
 	myXwing = Xwing();
 	myXwing.init();
 	
@@ -39,6 +44,10 @@ function OnInit(params)
 	
 	PodObj = EscapePod();
 	PodObj.init();
+	
+	/*---Global XVR parameters---*/
+	SetFrameRate(30);	
+	SetTimeStep(10);
 }
 
 function OnFrame()
