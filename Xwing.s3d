@@ -6,11 +6,12 @@
 #define SPEED_STEP	0.0025
 
 class xWing{
-	var camera;
-	var light;
 	var xWingMesh;
 	var xWingObj;	
 	var xWingPos;
+	var withCamera;
+	var camera;
+	var light;
 	var cameraMode;			/* 0->behind / 1->inside */
 	
 	var yaw;				/* Angle on Y axis */
@@ -24,7 +25,12 @@ class xWing{
 	init();
 	draw();
 	setPosition(position);
-	update();
+	setSpeed(speed);
+	increaseSpeed();
+	decreaseSpeed();
+	useCamera(cam);			/*--- cam true if this obj uses camera, otherwise false ---*/
+	changeCameraMode();
+	updateAngles(roll_delta, pitch_delta, yaw_delta);
 };
 
 function xWing::init(){
@@ -37,15 +43,32 @@ function xWing::init(){
 	currentFrame = 0;
 	currentLife = 100;
 	cameraMode = 0;
+	withCamera = false;
 	
-	camera = CameraGetCurrent();
-	light = CVmLight();
-	light.SetDiffuse(1, 1, 1);
-	light.Enable();
 	xWingMesh = CVmNewMesh("Xwing.AAM");
 	xWingMesh.centerBoundingBox();
 	xWingObj = CVmObj(xWingMesh);
 
+}
+
+function xWing::useCamera(cam)
+{
+	withCamera = cam;
+	if (cam == true) {
+		camera = CameraGetCurrent();
+		light = CVmLight();
+		light.SetDiffuse(1, 1, 1);
+		light.Enable();
+	} else {
+		camera = void;
+		light.Disable();
+		light = void;
+	}
+}
+
+function xWing::changeCameraMode()
+{
+	cameraMode = 1 - cameraMode;
 }
 
 function xWing::setPosition(pos){
@@ -59,77 +82,65 @@ function xWing::setPosition(pos){
 	xWingObj.setPosition(xWingPos);
 }
 
-function xWing::draw(){
-	xWingObj.draw(VR_FRAMENUMBER, currentFrame);
+function xWing::increaseSpeed()
+{
+	if(currentFrame > 0) {
+		currentFrame -= FRAME_STEP;
+	}
+	velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
 }
 
-function xWing::update(){
-	static var cameraModeAntiBounce = false;
-	var y = 0, p = 0, r = 0;
-	var cameraPos;
-	
-	/*---modifiche al vettore velocità e al frame---*/
-	if(keypressed(VK_CONTROL)) {
-		if(currentFrame > 0) {
-			currentFrame -= FRAME_STEP;
-		}
-		velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
-	} else {
-		if(currentFrame < 20) {
-			currentFrame += FRAME_STEP;
-		}
-		velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
+function xWing::decreaseSpeed()
+{
+	if(currentFrame < 20) {
+		currentFrame += FRAME_STEP;
 	}
-	
-	/*---modifiche agli angoli--- */
-	if(Keypressed(VK_LEFT) || Keypressed("a")) {
-		r = -ANGLE_STEP;
-	} else if(Keypressed(VK_RIGHT) || Keypressed("d")) {
-		r = ANGLE_STEP;
-	}
-	if(Keypressed(VK_UP) || Keypressed("w")) {
-		p = ANGLE_STEP;
-	} else if(Keypressed(VK_DOWN) || Keypressed("s")) {
-		p = -ANGLE_STEP;
-	}
-	if(Keypressed(VK_RSHIFT) || Keypressed("q")) {
-		y = ANGLE_STEP;
-	} else if(Keypressed(VK_END) || Keypressed("e")) {
-		y = -ANGLE_STEP;
-	}
-	/*---Modify camera mode---*/
-	if(Keypressed("c")) {
-		cameraModeAntiBounce = true;
-	} else if (cameraModeAntiBounce == true) {
-		cameraMode = 1 - cameraMode;
-		cameraModeAntiBounce = false;
-	}
+	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
+}
 
-	/*---rotazione oggetto---*/
-	xWingObj.Rotate(p, [1,0,0]);
-	xWingObj.Rotate(y, [0,1,0]);
-	xWingObj.Rotate(r, [0,0,1]);
-	pitch = (pitch + p) % 360;
-	yaw = (yaw + y) % 360;
-	roll = (roll + r) % 360;
-	
+function xWing::setSpeed(speed)
+{
+	if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
+		velocity = speed;
+	}
+}
+
+function xWing::draw(){
 	/*---only for debug purpose---*/
 	xWingObj.DrawAxis();
 	xWingObj.DrawBoundingBox();
+	
+	xWingObj.draw(VR_FRAMENUMBER, currentFrame);
+}
+
+function xWing::updateAngles(roll_delta, pitch_delta, yaw_delta) {
+	var cameraPos;
+
+	/*---rotazione oggetto---*/
+	xWingObj.Rotate(pitch_delta, [1,0,0]);
+	xWingObj.Rotate(yaw_delta, [0,1,0]);
+	xWingObj.Rotate(roll_delta, [0,0,1]);
+	pitch = (pitch + pitch_delta) % 360;
+	yaw = (yaw + yaw_delta) % 360;
+	roll = (roll + roll_delta) % 360;
 	
 	/*---settaggio direzione e posizione--- */
 	direction = xWingObj.GetZaxis();
 	setPosition(xWingPos+velocity*direction);
 	
 	/* Camera and light position and pose */
-	if (cameraMode == 0) {
-		cameraPos = xWingObj.getPosition() + xWingObj.getYaxis()*10 + xWingObj.getZaxis()*(-60);
-	} else {
-		cameraPos = xWingObj.getPosition() + xWingObj.getYaxis()*2.8 + xWingObj.getZaxis()*(-2.8);
+	if (withCamera == true) {
+		if (cameraMode == 0) {
+			cameraPos = xWingObj.getPosition() + xWingObj.getYaxis()*10 + xWingObj.getZaxis()*(-60);
+		} else {
+			cameraPos = xWingObj.getPosition() + xWingObj.getYaxis()*2.8 + xWingObj.getZaxis()*(-2.8);
+		}
+		camera.setPosition(cameraPos);
+		camera.setUpVector(xWingObj.GetYaxis());
+		camera.setDirection(direction);
+		
+		light.setPosition(cameraPos);
 	}
-	camera.setPosition(cameraPos);
-	camera.setUpVector(xWingObj.GetYaxis());
-	camera.setDirection(direction);
 	
-	light.setPosition(cameraPos);
 }
+

@@ -5,6 +5,7 @@
 #include <TieFighter.s3d>
 #include <EscapePod.s3d>
 #include <Networker.s3d>
+#include <UserInput.s3d>
 
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
@@ -13,6 +14,7 @@ SET SCENE_FAR  = 1000;
 
 var myXwing;
 var networkController;
+var userInputController;
 var enemiesFighter;
 
 var TieObj;
@@ -35,8 +37,12 @@ function OnInit(params)
 	networkController = Networker();
 	networkController.init();
 	
+	userInputController = UserInput();
+	userInputController.init();
+	
 	myXwing = Xwing();
 	myXwing.init();
+	myXwing.useCamera(true);
 	
 	TieObj = TieFighter();
 	TieObj.init();
@@ -54,14 +60,13 @@ function OnFrame()
 {
 	/* manage camera */
 	//CameraMoveMouse();
-	
+	userInputController.getUserInput(myXwing);
 	SceneBegin();
 
 	DrawGrid([0.5, 0.5, 0.5], 1000);
 
 	// TODO: put your drawing code here
 	
-	myXwing.update();
 	myXwing.draw();
 	
 	/*DEBUG

@@ -1,0 +1,56 @@
+class UserInput {
+	var cameraModeAntiBounce;
+	
+	init();
+	getUserInput(obj);
+};
+
+function UserInput::init()
+{
+	cameraModeAntiBounce = false;
+}
+
+/* obj must implements those function:
+ * 		- increaseSpeed()
+ * 		- decreaseSpeed()
+ * 		- changeCameraMode()
+ * 		- updateAngles(roll, pitch, yaw)
+ */
+function UserInput::getUserInput(obj)
+{
+	var y = 0, p = 0, r = 0;
+	
+	/*---modifiche al vettore velocità e al frame---*/
+	if(keypressed(VK_CONTROL)) {
+		obj.increaseSpeed();
+	} else {
+		obj.decreaseSpeed();
+	}
+	
+	/*---modifiche agli angoli--- */
+	if(Keypressed(VK_LEFT) || Keypressed("a")) {
+		r = -ANGLE_STEP;
+	} else if(Keypressed(VK_RIGHT) || Keypressed("d")) {
+		r = ANGLE_STEP;
+	}
+	if(Keypressed(VK_UP) || Keypressed("w")) {
+		p = ANGLE_STEP;
+	} else if(Keypressed(VK_DOWN) || Keypressed("s")) {
+		p = -ANGLE_STEP;
+	}
+	if(Keypressed(VK_RSHIFT) || Keypressed("q")) {
+		y = ANGLE_STEP;
+	} else if(Keypressed(VK_END) || Keypressed("e")) {
+		y = -ANGLE_STEP;
+	}
+	/*---Modify camera mode---*/
+	if(Keypressed("c")) {
+		cameraModeAntiBounce = true;
+	} else if (cameraModeAntiBounce == true) {
+		obj.changeCameraMode();
+		cameraModeAntiBounce = false;
+	}
+
+	/*---rotazione oggetto---*/
+	obj.updateAngles(r, p, y);
+}
