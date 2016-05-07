@@ -2,6 +2,8 @@
 #include <Script3d.h>
 #include <Camera.s3d.h>
 #include <Xwing.s3d>
+#include <TieFighter.s3d>
+#include <EscapePod.s3d>
 
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
@@ -9,73 +11,48 @@ SET SCENE_NEAR = 0.5;
 SET SCENE_FAR  = 1000;
 
 var myXwing;
+var enemiesFighter;
 
-var TieMesh;
 var TieObj;
-var PodMesh;
 var PodObj;
 var TiePos = [0.0, 10.0, 0.0];
-
-
-/* Light globals */
-var Light0;
 
 /* Function declarations */
 function CameraMoveMouse();
 function DrawGrid(col, size);
 
-
-
 function OnDownload()
 {
-	// TODO: download your resources here
-	// E.g.: FileDownload("resource.ext");
 	FileDownload("3d_models/Xwing.zip");
 	FileDownload("3d_models/Tie_2.zip");
 	FileDownload("3d_models/EscapePod.zip");
-	
 }
-
-
 
 function OnInit(params)
 {
-	/* initialize light */
-	Light0 = CVmLight();
-	Light0.SetDiffuse(1, 1, 1);
-	Light0.Enable();	
-
-	// TODO: put your initialization code here
-	
 	myXwing = Xwing();
-	myXwing.init(Light0);
+	myXwing.init();
 	
-	TieMesh = CVmNewMesh("Tie_2.AAM");
-	TieObj = CVmObj(TieMesh);
+	TieObj = TieFighter();
+	TieObj.init();
+	TieObj.setPosition(TiePos);
 	
-	PodMesh = CVmNewMesh("escape_pod.AAM");
-	PodObj = CVmObj(PodMesh);
-	//myobj.scale(0.1);
+	PodObj = EscapePod();
+	PodObj.init();
 }
-
-
 
 function OnFrame()
 {
 	/* manage camera */
-	CameraMoveMouse();
-	
+	//CameraMoveMouse();
 	
 	SceneBegin();
 
 	DrawGrid([0.5, 0.5, 0.5], 1000);
 
 	// TODO: put your drawing code here
-	//xWingObj.setPosition(xWingPos);
-	TieObj.setPosition(TiePos);
 	
 	myXwing.update();
-	//myXwing.attachCamera(CameraGetCurrent(), 50);
 	myXwing.draw();
 	
 	/*DEBUG
@@ -89,20 +66,15 @@ function OnFrame()
 	SceneEnd();
 }
 
-
-
 function DownloadReady(RequestID)
 {
 	// TODO
 }
 
-
-
 function OnTimer()
 {
 	// TODO:
 }
-
 
 function OnEvent(eventID, wparam, lparam){
 	// TODO: put your events handling code here
@@ -112,24 +84,16 @@ function OnError(){
 	// TODO: put your errors handling code here
 }
 
-
 function OnExit()
 {
 	// TODO: put your cleanup code here
 	EraseCache();
 }
 
-
-
-// Camera manager (using mouse)
 function CameraMoveMouse()
 {	
-
 	CameraMoveMouse_MBL_LC();
-
 }
-
-
 
 function DrawGrid(col, size)
 {
