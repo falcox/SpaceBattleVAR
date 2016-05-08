@@ -2,7 +2,7 @@ class UserInput {
 	var cameraModeAntiBounce;
 	
 	init();
-	getUserInput(obj);
+	userControlFighter(obj);
 };
 
 function UserInput::init()
@@ -10,21 +10,21 @@ function UserInput::init()
 	cameraModeAntiBounce = false;
 }
 
-/* obj must implements those function:
+/* fighter object must implements those function:
  * 		- increaseSpeed()
  * 		- decreaseSpeed()
  * 		- changeCameraMode()
  * 		- updateAngles(roll, pitch, yaw)
  */
-function UserInput::getUserInput(obj)
+function UserInput::userControlFighter(fighter)
 {
 	var y = 0, p = 0, r = 0;
 	
 	/*---modifiche al vettore velocità e al frame---*/
 	if(keypressed(VK_CONTROL)) {
-		obj.increaseSpeed();
+		fighter.increaseSpeed();
 	} else {
-		obj.decreaseSpeed();
+		fighter.decreaseSpeed();
 	}
 	
 	/*---modifiche agli angoli--- */
@@ -47,10 +47,10 @@ function UserInput::getUserInput(obj)
 	if(Keypressed("c")) {
 		cameraModeAntiBounce = true;
 	} else if (cameraModeAntiBounce == true) {
-		obj.changeCameraMode();
+		fighter.changeCameraMode();
 		cameraModeAntiBounce = false;
 	}
 
 	/*---rotazione oggetto---*/
-	obj.updateAngles(r, p, y);
+	fighter.updateAngles(r, p, y);
 }
