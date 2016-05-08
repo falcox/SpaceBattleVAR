@@ -1,4 +1,5 @@
 #define POSITION_PDU	1
+#define ENEMIES_FIGHTER_NUM	10
 
 
 class Networker {

@@ -7,6 +7,8 @@
 #include <Networker.s3d>
 #include <UserInput.s3d>
 
+#define AMBIENT_SPACESHIP_NUM 10
+
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
 SET SCENE_NEAR = 0.5;
@@ -15,11 +17,10 @@ SET SCENE_FAR  = 1000;
 var myFighter;
 var networkController;
 var userInputController;
-var enemiesFighter;
+var enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
 
-var TieObj;
-var PodObj;
-var TiePos = [0.0, 10.0, 0.0];
+var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
+
 
 /* Function declarations */
 function CameraMoveMouse();
@@ -30,6 +31,10 @@ function OnDownload()
 	FileDownload("3d_models/Xwing.zip");
 	FileDownload("3d_models/Tie_2.zip");
 	FileDownload("3d_models/EscapePod.zip");
+	FileDownload("3d_models/ywing.zip");
+	FileDownload("3d_models/arc170.zip");
+	FileDownload("3d_models/emperor_shuttle.zip");
+	FileDownload("3d_models/millennium_falcon.zip");
 }
 
 function OnInit(params)
@@ -48,12 +53,13 @@ function OnInit(params)
 	enemiesFighter.init();
 	enemiesFighter.setPosition([30,10,10]);
 	
-	TieObj = TieFighter();
-	TieObj.init();
-	TieObj.setPosition(TiePos);
+	ambientSpaceship[0] = TieFighter();
+	ambientSpaceship[0].init();
+	ambientSpaceship[0].setPosition([0.0, 10.0, 0.0]);
 	
-	PodObj = EscapePod();
-	PodObj.init();
+	ambientSpaceship[1] = EscapePod();
+	ambientSpaceship[1].init();
+	ambientSpaceship[1].setPosition([100.0, 50.0, 0.0]);
 	
 	/*---Global XVR parameters---*/
 	SetFrameRate(60);	
@@ -70,20 +76,21 @@ function OnFrame()
 
 	DrawGrid([0.5, 0.5, 0.5], 1000);
 
-	// TODO: put your drawing code here
-	
+	/*---here we draw our fighter---*/
 	myFighter.draw();
 	
 	/*---here we draw all enemies fighter---*/
-	enemiesFighter.draw();
-	
-	/*DEBUG
-	trace(myXwing.psi);
-	trace(sin((myXwing.psi)*GRAD_TO_RAD));
-	trace(myXwing.direction);
-	 ---- */
-	TieObj.draw();
-	PodObj.draw();
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		if (enemiesFighter[i] != null) {
+			enemiesFighter[i].draw();
+		}
+	}
+	/*---here we draw all ambient spaceships---*/
+	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+		if (ambientSpaceship[i] != null) {
+			ambientSpaceship[i].draw();
+		}
+	}
 	
 	SceneEnd();
 }
