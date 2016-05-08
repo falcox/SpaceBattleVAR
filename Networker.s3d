@@ -1,25 +1,194 @@
-#define POSITION_PDU	1
+#define SERVER_ADV_PDU	1
+#define REQ_ID_PDU		2
+#define ACK_ID_PDU		3
+#define POSITION_PDU	4
 #define ENEMIES_FIGHTER_NUM	10
 
+#define LOST_SERVER_MSEC_THRESHOLD 10000
+#define SEND_ADV_MSEC_THRESHOLD 2000
+#define ACK_ID_ERROR	-1
+
+/*
+ * Packets: 	SERVER_ADV_PDU: {1, server_playerId, next_playerId, max_playerId}
+ * 				REQ_ID_PDU:		{2, playerId_requested}
+ * 				ACK_ID_PDU:		{3, playerId_assigned}
+ */
+
+class player {
+	var playerIpAddress;
+	var lastTimeAlive;
+};
 
 class Networker {
 	
 	var playerId;
-	var serverChannel;
+	var tickMsec;
+	var advServerChannel;
+	var server;
+	var serverIp;
+	var player_list;
+	var player_number;
 	
-	init();
+	init(msec);
 	getId();
+	poll();
+	isServer();
 	
+	/*private*/
+	sendBroadcastAdv();
+	sendReqId(req_id);
+	sendAckId(destination, ack_id);
 };
 
-function Networker::init()
+function Networker::init(msec)
 {
 	playerId = -1;
+	tickMsec = msec;
+	server = false;
+	advServerChannel = NetCreateChannel(50023,"0.0.0.0",VR_NO_BLOCKING);
+	player_list = Array(ENEMIES_FIGHTER_NUM);
+	player_number = 0;
 }
 
 function Networker::getId()
 {
 	return playerId;
 }
+
+function Networker::isServer()
+{
+	return server;
+}
+
+function Networker::sendBroadcastAdv()
+{
+	//SERVER_ADV_PDU: {1, server_playerId, next_playerId, max_playerId}
+	var next_playerId = ENEMIES_FIGHTER_NUM + 1;
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		if (i != playerId && player_list[i] == null) {
+			next_playerId = i;
+			break;
+		}
+	}
+	var PDU = vector(4);
+	PDU[0] = SERVER_ADV_PDU;
+	PDU[1] = playerId;
+	PDU[2] = next_playerId;
+	PDU[3] = ENEMIES_FIGHTER_NUM;
+	NetVarSendTo("10.0.0.255", 50023, PDU);
+}
+
+function Networker::sendReqId(req_id)
+{
+	//REQ_ID_PDU:		{2, playerId_requested}
+	var PDU = vector(2);
+	PDU[0] = REQ_ID_PDU;
+	PDU[1] = req_id;
+	NetVarSendTo(serverIp, 50023, PDU);	
+}
+
+function Networker::sendAckId(destination, ack_id)
+{
+	//ACK_ID_PDU:		{3, playerId_assigned}
+	var PDU = vector(2);
+	PDU[0] = ACK_ID_PDU;
+	PDU[1] = ack_id;
+	NetVarSendTo(destination, 50023, PDU);
+}
+
+function Networker::poll()
+{
+	static var timeElapsed = 0;
+	static var advTimeElapsed = 0;
+	var data_ready = true;
+	timeElapsed += tickMsec;
+	advTimeElapsed += tickMsec;
+	
+	while(data_ready) {
+		var sender = "................";
+		var received_data = NetVarReceiveFrom(advServerChannel,&sender);
+		if(received_data != void) {
+			//trace(received_data);
+			if(received_data[1] != playerId) {
+				if(received_data[0] == SERVER_ADV_PDU) {
+					if (playerId == -1) {
+						/* we have no Id so request one from server */
+						serverIp = sender;
+						if (received_data[2] <= received_data[3]) {
+							sendReqId(received_data[2]);
+						} else {
+							//TODO ERRORE! troppi giocatori
+							Outputln("MAX PLAYER NUMBER REACHED!");
+						}
+					}
+					if (server == true) {
+						/* we receive an advertisement from another server so decide who will do the server */
+						if (received_data[1] < playerId) {
+							server = false;
+						}
+					}
+					if (serverIp != sender && playerId != -1) {
+						/* maybe the server is changed, so update server address and renew Id */
+						serverIp = sender;
+						sendReqId(playerId);
+					}
+					advTimeElapsed = 0;
+				} else if (received_data[0] == ACK_ID_PDU) {
+					/* we have received an id from server */
+					if (received_data[1] < 0) {
+						/* Error */
+						Outputln("ERROR ACK ID FROM SERVER!");
+					} else {
+						playerId = received_data[1];
+						Outputln(Sprintf("GET ID: %d", playerId));
+						/* TODO generate an event  */
+					}
+				} else if (received_data[0] == REQ_ID_PDU && server == true) {
+					/* We are the server  */
+					if (player_number < ENEMIES_FIGHTER_NUM) {
+						var id = received_data[1];
+						if (player_list[id] == void) {
+							player_list[id] = player();
+							player_list[id].playerIpAddress = sender;
+							player_list[id].lastTimeAlive = getTime();
+							player_number++;
+							/* send ACK */
+							sendAckId(sender, id);
+						} else {
+							sendAckId(sender, ACK_ID_ERROR);
+						}
+					}
+				}
+			}
+		} else {
+			data_ready = false;
+		}
+	}
+	
+	/* if this condition holds we have not received any advertisement until the temporal threshold,
+	 * so we can infer that the server is lost. We are the server now.
+	 */
+	if (advTimeElapsed > LOST_SERVER_MSEC_THRESHOLD) {
+		advTimeElapsed = 0;
+		server = true;
+		if (playerId == -1) {
+			playerId = 0;
+		}
+		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+			player_list[i] = null;
+		}
+		player_list[playerId] = player();
+		sendBroadcastAdv();
+		Outputln("I'M THE SERVER!");
+	}
+	/* if this condition holds we are the server and we periodically send advertisement */
+	if (advTimeElapsed > SEND_ADV_MSEC_THRESHOLD && server == true) {
+		advTimeElapsed = 0;
+		sendBroadcastAdv();
+		Outputln("SEND ADV!");
+	}
+	
+}
+
 
 

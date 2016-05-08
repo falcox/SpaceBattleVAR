@@ -8,6 +8,8 @@
 #include <UserInput.s3d>
 
 #define AMBIENT_SPACESHIP_NUM 10
+#define TIMER_MSEC_TICK 10
+#define FRAMERATE 60
 
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
@@ -39,7 +41,7 @@ function OnDownload()
 function OnInit(params)
 {
 	networkController = Networker();
-	networkController.init();
+	networkController.init(TIMER_MSEC_TICK);
 	
 	userInputController = UserInput();
 	userInputController.init();
@@ -61,8 +63,8 @@ function OnInit(params)
 	ambientSpaceship[1].setPosition([100.0, 50.0, 0.0]);
 	
 	/*---Global XVR parameters---*/
-	SetFrameRate(60);	
-	SetTimeStep(10);
+	SetFrameRate(FRAMERATE);	
+	SetTimeStep(TIMER_MSEC_TICK);
 }
 
 function OnFrame()
@@ -101,8 +103,7 @@ function DownloadReady(RequestID)
 
 function OnTimer()
 {
-	// TODO:
-	
+	networkController.poll();
 }
 
 function OnEvent(eventID, wparam, lparam){
