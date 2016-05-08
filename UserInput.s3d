@@ -1,0 +1,56 @@
+class UserInput {
+	var cameraModeAntiBounce;
+	
+	init();
+	userControlFighter(obj);
+};
+
+function UserInput::init()
+{
+	cameraModeAntiBounce = false;
+}
+
+/* fighter object must implements those function:
+ * 		- increaseSpeed()
+ * 		- decreaseSpeed()
+ * 		- changeCameraMode()
+ * 		- updateAngles(roll, pitch, yaw)
+ */
+function UserInput::userControlFighter(fighter)
+{
+	var y = 0, p = 0, r = 0;
+	
+	/*---modifiche al vettore velocità e al frame---*/
+	if(keypressed(VK_CONTROL)) {
+		fighter.increaseSpeed();
+	} else {
+		fighter.decreaseSpeed();
+	}
+	
+	/*---modifiche agli angoli--- */
+	if(Keypressed(VK_LEFT) || Keypressed("a")) {
+		r = -ANGLE_STEP;
+	} else if(Keypressed(VK_RIGHT) || Keypressed("d")) {
+		r = ANGLE_STEP;
+	}
+	if(Keypressed(VK_UP) || Keypressed("w")) {
+		p = ANGLE_STEP;
+	} else if(Keypressed(VK_DOWN) || Keypressed("s")) {
+		p = -ANGLE_STEP;
+	}
+	if(Keypressed(VK_RSHIFT) || Keypressed("q")) {
+		y = ANGLE_STEP;
+	} else if(Keypressed(VK_END) || Keypressed("e")) {
+		y = -ANGLE_STEP;
+	}
+	/*---Modify camera mode---*/
+	if(Keypressed("c")) {
+		cameraModeAntiBounce = true;
+	} else if (cameraModeAntiBounce == true) {
+		fighter.changeCameraMode();
+		cameraModeAntiBounce = false;
+	}
+
+	/*---rotazione oggetto---*/
+	fighter.updateAngles(r, p, y);
+}

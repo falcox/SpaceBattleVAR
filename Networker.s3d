@@ -1,0 +1,24 @@
+#define POSITION_PDU	1
+
+
+class Networker {
+	
+	var playerId;
+	var serverChannel;
+	
+	init();
+	getId();
+	
+};
+
+function Networker::init()
+{
+	playerId = -1;
+}
+
+function Networker::getId()
+{
+	return playerId;
+}
+
+

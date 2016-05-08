@@ -4,13 +4,17 @@
 #include <Xwing.s3d>
 #include <TieFighter.s3d>
 #include <EscapePod.s3d>
+#include <Networker.s3d>
+#include <UserInput.s3d>
 
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
 SET SCENE_NEAR = 0.5;
 SET SCENE_FAR  = 1000;
 
-var myXwing;
+var myFighter;
+var networkController;
+var userInputController;
 var enemiesFighter;
 
 var TieObj;
@@ -30,8 +34,19 @@ function OnDownload()
 
 function OnInit(params)
 {
-	myXwing = Xwing();
-	myXwing.init();
+	networkController = Networker();
+	networkController.init();
+	
+	userInputController = UserInput();
+	userInputController.init();
+	
+	myFighter = Xwing();
+	myFighter.init();
+	myFighter.useCamera(true);
+	
+	enemiesFighter = Xwing();
+	enemiesFighter.init();
+	enemiesFighter.setPosition([30,10,10]);
 	
 	TieObj = TieFighter();
 	TieObj.init();
@@ -39,12 +54,17 @@ function OnInit(params)
 	
 	PodObj = EscapePod();
 	PodObj.init();
+	
+	/*---Global XVR parameters---*/
+	SetFrameRate(60);	
+	SetTimeStep(10);
 }
 
 function OnFrame()
 {
 	/* manage camera */
 	//CameraMoveMouse();
+	userInputController.userControlFighter(myFighter);
 	
 	SceneBegin();
 
@@ -52,8 +72,10 @@ function OnFrame()
 
 	// TODO: put your drawing code here
 	
-	myXwing.update();
-	myXwing.draw();
+	myFighter.draw();
+	
+	/*---here we draw all enemies fighter---*/
+	enemiesFighter.draw();
 	
 	/*DEBUG
 	trace(myXwing.psi);
@@ -74,6 +96,7 @@ function DownloadReady(RequestID)
 function OnTimer()
 {
 	// TODO:
+	
 }
 
 function OnEvent(eventID, wparam, lparam){
