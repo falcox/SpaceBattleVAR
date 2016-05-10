@@ -4,6 +4,7 @@
 #define MIN_SPEED	0
 #define MAX_SPEED	0.4
 #define SPEED_STEP	0.0025
+#define XWING_TYPE	1
 
 class xWing{
 	var xWingMesh;
@@ -26,11 +27,13 @@ class xWing{
 	draw();
 	setPosition(position);
 	setSpeed(speed);
+	getAngles();
 	increaseSpeed();
 	decreaseSpeed();
 	useCamera(cam);			/*--- cam true if this obj uses camera, otherwise false ---*/
 	changeCameraMode();
 	updateAngles(roll_delta, pitch_delta, yaw_delta);
+	getFighterData();
 };
 
 function xWing::init(){
@@ -71,6 +74,20 @@ function xWing::changeCameraMode()
 	cameraMode = 1 - cameraMode;
 }
 
+function xWing::getFighterData()
+{
+	var data = vector(8);
+	data[0] = XWING_TYPE;
+	data[1] = xWingPos.x;
+	data[2] = xWingPos.y;
+	data[3] = xWingPos.z;
+	data[4] = roll;
+	data[5] = pitch;
+	data[6] = yaw;
+	data[7] = velocity;
+	return data;
+}
+
 function xWing::setPosition(pos){
 	var i = pos.z;
 	var j = pos.x;
@@ -84,18 +101,28 @@ function xWing::setPosition(pos){
 
 function xWing::increaseSpeed()
 {
+	var tempVel = velocity;
 	if(currentFrame > 0) {
 		currentFrame -= FRAME_STEP;
 	}
 	velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
+	if (velocity == tempVel) {
+		return false;
+	}
+	return true;
 }
 
 function xWing::decreaseSpeed()
 {
+	var tempVel = velocity;
 	if(currentFrame < 20) {
 		currentFrame += FRAME_STEP;
 	}
 	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
+	if (velocity == tempVel) {
+		return false;
+	}
+	return true;
 }
 
 function xWing::setSpeed(speed)
@@ -103,6 +130,11 @@ function xWing::setSpeed(speed)
 	if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
 		velocity = speed;
 	}
+}
+
+function xWing::getAngles()
+{
+	return [roll, pitch, yaw];
 }
 
 function xWing::draw(){

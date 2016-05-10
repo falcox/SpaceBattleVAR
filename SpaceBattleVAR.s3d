@@ -8,7 +8,7 @@
 #include <UserInput.s3d>
 
 #define AMBIENT_SPACESHIP_NUM 10
-#define TIMER_MSEC_TICK 10
+#define TIMER_MSEC_TICK 100
 #define FRAMERATE 60
 
 /* Set global scene parameters */
@@ -17,7 +17,7 @@ SET SCENE_NEAR = 0.5;
 SET SCENE_FAR  = 1000;
 
 var myFighter;
-var networkController;
+var networkController =  void;
 var userInputController;
 var enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
 var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
@@ -49,10 +49,11 @@ function OnInit(params)
 	myFighter = Xwing();
 	myFighter.init();
 	myFighter.useCamera(true);
+	myFighter.setPosition([ 50, 0, 0 ]);
 	
-	enemiesFighter[0] = Xwing();
+	/*enemiesFighter[0] = Xwing();
 	enemiesFighter[0].init();
-	enemiesFighter[0].setPosition([30,10,10]);
+	enemiesFighter[0].setPosition([30,10,10]);*/
 	
 	ambientSpaceship[0] = TieFighter();
 	ambientSpaceship[0].init();
@@ -71,7 +72,12 @@ function OnFrame()
 {
 	/* manage camera */
 	//CameraMoveMouse();
-	userInputController.userControlFighter(myFighter);
+	if (userInputController.userControlFighter(myFighter) == true) {
+		if (networkController != void) {
+			var data = myFighter.getFighterData();
+			networkController.sendFighterData(data);
+		}
+	}
 	
 	SceneBegin();
 
@@ -82,13 +88,13 @@ function OnFrame()
 	
 	/*---here we draw all enemies fighter---*/
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
-		if (enemiesFighter[i] != null) {
+		if (enemiesFighter[i] != void) {
 			enemiesFighter[i].draw();
 		}
 	}
 	/*---here we draw all ambient spaceships---*/
 	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
-		if (ambientSpaceship[i] != null) {
+		if (ambientSpaceship[i] != void) {
 			ambientSpaceship[i].draw();
 		}
 	}
@@ -103,11 +109,38 @@ function DownloadReady(RequestID)
 
 function OnTimer()
 {
-	networkController.poll();
+	if (networkController != void) {
+		networkController.poll();
+	}
 }
 
 function OnEvent(eventID, wparam, lparam){
-	// TODO: put your events handling code here
+	if (networkController != void) {
+		if (eventId == networkController.isIdEvent()) {
+			Outputln(Sprintf("GET ID: %d", wparam));
+		}
+		if (eventId == networkController.isEnemyDataEvent()) {
+			var id = wparam[0];
+			var type = wparam[1];
+			if (enemiesFighter[id] == void) {
+				if (type == 1) { /* xwing */
+					enemiesFighter[id] = xWing();
+					enemiesFighter[id].init();
+				} else {
+					Outputln("Error! fighter type does not exists!");
+					return;
+				}
+			}
+			enemiesFighter[id].setPosition([wparam[2], wparam[3], wparam[4]]);
+			enemiesFighter[id].setSpeed(wparam[8]);
+			// TODO: this doesn't work! we must find a better way to rotate the model
+			enemiesFighter[id].updateAngles(wparam[5], wparam[6], wparam[7]);
+		}
+		if (eventId == networkController.isEnemyExitEvent()) {
+			enemiesFighter[wparam] = void;
+			Outputln(Sprintf("Player %d is gone!",wparam));
+		}
+	}
 }
 
 function OnError(){
