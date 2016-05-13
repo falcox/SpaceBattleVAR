@@ -14,7 +14,7 @@ function UserInput::init()
  * 		- increaseSpeed()
  * 		- decreaseSpeed()
  * 		- changeCameraMode()
- * 		- updateAngles(roll, pitch, yaw)
+ * 		- setRelativeAngle(roll, pitch, yaw)
  */
 function UserInput::userControlFighter(fighter)
 {
@@ -62,7 +62,7 @@ function UserInput::userControlFighter(fighter)
 	}
 
 	/*---rotazione oggetto---*/
-	fighter.updateAngles(r, p, y);
+	fighter.setRelativeAngle(r, p, y);
 	
 	return changedOccurred;
 }

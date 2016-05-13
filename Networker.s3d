@@ -45,6 +45,7 @@ class Networker {
 	var serverId;
 	var player_list;
 	var player_number;
+	var lastPlayerDataSended;
 	
 	var resendWindow;
 	var keepaliveTimeElapsed;
@@ -98,6 +99,7 @@ function Networker::init(msec)
 	}
 	player_number = 0;
 	keepaliveTimeElapsed = 0;
+	lastPlayerDataSended = vector(10);
 	resendWindow = AckMsgWindow();
 	resendWindow.init(tickMsec, ENEMIES_FIGHTER_NUM, RESEND_WAIT_MSEC);
 	idEvent = Event();
@@ -211,7 +213,6 @@ function Networker::poll()
 {
 	static var advTimeElapsed = 0;
 	static var reqTimeElapsed = 0;
-	static var reqSended = false;
 	var data_ready = true;
 	keepaliveTimeElapsed += tickMsec;
 	advTimeElapsed += tickMsec;
@@ -305,7 +306,6 @@ function Networker::poll()
 						var data = {id, received_data[2], received_data[3], received_data[4], received_data[5],
 							received_data[6], received_data[7], received_data[8], received_data[9]
 						};
-						Outputln("ricevuto FIGHTER_PDU");
 						if (server == true) {
 							/* I'm the server so I know who are players, if it is not in the list don't relay */
 							if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
@@ -361,11 +361,6 @@ function Networker::poll()
 	if (keepaliveTimeElapsed > KEEPALIVE_SEND_MSEC && playerId != -1 && server == false) {
 		sendKeepalive();
 		keepaliveTimeElapsed = 0;
-	}
-	
-	/* If we have sended a request but no ack was received, put flag to false to resend request. */
-	if (reqTimeElapsed > RESEND_WAIT_MSEC && playerId == -1 && reqSended == true) {
-		reqSended = false;
 	}
 	
 	/* Resend window, a queue to store non-acked message */

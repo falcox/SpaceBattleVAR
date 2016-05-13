@@ -17,7 +17,6 @@ class AckMsgWindow {
 
 class conMessage {
 	var resendTime;
-	var msgId;
 	var message;
 };
 
@@ -35,12 +34,11 @@ function AckMsgWindow::init(time_tick, slots, resend_wait_time)
 
 function AckMsgWindow::add(id, ip_address, msg)
 {
-	/* Create a message and add to the destination player queue */
+	/* Create a message and add to the destination player queue, compute also a msg Id */
 	var msg_elem = conMessage();
 	ipAddress[id] = ip_address;
 	msg_elem.resendTime = 0;
-	msg_elem.msgId = Rand(MAX_MSG_ID);
-	msg[1] = msg_elem.msgId;
+	msg[1] = Rand(MAX_MSG_ID);
 	msg_elem.message = msg;
 	aadd(messages[id], msg_elem);
 }
@@ -64,7 +62,7 @@ function AckMsgWindow::ackReceived(id, msgId)
 	/* Remove the acked message from player queue */
 	var queue_size = len(messages[id]);
 	for (var i = 0; i < queue_size; i++) {
-		if (messages[id][i].msgId == msgId) {
+		if (messages[id][i].message[1] == msgId) {
 			adel( messages[id], i);
 		}
 	}

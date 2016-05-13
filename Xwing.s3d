@@ -18,6 +18,7 @@ class xWing{
 	var yaw;				/* Angle on Y axis */
 	var pitch;				/* Angle on X axis */
 	var roll;				/* Angle on Z axis */
+	var rollDelta, pitchDelta, yawDelta;
 	var direction;			
 	var currentLife;		/* Life variable from 0 to 100 */
 	var velocity;
@@ -27,12 +28,13 @@ class xWing{
 	draw();
 	setPosition(position);
 	setSpeed(speed);
-	getAngles();
+	setAngle(r, p, y);
+	setRelativeAngle(r, p, y);
 	increaseSpeed();
 	decreaseSpeed();
 	useCamera(cam);			/*--- cam true if this obj uses camera, otherwise false ---*/
 	changeCameraMode();
-	updateAngles(roll_delta, pitch_delta, yaw_delta);
+	update();
 	getFighterData();
 };
 
@@ -132,9 +134,18 @@ function xWing::setSpeed(speed)
 	}
 }
 
-function xWing::getAngles()
+function xWing::setAngle(r, p, y)
 {
-	return [roll, pitch, yaw];
+	rollDelta = r - roll;
+	pitchDelta = p - pitch;
+	yawDelta = y - yaw;
+}
+
+function xWing::setRelativeAngle(r, p, y)
+{
+	rollDelta = r;
+	pitchDelta = p;
+	yawDelta = y;
 }
 
 function xWing::draw(){
@@ -145,16 +156,19 @@ function xWing::draw(){
 	xWingObj.draw(VR_FRAMENUMBER, currentFrame);
 }
 
-function xWing::updateAngles(roll_delta, pitch_delta, yaw_delta) {
+function xWing::update() {
 	var cameraPos;
 
 	/*---rotazione oggetto---*/
-	xWingObj.Rotate(pitch_delta, [1,0,0]);
-	xWingObj.Rotate(yaw_delta, [0,1,0]);
-	xWingObj.Rotate(roll_delta, [0,0,1]);
-	pitch = (pitch + pitch_delta) % 360;
-	yaw = (yaw + yaw_delta) % 360;
-	roll = (roll + roll_delta) % 360;
+	xWingObj.Rotate(pitchDelta, [1,0,0]);
+	xWingObj.Rotate(yawDelta, [0,1,0]);
+	xWingObj.Rotate(rollDelta, [0,0,1]);
+	pitch = (pitch + pitchDelta) % 360;
+	yaw = (yaw + yawDelta) % 360;
+	roll = (roll + rollDelta) % 360;
+	pitchDelta = 0;
+	yawDelta = 0;
+	rollDelta = 0;
 	
 	/*---settaggio direzione e posizione--- */
 	direction = xWingObj.GetZaxis();
