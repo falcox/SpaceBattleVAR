@@ -14,44 +14,38 @@ function UserInput::init()
  * 		- increaseSpeed()
  * 		- decreaseSpeed()
  * 		- changeCameraMode()
+ * 		- getAngleStep()
  * 		- setRelativeAngle(roll, pitch, yaw)
  */
 function UserInput::userControlFighter(fighter)
 {
 	var y = 0, p = 0, r = 0;
-	/* changedOccurred is set true only if a command modifies the fighter pose or velocity */
-	var changedOccurred = false;
+	var angleStep = fighter.getAngleStep();
 	
 	/*---modifiche al vettore velocità e al frame---*/
 	//TODO: in questo momento questo pezzo di codice modifica changedOccurred a seconda
 	//		della posizione del codice stesso, non va tanto bene...
-	if(keypressed(VK_CONTROL)) {
-		changedOccurred = fighter.increaseSpeed();
+	if(keypressed(VK_SHIFT)) {
+		fighter.increaseSpeed();
 	} else {
-		changedOccurred = fighter.decreaseSpeed();
+		fighter.decreaseSpeed();
 	}
 	
 	/*---modifiche agli angoli--- */
 	if(Keypressed(VK_LEFT) || Keypressed("a")) {
-		r = -ANGLE_STEP;
-		changedOccurred = true;
+		r = -angleStep;
 	} else if(Keypressed(VK_RIGHT) || Keypressed("d")) {
-		r = ANGLE_STEP;
-		changedOccurred = true;
+		r = angleStep;
 	}
 	if(Keypressed(VK_UP) || Keypressed("w")) {
-		p = ANGLE_STEP;
-		changedOccurred = true;
+		p = angleStep;
 	} else if(Keypressed(VK_DOWN) || Keypressed("s")) {
-		p = -ANGLE_STEP;
-		changedOccurred = true;
+		p = -angleStep;
 	}
 	if(Keypressed(VK_RSHIFT) || Keypressed("q")) {
-		y = ANGLE_STEP;
-		changedOccurred = true;
+		y = angleStep;
 	} else if(Keypressed(VK_END) || Keypressed("e")) {
-		y = -ANGLE_STEP;
-		changedOccurred = true;
+		y = -angleStep;
 	}
 	/*---Modify camera mode---*/
 	if(Keypressed("c")) {
@@ -63,6 +57,4 @@ function UserInput::userControlFighter(fighter)
 
 	/*---rotazione oggetto---*/
 	fighter.setRelativeAngle(r, p, y);
-	
-	return changedOccurred;
 }

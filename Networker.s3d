@@ -15,7 +15,12 @@
 #define KEEPALIVE_MSEC				10000
 #define KEEPALIVE_SEND_MSEC			3500
 #define RESEND_WAIT_MSEC			3500
+/* DATA_SEND_THRESHOLD threshold to decide to whom a pdu will be sended, 
+ * based on last player position sended and actual position on PDU */
 #define DATA_SEND_THRESHOLD			1000
+/* DISTANCE_BETWEEN_PDU: threshold to decide a PDU can be sended, 
+ * based on last player position sended and actual position on PDU */
+#define DISTANCE_BETWEEN_PDU		10
 
 
 /*
@@ -65,12 +70,31 @@ class Networker {
 	sendFighterData(fighterData);
 	
 	/*private*/
+	playerLost(id);
 	sendBroadcastAdv();
 	sendReqId(req_id);
 	sendAckId(destination, ackIdMsg, ack_id);
 	sendKeepalive();
 	relayPlayerData(PDU);
 };
+
+function euclideanDistance(position1, position2)
+{
+	var difference = position2 - position1;
+	var sum = 0;
+	for(var i = 0; i < len(difference); i++) {
+		sum += (difference[i] ^ 2);
+	}
+	return sqrt(sum);
+}
+
+function floatEqual(number1, number2, error)
+{
+	if ( abs(number1 - number2) < error ) {
+        return true;
+    }
+    return false;
+}
 
 function Networker::isIdEvent()
 {
@@ -90,6 +114,7 @@ function Networker::isEnemyExitEvent()
 function Networker::init(msec)
 {
 	playerId = -1;
+	serverId = -1;
 	tickMsec = msec;
 	server = false;
 	advServerChannel = NetCreateChannel(50023,"0.0.0.0",VR_NO_BLOCKING);
@@ -177,7 +202,7 @@ function Networker::relayPlayerData(PDU)
 		/* Check if there is an entry, then if it is not me and if it is not the player that sent the PDU */
 		if (player_list[i] != void && i != playerId && i != PDU[1]) {
 			var playerpos = [player_list[i].posx, player_list[i].posy, player_list[i].posz];
-			if (modulus(playerpos - pdupos) < DATA_SEND_THRESHOLD) {
+			if (euclideanDistance(playerpos, pdupos) < DATA_SEND_THRESHOLD) {
 				NetVarSendTo(player_list[i].playerIpAddress, 50023, PDU);
 			}
 		}
@@ -201,22 +226,44 @@ function Networker::sendFighterData(fighterData)
 	PDU[7] = fighterData[5];
 	PDU[8] = fighterData[6];
 	PDU[9] = fighterData[7];
-	if (server == true) {
-		relayPlayerData(PDU);
-	} else {
-		NetVarSendTo(serverIp, 50023, PDU);
+	
+	var changed = false;
+	var lastPos = [lastPlayerDataSended[3], lastPlayerDataSended[4], lastPlayerDataSended[5]];
+	var pduPos = [PDU[3], PDU[4], PDU[5]];
+	for(var i = 6; i < 10; i++) {
+		if (!floatEqual(PDU[i], lastPlayerDataSended[i], 0.05)) {
+			changed = true;
+			//Outputln(Sprintf("PDU: %f != last: %f", PDU[i], lastPlayerDataSended[i]));
+		}
 	}
-	keepaliveTimeElapsed = 0;
+	if (euclideanDistance(lastPos, pduPos) > DISTANCE_BETWEEN_PDU) {
+		changed = true;
+	}
+	if (changed == true) {
+		if (server == true) {
+			relayPlayerData(PDU);
+		} else {
+			NetVarSendTo(serverIp, 50023, PDU);
+		}
+		lastPlayerDataSended = PDU;
+		keepaliveTimeElapsed = 0;
+	}
+}
+
+function Networker::playerLost(id)
+{
+	player_list[id] = void;
+	player_number--;
+	resendWindow.emptyQueue(id);
+	EventPost(enemyExitEvent, id, 1);
 }
 
 function Networker::poll()
 {
 	static var advTimeElapsed = 0;
-	static var reqTimeElapsed = 0;
 	var data_ready = true;
 	keepaliveTimeElapsed += tickMsec;
 	advTimeElapsed += tickMsec;
-	reqTimeElapsed += tickMsec;
 	
 	while(data_ready) {
 		var sender = "................";
@@ -256,6 +303,7 @@ function Networker::poll()
 					if (received_data[2] < 0) {
 						/* Error */
 						Outputln("ERROR ACK ID FROM SERVER!");
+						playerId = -1;
 					} else {
 						playerId = received_data[2];
 						resendWindow.ackReceived(serverId, received_data[1]);
@@ -298,6 +346,7 @@ function Networker::poll()
 					if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
 						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
 					}
+					Outputln("received keepalive");
 				} else {
 					/* Data player packets handling code */
 					var id = received_data[1];
@@ -314,6 +363,8 @@ function Networker::poll()
 								player_list[id].posy = received_data[4];
 								player_list[id].posz = received_data[5];
 								relayPlayerData(received_data);
+							} else {
+								sendAckId(sender, 0, ACK_ID_ERROR);
 							}
 						} else {
 							/* I'm a client, if I don't know this identificator I create a new record */
@@ -340,10 +391,10 @@ function Networker::poll()
 		if (playerId == -1) {
 			playerId = 0;
 		}
-		serverId = playerId;
-		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
-			player_list[i] = void;
+		if (serverId != -1) {
+			playerLost(serverId);
 		}
+		serverId = playerId;
 		player_list[playerId] = player();
 		sendBroadcastAdv();
 		EventPost(idEvent, playerId, 1);
@@ -371,10 +422,7 @@ function Networker::poll()
 		if (player_list[i] != void && i != playerId && i != serverId) {
 			player_list[i].keepaliveTime -= tickMsec;
 			if (player_list[i].keepaliveTime <= 0) {
-				player_list[i] = void;
-				player_number--;
-				resendWindow.emptyQueue(i);
-				EventPost(enemyExitEvent, i, 1);
+				playerLost(i);
 			}
 		}
 	}

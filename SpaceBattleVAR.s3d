@@ -70,11 +70,10 @@ function OnFrame()
 {
 	/* manage camera */
 	//CameraMoveMouse();
-	if (userInputController.userControlFighter(myFighter) == true) {
-		if (networkController != void) {
-			var data = myFighter.getFighterData();
-			networkController.sendFighterData(data);
-		}
+	userInputController.userControlFighter(myFighter);
+	
+	if (networkController != void) {
+		networkController.sendFighterData(myFighter.getFighterData());
 	}
 	
 	SceneBegin();
@@ -95,6 +94,7 @@ function OnFrame()
 	/*---here we draw all ambient spaceships---*/
 	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
 		if (ambientSpaceship[i] != void) {
+			//ambientSpaceship[i].update();
 			ambientSpaceship[i].draw();
 		}
 	}
