@@ -23,8 +23,6 @@ function UserInput::userControlFighter(fighter)
 	var angleStep = fighter.getAngleStep();
 	
 	/*---modifiche al vettore velocità e al frame---*/
-	//TODO: in questo momento questo pezzo di codice modifica changedOccurred a seconda
-	//		della posizione del codice stesso, non va tanto bene...
 	if(keypressed(VK_SHIFT)) {
 		fighter.increaseSpeed();
 	} else {

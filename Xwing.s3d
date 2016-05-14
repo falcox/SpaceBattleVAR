@@ -30,6 +30,7 @@ class xWing{
 	setSpeed(speed);
 	setAngle(r, p, y);
 	setRelativeAngle(r, p, y);
+	setAnimationFrame(frame_number);
 	getAngleStep();
 	increaseSpeed();
 	decreaseSpeed();
@@ -84,7 +85,7 @@ function xWing::getAngleStep()
 
 function xWing::getFighterData()
 {
-	var data = vector(8);
+	var data = vector(9);
 	data[0] = XWING_TYPE;
 	data[1] = xWingPos.x;
 	data[2] = xWingPos.y;
@@ -93,6 +94,7 @@ function xWing::getFighterData()
 	data[5] = pitch;
 	data[6] = yaw;
 	data[7] = velocity;
+	data[8] = currentFrame;
 	return data;
 }
 
@@ -128,6 +130,11 @@ function xWing::setSpeed(speed)
 	if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
 		velocity = speed;
 	}
+}
+
+function xWing::setAnimationFrame(frame_number)
+{
+	currentFrame = frame_number;
 }
 
 function xWing::setAngle(r, p, y)

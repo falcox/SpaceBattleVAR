@@ -41,7 +41,7 @@ function OnDownload()
 function OnInit(params)
 {
 	networkController = Networker();
-	networkController.init(TIMER_MSEC_TICK);
+	networkController.init();
 	
 	userInputController = UserInput();
 	userInputController.init();
@@ -134,6 +134,7 @@ function OnEvent(eventID, wparam, lparam){
 			enemiesFighter[id].setPosition([wparam[2], wparam[3], wparam[4]]);
 			enemiesFighter[id].setAngle(wparam[5], wparam[6], wparam[7]);
 			enemiesFighter[id].setSpeed(wparam[8]);
+			enemiesFighter[id].setAnimationFrame(wparam[9]);
 		}
 		if (eventId == networkController.isEnemyExitEvent()) {
 			enemiesFighter[wparam] = void;

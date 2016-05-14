@@ -29,7 +29,7 @@
  * 				ACK_ID_PDU:		{3, msgId, playerId_assigned}
  * 				KEEPALIVE_PDU:	{4, playerId}
  * 				
- * 				FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity}
+ * 				FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
  */
 
 class player {
@@ -43,7 +43,6 @@ class player {
 class Networker {
 	
 	var playerId;
-	var tickMsec;
 	var advServerChannel;
 	var server;
 	var serverIp;
@@ -60,7 +59,7 @@ class Networker {
 	var enemyDataEvent;
 	var enemyExitEvent;
 	
-	init(msec);
+	init();
 	getId();
 	poll();
 	isServer();
@@ -111,11 +110,10 @@ function Networker::isEnemyExitEvent()
 	return enemyExitEvent;
 }
 
-function Networker::init(msec)
+function Networker::init()
 {
 	playerId = -1;
 	serverId = -1;
-	tickMsec = msec;
 	server = false;
 	advServerChannel = NetCreateChannel(50023,"0.0.0.0",VR_NO_BLOCKING);
 	player_list = Array(ENEMIES_FIGHTER_NUM);
@@ -126,7 +124,7 @@ function Networker::init(msec)
 	keepaliveTimeElapsed = 0;
 	lastPlayerDataSended = vector(10);
 	resendWindow = AckMsgWindow();
-	resendWindow.init(tickMsec, ENEMIES_FIGHTER_NUM, RESEND_WAIT_MSEC);
+	resendWindow.init(ENEMIES_FIGHTER_NUM, RESEND_WAIT_MSEC);
 	idEvent = Event();
 	enemyDataEvent = Event();
 	enemyExitEvent = Event();
@@ -214,8 +212,8 @@ function Networker::sendFighterData(fighterData)
 	if (playerId == -1) {
 		return;
 	}
-	//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity}
-	var PDU = vector(10);
+	//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
+	var PDU = vector(11);
 	PDU[0] = FIGHTER_PDU;
 	PDU[1] = playerId;
 	PDU[2] = fighterData[0];
@@ -226,11 +224,12 @@ function Networker::sendFighterData(fighterData)
 	PDU[7] = fighterData[5];
 	PDU[8] = fighterData[6];
 	PDU[9] = fighterData[7];
+	PDU[10] = fighterData[8];
 	
 	var changed = false;
 	var lastPos = [lastPlayerDataSended[3], lastPlayerDataSended[4], lastPlayerDataSended[5]];
 	var pduPos = [PDU[3], PDU[4], PDU[5]];
-	for(var i = 6; i < 10; i++) {
+	for(var i = 6; i < 11; i++) {
 		if (!floatEqual(PDU[i], lastPlayerDataSended[i], 0.05)) {
 			changed = true;
 			//Outputln(Sprintf("PDU: %f != last: %f", PDU[i], lastPlayerDataSended[i]));
@@ -260,8 +259,11 @@ function Networker::playerLost(id)
 
 function Networker::poll()
 {
+	static var time = GetTime();
 	static var advTimeElapsed = 0;
 	var data_ready = true;
+	var tickMsec = GetTime() - time;
+
 	keepaliveTimeElapsed += tickMsec;
 	advTimeElapsed += tickMsec;
 	
@@ -346,14 +348,13 @@ function Networker::poll()
 					if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
 						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
 					}
-					Outputln("received keepalive");
 				} else {
 					/* Data player packets handling code */
 					var id = received_data[1];
 					if (received_data[0] == FIGHTER_PDU) {
-						//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity}
+						//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
 						var data = {id, received_data[2], received_data[3], received_data[4], received_data[5],
-							received_data[6], received_data[7], received_data[8], received_data[9]
+							received_data[6], received_data[7], received_data[8], received_data[9], received_data[10]
 						};
 						if (server == true) {
 							/* I'm the server so I know who are players, if it is not in the list don't relay */
@@ -396,6 +397,7 @@ function Networker::poll()
 		}
 		serverId = playerId;
 		player_list[playerId] = player();
+		player_list[playerId].keepaliveTime = KEEPALIVE_MSEC;
 		sendBroadcastAdv();
 		EventPost(idEvent, playerId, 1);
 		Outputln("I'M THE SERVER!");
@@ -418,15 +420,17 @@ function Networker::poll()
 	resendWindow.send();
 	
 	/* decrease keepalive time of each player */
-	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
-		if (player_list[i] != void && i != playerId && i != serverId) {
-			player_list[i].keepaliveTime -= tickMsec;
-			if (player_list[i].keepaliveTime <= 0) {
-				playerLost(i);
+	if (playerId != -1) {
+		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+			if (player_list[i] != void && i != playerId && i != serverId) {
+				player_list[i].keepaliveTime -= tickMsec;
+				if (player_list[i].keepaliveTime <= 0) {
+					playerLost(i);
+				}
 			}
 		}
 	}
-	
+	time = GetTime();
 }
 
 
