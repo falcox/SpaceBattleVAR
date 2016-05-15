@@ -1,7 +1,7 @@
 class EscapePod {
-	var mesh;
 	var podObj;	
 	var position;
+	var ambientType;
 	
 	var yaw;				/* Angle on Y axis */
 	var pitch;				/* Angle on X axis */
@@ -10,24 +10,23 @@ class EscapePod {
 	var currentLife;		/* Life variable from 0 to 100 */
 	var velocity;
 	
-	init();
+	init(mesh, type);
 	draw();
 	setPosition(position);
 	update();
 };
 
-function EscapePod::init()
+function EscapePod::init(mesh, type)
 {
 	yaw = 0;
 	roll = 0;
 	pitch = 0;
+	ambientType = type;
 	direction = [0, 0, 1];
 	position = [0,0,0];
 	velocity = MIN_SPEED;
 	currentLife = 100;
-	
-	mesh = CVmNewMesh("escape_pod.AAM");
-	mesh.centerBoundingBox();
+
 	podObj = CVmObj(mesh);
 }
 
