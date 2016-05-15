@@ -2,10 +2,16 @@
 #include <Script3d.h>
 #include <Camera.s3d.h>
 #include <Xwing.s3d>
+#include <MeshFactory.s3d>
 #include <TieFighter.s3d>
 #include <EscapePod.s3d>
+#include <EmperorShuttle.s3d>
 #include <Networker.s3d>
 #include <UserInput.s3d>
+
+#define AMBIENT_SPACESHIP_NUM 10
+#define TIMER_MSEC_TICK 100
+#define FRAMERATE 60
 
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
@@ -13,13 +19,11 @@ SET SCENE_NEAR = 0.5;
 SET SCENE_FAR  = 1000;
 
 var myFighter;
-var networkController;
+var networkController =  void;
 var userInputController;
-var enemiesFighter;
-
-var TieObj;
-var PodObj;
-var TiePos = [0.0, 10.0, 0.0];
+var enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
+var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
+var meshes = MeshFactory();
 
 /* Function declarations */
 function CameraMoveMouse();
@@ -29,6 +33,10 @@ function OnDownload()
 {
 	FileDownload("3d_models/Xwing.zip");
 	FileDownload("3d_models/Tie_2.zip");
+	FileDownload("3d_models/ywing.zip");
+	FileDownload("3d_models/arc170.zip");
+	FileDownload("3d_models/millennium_falcon.zip");
+	FileDownload("3d_models/emperor_shuttle.zip");
 	FileDownload("3d_models/EscapePod.zip");
 }
 
@@ -40,24 +48,26 @@ function OnInit(params)
 	userInputController = UserInput();
 	userInputController.init();
 	
+	meshes.init();
+	
 	myFighter = Xwing();
-	myFighter.init();
+	myFighter.init( meshes.getFighterMeshes(XWING_TYPE), XWING_TYPE );
 	myFighter.useCamera(true);
+	myFighter.setPosition([ 50, 0, 0 ]);
 	
-	enemiesFighter = Xwing();
-	enemiesFighter.init();
-	enemiesFighter.setPosition([30,10,10]);
+	ambientSpaceship[0] = EmperorShuttle();
+	ambientSpaceship[0].init( meshes.getAmbientMeshes(EMPEROR_SHUTTLE), EMPEROR_SHUTTLE );
+	ambientSpaceship[0].setPosition([0.0, 0.0, 200.0]);
 	
-	TieObj = TieFighter();
-	TieObj.init();
-	TieObj.setPosition(TiePos);
-	
-	PodObj = EscapePod();
-	PodObj.init();
+	/*ambientSpaceship[1] = EscapePod();
+	ambientSpaceship[1].init();
+	ambientSpaceship[1].setPosition([100.0, 50.0, 0.0]);*/
 	
 	/*---Global XVR parameters---*/
-	SetFrameRate(60);	
-	SetTimeStep(10);
+	SetFrameRate(FRAMERATE);	
+	SetTimeStep(TIMER_MSEC_TICK);
+
+	Outputln("START!");
 }
 
 function OnFrame()
@@ -66,24 +76,32 @@ function OnFrame()
 	//CameraMoveMouse();
 	userInputController.userControlFighter(myFighter);
 	
+	if (networkController != void) {
+		networkController.sendFighterData(myFighter.getFighterData());
+	}
+	
 	SceneBegin();
 
-	DrawGrid([0.5, 0.5, 0.5], 1000);
+	DrawGrid([0.5, 0.5, 0.5], 10000);
 
-	// TODO: put your drawing code here
-	
+	/*---here we draw our fighter---*/
+	myFighter.update();
 	myFighter.draw();
 	
 	/*---here we draw all enemies fighter---*/
-	enemiesFighter.draw();
-	
-	/*DEBUG
-	trace(myXwing.psi);
-	trace(sin((myXwing.psi)*GRAD_TO_RAD));
-	trace(myXwing.direction);
-	 ---- */
-	TieObj.draw();
-	PodObj.draw();
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		if (enemiesFighter[i] != void) {
+			enemiesFighter[i].update();
+			enemiesFighter[i].draw();
+		}
+	}
+	/*---here we draw all ambient spaceships---*/
+	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+		if (ambientSpaceship[i] != void) {
+			//ambientSpaceship[i].update();
+			ambientSpaceship[i].draw();
+		}
+	}
 	
 	SceneEnd();
 }
@@ -95,12 +113,38 @@ function DownloadReady(RequestID)
 
 function OnTimer()
 {
-	// TODO:
-	
+	if (networkController != void) {
+		networkController.poll();
+	}
 }
 
 function OnEvent(eventID, wparam, lparam){
-	// TODO: put your events handling code here
+	if (networkController != void) {
+		if (eventId == networkController.isIdEvent()) {
+			Outputln(Sprintf("GET ID: %d", wparam));
+		}
+		if (eventId == networkController.isEnemyDataEvent()) {
+			var id = wparam[0];
+			var type = wparam[1];
+			if (enemiesFighter[id] == void) {
+				if (type == XWING_TYPE) { /* xwing */
+					enemiesFighter[id] = Xwing();
+					enemiesFighter[id].init( meshes.getFighterMeshes(XWING_TYPE), XWING_TYPE );
+				} else {
+					Outputln("Error! fighter type does not exists!");
+					return;
+				}
+			}
+			enemiesFighter[id].setPosition([wparam[2], wparam[3], wparam[4]]);
+			enemiesFighter[id].setAngle(wparam[5], wparam[6], wparam[7]);
+			enemiesFighter[id].setSpeed(wparam[8]);
+			enemiesFighter[id].setAnimationFrame(wparam[9]);
+		}
+		if (eventId == networkController.isEnemyExitEvent()) {
+			enemiesFighter[wparam] = void;
+			Outputln(Sprintf("Player %d is gone!",wparam));
+		}
+	}
 }
 
 function OnError(){
@@ -128,7 +172,7 @@ function DrawGrid(col, size)
 	glColor(col);
 	var max = size / 2.0;
 	var min = -max;	
-	var step = size / 10.0;
+	var step = size / 100.0;
 	
 	glBegin(GL_LINES);
 		for (var i = min; i <= max; i += step)

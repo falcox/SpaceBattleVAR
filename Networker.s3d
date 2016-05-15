@@ -1,24 +1,437 @@
-#define POSITION_PDU	1
+#include <AckMsgWindow.s3d>
 
+#define SERVER_ADV_PDU	1
+#define REQ_ID_PDU		2
+#define ACK_ID_PDU		3
+#define KEEPALIVE_PDU	4
+#define FIGHTER_PDU		5
+
+
+#define ENEMIES_FIGHTER_NUM	10
+
+#define LOST_SERVER_MSEC_THRESHOLD 	10000
+#define SEND_ADV_MSEC_THRESHOLD 	2000
+#define ACK_ID_ERROR				-1
+#define KEEPALIVE_MSEC				10000
+#define KEEPALIVE_SEND_MSEC			3500
+#define RESEND_WAIT_MSEC			3500
+/* DATA_SEND_THRESHOLD threshold to decide to whom a pdu will be sended, 
+ * based on last player position sended and actual position on PDU */
+#define DATA_SEND_THRESHOLD			1000
+/* DISTANCE_BETWEEN_PDU: threshold to decide a PDU can be sended, 
+ * based on last player position sended and actual position on PDU */
+#define DISTANCE_BETWEEN_PDU		10
+
+
+/*
+ * Packets: 	SERVER_ADV_PDU: {1, server_playerId, next_playerId, max_playerId}
+ * 				REQ_ID_PDU:		{2, msgId, playerId_requested}
+ * 				ACK_ID_PDU:		{3, msgId, playerId_assigned}
+ * 				KEEPALIVE_PDU:	{4, playerId}
+ * 				
+ * 				FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
+ */
+
+class player {
+	var playerIpAddress;
+	var keepaliveTime;
+	var posx;
+	var posy;
+	var posz;
+};
 
 class Networker {
 	
 	var playerId;
-	var serverChannel;
+	var advServerChannel;
+	var server;
+	var serverIp;
+	var serverId;
+	var player_list;
+	var player_number;
+	var lastPlayerDataSended;
+	
+	var resendWindow;
+	var keepaliveTimeElapsed;
+	
+	/* Events */
+	var idEvent;
+	var enemyDataEvent;
+	var enemyExitEvent;
 	
 	init();
 	getId();
+	poll();
+	isServer();
+	isIdEvent();
+	isEnemyDataEvent();
+	isEnemyExitEvent();
+	sendFighterData(fighterData);
 	
+	/*private*/
+	playerLost(id);
+	sendBroadcastAdv();
+	sendReqId(req_id);
+	sendAckId(destination, ackIdMsg, ack_id);
+	sendKeepalive();
+	relayPlayerData(PDU);
 };
+
+function euclideanDistance(position1, position2)
+{
+	var difference = position2 - position1;
+	var sum = 0;
+	for(var i = 0; i < len(difference); i++) {
+		sum += (difference[i] ^ 2);
+	}
+	return sqrt(sum);
+}
+
+function floatEqual(number1, number2, error)
+{
+	if ( abs(number1 - number2) < error ) {
+        return true;
+    }
+    return false;
+}
+
+function Networker::isIdEvent()
+{
+	return idEvent; 
+}
+
+function Networker::isEnemyDataEvent()
+{
+	return enemyDataEvent;
+}
+
+function Networker::isEnemyExitEvent()
+{
+	return enemyExitEvent;
+}
 
 function Networker::init()
 {
 	playerId = -1;
+	serverId = -1;
+	server = false;
+	advServerChannel = NetCreateChannel(50023,"0.0.0.0",VR_NO_BLOCKING);
+	player_list = Array(ENEMIES_FIGHTER_NUM);
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		player_list[i] = void;
+	}
+	player_number = 0;
+	keepaliveTimeElapsed = 0;
+	lastPlayerDataSended = vector(10);
+	resendWindow = AckMsgWindow();
+	resendWindow.init(ENEMIES_FIGHTER_NUM, RESEND_WAIT_MSEC);
+	idEvent = Event();
+	enemyDataEvent = Event();
+	enemyExitEvent = Event();
 }
 
 function Networker::getId()
 {
 	return playerId;
 }
+
+function Networker::isServer()
+{
+	return server;
+}
+
+function Networker::sendBroadcastAdv()
+{
+	//SERVER_ADV_PDU: {1, server_playerId, next_playerId, max_playerId}
+	var next_playerId = ENEMIES_FIGHTER_NUM + 1;
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		if (i != playerId && player_list[i] == void) {
+			next_playerId = i;
+			break;
+		}
+	}
+	var PDU = vector(4);
+	PDU[0] = SERVER_ADV_PDU;
+	PDU[1] = playerId;
+	PDU[2] = next_playerId;
+	PDU[3] = ENEMIES_FIGHTER_NUM;
+	NetVarSendTo("10.0.0.255", 50023, PDU);
+}
+
+function Networker::sendReqId(req_id)
+{
+	//REQ_ID_PDU:		{2, msgId, playerId_requested}
+	var PDU = vector(3);
+	PDU[0] = REQ_ID_PDU;
+	PDU[1] = 0;
+	PDU[2] = req_id;
+	resendWindow.add(serverId, serverIp, PDU);
+}
+
+function Networker::sendAckId(destination, ackIdMsg, ack_id)
+{
+	//ACK_ID_PDU:		{3, msgId, playerId_assigned}
+	var PDU = vector(3);
+	PDU[0] = ACK_ID_PDU;
+	PDU[1] = ackIdMsg;
+	PDU[2] = ack_id;
+	NetVarSendTo(destination, 50023, PDU);
+}
+
+function Networker::sendKeepalive()
+{
+	//KEEPALIVE_PDU:		{4, playerId}
+	var PDU = vector(2);
+	PDU[0] = KEEPALIVE_PDU;
+	PDU[1] = playerId;
+	NetVarSendTo(serverIp, 50023, PDU);
+}
+
+function Networker::relayPlayerData(PDU)
+{
+	/* Here we relay the data to all player only if the sender of this 
+	 * PDU has distance lesser than a threshold
+	 */
+	if (server == false) {
+		return;
+	}
+	var pdupos = [PDU[3], PDU[4], PDU[5]];
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		/* Check if there is an entry, then if it is not me and if it is not the player that sent the PDU */
+		if (player_list[i] != void && i != playerId && i != PDU[1]) {
+			var playerpos = [player_list[i].posx, player_list[i].posy, player_list[i].posz];
+			if (euclideanDistance(playerpos, pdupos) < DATA_SEND_THRESHOLD) {
+				NetVarSendTo(player_list[i].playerIpAddress, 50023, PDU);
+			}
+		}
+	}
+}
+
+function Networker::sendFighterData(fighterData)
+{
+	if (playerId == -1) {
+		return;
+	}
+	//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
+	var PDU = vector(11);
+	PDU[0] = FIGHTER_PDU;
+	PDU[1] = playerId;
+	PDU[2] = fighterData[0];
+	PDU[3] = fighterData[1];
+	PDU[4] = fighterData[2];
+	PDU[5] = fighterData[3];
+	PDU[6] = fighterData[4];
+	PDU[7] = fighterData[5];
+	PDU[8] = fighterData[6];
+	PDU[9] = fighterData[7];
+	PDU[10] = fighterData[8];
+	
+	var changed = false;
+	var lastPos = [lastPlayerDataSended[3], lastPlayerDataSended[4], lastPlayerDataSended[5]];
+	var pduPos = [PDU[3], PDU[4], PDU[5]];
+	for(var i = 6; i < 11; i++) {
+		if (!floatEqual(PDU[i], lastPlayerDataSended[i], 0.05)) {
+			changed = true;
+			//Outputln(Sprintf("PDU: %f != last: %f", PDU[i], lastPlayerDataSended[i]));
+		}
+	}
+	if (euclideanDistance(lastPos, pduPos) > DISTANCE_BETWEEN_PDU) {
+		changed = true;
+	}
+	if (changed == true) {
+		if (server == true) {
+			relayPlayerData(PDU);
+		} else {
+			NetVarSendTo(serverIp, 50023, PDU);
+		}
+		lastPlayerDataSended = PDU;
+		keepaliveTimeElapsed = 0;
+	}
+}
+
+function Networker::playerLost(id)
+{
+	player_list[id] = void;
+	player_number--;
+	resendWindow.emptyQueue(id);
+	EventPost(enemyExitEvent, id, 1);
+}
+
+function Networker::poll()
+{
+	static var time = GetTime();
+	static var advTimeElapsed = 0;
+	var data_ready = true;
+	var tickMsec = GetTime() - time;
+
+	keepaliveTimeElapsed += tickMsec;
+	advTimeElapsed += tickMsec;
+	
+	while(data_ready) {
+		var sender = "................";
+		var received_data = NetVarReceiveFrom(advServerChannel,&sender);
+		if(received_data != void) {
+			if(received_data[1] != playerId) {
+				//trace(received_data);
+				/* SERVER_ADV_PDU handling code */
+				if(received_data[0] == SERVER_ADV_PDU) {
+					serverId = received_data[1];
+					if (playerId == -1 && resendWindow.queueSize( serverId ) == 0) {
+						/* we have no Id so request one from server */
+						serverIp = sender;
+						if (received_data[2] <= received_data[3]) {
+							sendReqId(received_data[2]);
+						} else {
+							//TODO ERRORE! troppi giocatori
+							Outputln("MAX PLAYER NUMBER REACHED!");
+						}
+					}
+					if (server == true) {
+						/* we receive an advertisement from another server so decide who will do the server */
+						if (received_data[1] < playerId) {
+							server = false;
+						}
+					}
+					if (serverIp != sender && playerId != -1) {
+						/* maybe the server is changed, so update server address and renew Id */
+						serverIp = sender;
+						sendReqId(playerId);
+					}
+					advTimeElapsed = 0;
+				} else 
+				/* ACK_ID_PDU handling code */
+				if (received_data[0] == ACK_ID_PDU) {
+					/* we have received an id from server */
+					if (received_data[2] < 0) {
+						/* Error */
+						Outputln("ERROR ACK ID FROM SERVER!");
+						playerId = -1;
+					} else {
+						playerId = received_data[2];
+						resendWindow.ackReceived(serverId, received_data[1]);
+						EventPost(idEvent,playerId,1);
+						/* TODO generate an event  */
+					}
+				} else 
+				/* REQ_ID_PDU handling code */
+				if (received_data[0] == REQ_ID_PDU && server == true) {
+					/* We are the server  */
+					var id = received_data[2];
+					/* Renew the id */
+					if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
+						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
+					} else {
+						var i = 0;
+						for (i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+							if (player_list[i] == void) {
+								player_list[i] = player();
+								player_list[i].playerIpAddress = sender;
+								player_list[i].keepaliveTime = KEEPALIVE_MSEC;
+								player_list[i].posx = 0;
+								player_list[i].posy = 0;
+								player_list[i].posz = 0;
+								player_number++;
+								/* send ACK */
+								sendAckId(sender, received_data[1], id);
+								break;
+							}
+						}
+						/* If there is no more space for players send error */
+						if (i >= ENEMIES_FIGHTER_NUM) {
+							sendAckId(sender, received_data[1], ACK_ID_ERROR);
+						}
+					}
+				} else 
+				/* KEEPALIVE_PDU handling code */
+				if (received_data[0] == KEEPALIVE_PDU && server == true) {
+					var id = received_data[1];
+					if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
+						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
+					}
+				} else {
+					/* Data player packets handling code */
+					var id = received_data[1];
+					if (received_data[0] == FIGHTER_PDU) {
+						//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
+						var data = {id, received_data[2], received_data[3], received_data[4], received_data[5],
+							received_data[6], received_data[7], received_data[8], received_data[9], received_data[10]
+						};
+						if (server == true) {
+							/* I'm the server so I know who are players, if it is not in the list don't relay */
+							if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
+								player_list[id].keepaliveTime = KEEPALIVE_MSEC;
+								player_list[id].posx = received_data[3];
+								player_list[id].posy = received_data[4];
+								player_list[id].posz = received_data[5];
+								relayPlayerData(received_data);
+							} else {
+								sendAckId(sender, 0, ACK_ID_ERROR);
+							}
+						} else {
+							/* I'm a client, if I don't know this identificator I create a new record */
+							if (player_list[id] == void) {
+								player_list[id] = Player();
+							}
+							player_list[id].keepaliveTime = KEEPALIVE_MSEC;
+						}
+						EventPost(enemyDataEvent, data, 1);
+					}
+				}
+			}
+		} else {
+			data_ready = false;
+		}
+	}
+	
+	/* if this condition holds we have not received any advertisement until the temporal threshold,
+	 * so we can infer that the server is lost. We are the server now.
+	 */
+	if (advTimeElapsed > LOST_SERVER_MSEC_THRESHOLD) {
+		advTimeElapsed = 0;
+		server = true;
+		if (playerId == -1) {
+			playerId = 0;
+		}
+		if (serverId != -1) {
+			playerLost(serverId);
+		}
+		serverId = playerId;
+		player_list[playerId] = player();
+		player_list[playerId].keepaliveTime = KEEPALIVE_MSEC;
+		sendBroadcastAdv();
+		EventPost(idEvent, playerId, 1);
+		Outputln("I'M THE SERVER!");
+	}
+	
+	/* if this condition holds we are the server and we periodically send advertisement */
+	if (advTimeElapsed > SEND_ADV_MSEC_THRESHOLD && server == true) {
+		advTimeElapsed = 0;
+		sendBroadcastAdv();
+		//Outputln("SEND ADV!");
+	}
+	
+	/* send keepalive */
+	if (keepaliveTimeElapsed > KEEPALIVE_SEND_MSEC && playerId != -1 && server == false) {
+		sendKeepalive();
+		keepaliveTimeElapsed = 0;
+	}
+	
+	/* Resend window, a queue to store non-acked message */
+	resendWindow.send();
+	
+	/* decrease keepalive time of each player */
+	if (playerId != -1) {
+		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+			if (player_list[i] != void && i != playerId && i != serverId) {
+				player_list[i].keepaliveTime -= tickMsec;
+				if (player_list[i].keepaliveTime <= 0) {
+					playerLost(i);
+				}
+			}
+		}
+	}
+	time = GetTime();
+}
+
 
 

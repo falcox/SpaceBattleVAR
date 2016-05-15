@@ -1,0 +1,81 @@
+#define MAX_MSG_ID	32767
+
+class AckMsgWindow {
+	var ipAddress;
+	var messages;
+	var msgSlots;
+	var resendWaitTime;
+	
+	init(slots, resend_wait_time);
+	add(id, ip_address, msg);
+	ackReceived(id, msgId);
+	emptyQueue(id);
+	queueSize(id);
+	send();
+};
+
+class conMessage {
+	var resendTime;
+	var message;
+};
+
+function AckMsgWindow::init(slots, resend_wait_time)
+{
+	msgSlots = slots;
+	resendWaitTime = resend_wait_time;
+	ipAddress = Array(msgSlots);
+	messages = Array(msgSlots);
+	for(var i = 0; i < msgSlots; i++) {
+		messages[i] = Array(0);
+	}
+}
+
+function AckMsgWindow::add(id, ip_address, msg)
+{
+	/* Create a message and add to the destination player queue, compute also a msg Id */
+	var msg_elem = conMessage();
+	ipAddress[id] = ip_address;
+	msg_elem.resendTime = 0;
+	msg[1] = Rand(MAX_MSG_ID);
+	msg_elem.message = msg;
+	aadd(messages[id], msg_elem);
+}
+
+function AckMsgWindow::send()
+{
+	static var time = GetTime();
+	var timeTick = GetTime() - time;
+	
+	for (var i = 0; i < msgSlots; i++) {
+		var queue_size = len(messages[i]);
+		for (var j = 0; j < queue_size; j++) {
+			messages[i][j].resendTime -= timeTick;
+			if (messages[i][j].resendTime <= 0) {
+				NetVarSendTo(ipAddress[i], 50023, messages[i][j].message);
+				messages[i][j].resendTime = resendWaitTime;
+			}
+		}
+	}
+	time = GetTime();
+}
+
+function AckMsgWindow::ackReceived(id, msgId)
+{
+	/* Remove the acked message from player queue */
+	var queue_size = len(messages[id]);
+	for (var i = 0; i < queue_size; i++) {
+		if (messages[id][i].message[1] == msgId) {
+			adel( messages[id], i);
+		}
+	}
+}
+
+function AckMsgWindow::emptyQueue(id)
+{
+	messages[id] = Array(0);
+}
+
+function AckMsgWindow::queueSize(id)
+{
+	return len(messages[id]);
+}

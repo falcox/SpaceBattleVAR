@@ -1,0 +1,54 @@
+#define XWING_TYPE			0
+#define TIE_TYPE			1
+#define YWING_TYPE			2
+#define ARC170_TYPE			3
+#define MILLFALC_TYPE		4
+
+#define ESCAPE_POD			0
+#define EMPEROR_SHUTTLE		1
+
+class MeshFactory {
+	var fighterMeshes;
+	var ambientMeshes;
+	
+	init();
+	getFighterMeshes(fighterType);
+	getAmbientMeshes(ambientType);
+};
+
+function MeshFactory::init()
+{
+	fighterMeshes = Array(5);
+	fighterMeshes[XWING_TYPE] = CVmNewMesh("Xwing.AAM");
+	fighterMeshes[XWING_TYPE].centerBoundingBox();
+	
+	fighterMeshes[TIE_TYPE] = CVmNewMesh("Tie_2.AAM");
+	fighterMeshes[TIE_TYPE].centerBoundingBox();
+	
+	fighterMeshes[YWING_TYPE] = CVmNewMesh("ywing.AAM");
+	fighterMeshes[YWING_TYPE].centerBoundingBox();
+	
+	fighterMeshes[ARC170_TYPE] = CVmNewMesh("arc170.AAM");
+	fighterMeshes[ARC170_TYPE].centerBoundingBox();
+	
+	fighterMeshes[MILLFALC_TYPE] = CVmNewMesh("millennium_falcon.AAM");
+	fighterMeshes[MILLFALC_TYPE].centerBoundingBox();
+	
+	ambientMeshes = Array(2);
+	ambientMeshes[ESCAPE_POD] = CVmNewMesh("escape_pod.AAM");
+	ambientMeshes[ESCAPE_POD].centerBoundingBox();
+	ambientMeshes[EMPEROR_SHUTTLE] = CVmNewMesh("emperor_shuttle.AAM");
+	ambientMeshes[EMPEROR_SHUTTLE].centerBoundingBox();
+	ambientMeshes[EMPEROR_SHUTTLE].Scale(0.05);
+	
+}
+
+function MeshFactory::getFighterMeshes(fighterType)
+{
+	return fighterMeshes[fighterType];
+}
+
+function MeshFactory::getAmbientMeshes(ambientType)
+{
+	return ambientMeshes[ambientType];
+}

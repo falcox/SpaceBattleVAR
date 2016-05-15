@@ -2,13 +2,15 @@
 #define ANGLE_STEP 	0.5
 //#define MIN_SPEED	0.1
 #define MIN_SPEED	0
-#define MAX_SPEED	0.4
-#define SPEED_STEP	0.0025
+//#define MAX_SPEED	0.4
+#define MAX_SPEED	300
+//#define SPEED_STEP	0.0025
+#define SPEED_STEP	5
 
-class xWing{
-	var xWingMesh;
-	var xWingObj;	
-	var xWingPos;
+class Xwing {
+	var FighterObj;	
+	var FighterPos;
+	var FighterType;
 	var withCamera;
 	var camera;
 	var light;
@@ -17,41 +19,43 @@ class xWing{
 	var yaw;				/* Angle on Y axis */
 	var pitch;				/* Angle on X axis */
 	var roll;				/* Angle on Z axis */
-	var direction;			
+	var rollDelta, pitchDelta, yawDelta;		
 	var currentLife;		/* Life variable from 0 to 100 */
 	var velocity;
 	var currentFrame;
 	
-	init();
+	init(mesh, type);
 	draw();
 	setPosition(position);
 	setSpeed(speed);
+	setAngle(r, p, y);
+	setRelativeAngle(r, p, y);
+	setAnimationFrame(frame_number);
+	getAngleStep();
 	increaseSpeed();
 	decreaseSpeed();
 	useCamera(cam);			/*--- cam true if this obj uses camera, otherwise false ---*/
 	changeCameraMode();
-	updateAngles(roll_delta, pitch_delta, yaw_delta);
+	update();
+	getFighterData();
 };
 
-function xWing::init(){
+function Xwing::init(mesh, type){
 	yaw = 0;
 	roll = 0;
 	pitch = 0;
-	direction = [0, 0, 1];
-	xWingPos = [0,0,0];
+	FighterType = type;
+	FighterPos = [0,0,0];
 	velocity = MIN_SPEED;
 	currentFrame = 0;
 	currentLife = 100;
 	cameraMode = 0;
 	withCamera = false;
 	
-	xWingMesh = CVmNewMesh("Xwing.AAM");
-	xWingMesh.centerBoundingBox();
-	xWingObj = CVmObj(xWingMesh);
-
+	FighterObj = CVmObj(mesh);
 }
 
-function xWing::useCamera(cam)
+function Xwing::useCamera(cam)
 {
 	withCamera = cam;
 	if (cam == true) {
@@ -66,23 +70,44 @@ function xWing::useCamera(cam)
 	}
 }
 
-function xWing::changeCameraMode()
+function Xwing::changeCameraMode()
 {
 	cameraMode = 1 - cameraMode;
 }
 
-function xWing::setPosition(pos){
+function Xwing::getAngleStep()
+{
+	return ANGLE_STEP;
+}
+
+function Xwing::getFighterData()
+{
+	var data = vector(9);
+	data[0] = fighterType;
+	data[1] = FighterPos.x;
+	data[2] = FighterPos.y;
+	data[3] = FighterPos.z;
+	data[4] = roll;
+	data[5] = pitch;
+	data[6] = yaw;
+	data[7] = velocity;
+	data[8] = currentFrame;
+	return data;
+}
+
+function Xwing::setPosition(pos){
 	var i = pos.z;
 	var j = pos.x;
 	var k = pos.y;
 	
 	//TODO: controllo di non collisione
 	
-	xWingPos = pos;
-	xWingObj.setPosition(xWingPos);
+	FighterPos = pos;
+	FighterObj.setPosition(FighterPos);
+	
 }
 
-function xWing::increaseSpeed()
+function Xwing::increaseSpeed()
 {
 	if(currentFrame > 0) {
 		currentFrame -= FRAME_STEP;
@@ -90,7 +115,7 @@ function xWing::increaseSpeed()
 	velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
 }
 
-function xWing::decreaseSpeed()
+function Xwing::decreaseSpeed()
 {
 	if(currentFrame < 20) {
 		currentFrame += FRAME_STEP;
@@ -98,49 +123,78 @@ function xWing::decreaseSpeed()
 	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
 }
 
-function xWing::setSpeed(speed)
+function Xwing::setSpeed(speed)
 {
 	if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
 		velocity = speed;
 	}
 }
 
-function xWing::draw(){
-	/*---only for debug purpose---*/
-	xWingObj.DrawAxis();
-	xWingObj.DrawBoundingBox();
-	
-	xWingObj.draw(VR_FRAMENUMBER, currentFrame);
+function Xwing::setAnimationFrame(frame_number)
+{
+	currentFrame = frame_number;
 }
 
-function xWing::updateAngles(roll_delta, pitch_delta, yaw_delta) {
+function Xwing::setAngle(r, p, y)
+{
+	rollDelta = r - roll;
+	pitchDelta = p - pitch;
+	yawDelta = y - yaw;
+}
+
+function Xwing::setRelativeAngle(r, p, y)
+{
+	rollDelta = r;
+	pitchDelta = p;
+	yawDelta = y;
+}
+
+function Xwing::draw(){
+	/*---only for debug purpose---*/
+	FighterObj.DrawAxis();
+	FighterObj.DrawBoundingBox();
+	
+	FighterObj.draw(VR_FRAMENUMBER, currentFrame);
+}
+
+function Xwing::update() {
+	static var time = GetTime();
+	var timeTickSecond = 0.001;
 	var cameraPos;
+	var direction;
+	var displacement;
+	timeTickSecond *= (GetTime() - time);
 
 	/*---rotazione oggetto---*/
-	xWingObj.Rotate(pitch_delta, [1,0,0]);
-	xWingObj.Rotate(yaw_delta, [0,1,0]);
-	xWingObj.Rotate(roll_delta, [0,0,1]);
-	pitch = (pitch + pitch_delta) % 360;
-	yaw = (yaw + yaw_delta) % 360;
-	roll = (roll + roll_delta) % 360;
+	FighterObj.Rotate(pitchDelta, [1,0,0]);
+	FighterObj.Rotate(yawDelta, [0,1,0]);
+	FighterObj.Rotate(rollDelta, [0,0,1]);
+	pitch = (pitch + pitchDelta) % 360;
+	yaw = (yaw + yawDelta) % 360;
+	roll = (roll + rollDelta) % 360;
+	pitchDelta = 0;
+	yawDelta = 0;
+	rollDelta = 0;
 	
 	/*---settaggio direzione e posizione--- */
-	direction = xWingObj.GetZaxis();
-	setPosition(xWingPos+velocity*direction);
+	direction = FighterObj.GetZaxis();
+	displacement = velocity * timeTickSecond;
+	setPosition(FighterPos+displacement*direction);
 	
 	/* Camera and light position and pose */
 	if (withCamera == true) {
 		if (cameraMode == 0) {
-			cameraPos = xWingObj.getPosition() + xWingObj.getYaxis()*10 + xWingObj.getZaxis()*(-60);
+			cameraPos = FighterObj.getPosition() + FighterObj.getYaxis()*10 + FighterObj.getZaxis()*(-60);
 		} else {
-			cameraPos = xWingObj.getPosition() + xWingObj.getYaxis()*2.8 + xWingObj.getZaxis()*(-2.8);
+			cameraPos = FighterObj.getPosition() + FighterObj.getYaxis()*2.8 + FighterObj.getZaxis()*(-2.8);
 		}
 		camera.setPosition(cameraPos);
-		camera.setUpVector(xWingObj.GetYaxis());
+		camera.setUpVector(FighterObj.GetYaxis());
 		camera.setDirection(direction);
 		
 		light.setPosition(cameraPos);
 	}
 	
+	time = GetTime();
 }
 
