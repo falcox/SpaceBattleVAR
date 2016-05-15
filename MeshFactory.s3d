@@ -1,3 +1,6 @@
+#ifndef MESH_FACTORY
+#define MESH_FACTORY
+
 #define XWING_TYPE			0
 #define TIE_TYPE			1
 #define YWING_TYPE			2
@@ -11,12 +14,12 @@ class MeshFactory {
 	var fighterMeshes;
 	var ambientMeshes;
 	
-	init();
+	MeshFactory();
 	getFighterMeshes(fighterType);
 	getAmbientMeshes(ambientType);
 };
 
-function MeshFactory::init()
+function MeshFactory::MeshFactory()
 {
 	fighterMeshes = Array(5);
 	fighterMeshes[XWING_TYPE] = CVmNewMesh("Xwing.AAM");
@@ -52,3 +55,5 @@ function MeshFactory::getAmbientMeshes(ambientType)
 {
 	return ambientMeshes[ambientType];
 }
+
+#endif

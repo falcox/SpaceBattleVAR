@@ -1,86 +1,11 @@
-class EmperorShuttle {
-	var object;	
-	var objPos;
-	var objType;
+#include <AmbientObject.s3d>
+#include <MeshFactory.s3d>
+
+class EmperorShuttle: AmbientObject {
 	
-	var currentLife;		/* Life variable from 0 to 100 */
-	var velocity;
-	var currentFrame;
-	
-	init(mesh, type);
-	draw();
-	setPosition(position);
-	setSpeed(speed);
-	setAnimationFrame(frame_number);
-	update();
-	getAmbientObjData();
+	EmperorShuttle(meshFactory);
 };
 
-function EmperorShuttle::init(mesh, type){
-	objType = type;
-	objPos = [0,0,0];
-	velocity = 0;
-	currentFrame = 0;
-	currentLife = 100;
-	
-	object = CVmObj(mesh);
+function EmperorShuttle::EmperorShuttle(meshFactory){
+	AmbientObject::this.init( meshFactory.getAmbientMeshes(EMPEROR_SHUTTLE), EMPEROR_SHUTTLE );
 }
-
-function EmperorShuttle::setPosition(pos){
-	var i = pos.z;
-	var j = pos.x;
-	var k = pos.y;
-	
-	//TODO: controllo di non collisione
-	
-	objPos = pos;
-	object.setPosition(objPos);
-	
-}
-
-function EmperorShuttle::getAmbientObjData()
-{
-	var data = vector(2);
-	data[0] = objType;
-	data[1] = currentLife;
-	return data;
-}
-
-function EmperorShuttle::setSpeed(speed)
-{
-	if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
-		velocity = speed;
-	}
-}
-
-function EmperorShuttle::setAnimationFrame(frame_number)
-{
-	currentFrame = frame_number;
-}
-
-function EmperorShuttle::draw(){
-	/*---only for debug purpose---*/
-	object.DrawAxis();
-	object.DrawBoundingBox();
-	
-	object.draw(VR_FRAMENUMBER, currentFrame);
-}
-
-function EmperorShuttle::update() {
-	static var time = GetTime();
-	var timeTickSecond = 0.001;
-	var direction;
-	var displacement;
-	timeTickSecond *= (GetTime() - time);
-
-	/*---rotazione oggetto---*/
-	// maybe rotate in velocity direction
-	
-	/*---settaggio direzione e posizione--- */
-	direction = object.GetZaxis();
-	displacement = velocity * timeTickSecond;
-	setPosition(objPos+displacement*direction);
-	
-	time = GetTime();
-}
-
