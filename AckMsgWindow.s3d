@@ -6,7 +6,7 @@ class AckMsgWindow {
 	var msgSlots;
 	var resendWaitTime;
 	
-	init(slots, resend_wait_time);
+	AckMsgWindow(slots, resend_wait_time);
 	add(id, ip_address, msg);
 	ackReceived(id, msgId);
 	emptyQueue(id);
@@ -19,7 +19,7 @@ class conMessage {
 	var message;
 };
 
-function AckMsgWindow::init(slots, resend_wait_time)
+function AckMsgWindow::AckMsgWindow(slots, resend_wait_time)
 {
 	msgSlots = slots;
 	resendWaitTime = resend_wait_time;

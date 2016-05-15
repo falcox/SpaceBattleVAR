@@ -59,7 +59,7 @@ class Networker {
 	var enemyDataEvent;
 	var enemyExitEvent;
 	
-	init();
+	Networker();
 	getId();
 	poll();
 	isServer();
@@ -110,7 +110,7 @@ function Networker::isEnemyExitEvent()
 	return enemyExitEvent;
 }
 
-function Networker::init()
+function Networker::Networker()
 {
 	playerId = -1;
 	serverId = -1;
@@ -123,8 +123,7 @@ function Networker::init()
 	player_number = 0;
 	keepaliveTimeElapsed = 0;
 	lastPlayerDataSended = vector(10);
-	resendWindow = AckMsgWindow();
-	resendWindow.init(ENEMIES_FIGHTER_NUM, RESEND_WAIT_MSEC);
+	resendWindow = AckMsgWindow(ENEMIES_FIGHTER_NUM, RESEND_WAIT_MSEC);
 	idEvent = Event();
 	enemyDataEvent = Event();
 	enemyExitEvent = Event();

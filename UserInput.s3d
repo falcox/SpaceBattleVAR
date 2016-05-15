@@ -1,11 +1,11 @@
 class UserInput {
 	var cameraModeAntiBounce;
 	
-	init();
+	UserInput();
 	userControlFighter(obj);
 };
 
-function UserInput::init()
+function UserInput::UserInput()
 {
 	cameraModeAntiBounce = false;
 }

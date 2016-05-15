@@ -1,0 +1,13 @@
+#include <FighterJet.s3d>
+#include <MeshFactory.s3d>
+
+class Ywing: FighterJet {
+	Ywing(meshFactory);
+};
+
+function Ywing::Ywing(meshFactory)
+{
+	FighterJet::this.init(meshFactory.getFighterMeshes(YWING_TYPE), YWING_TYPE);
+	//TODO: Fix camera offset
+	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
+}

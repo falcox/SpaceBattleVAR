@@ -1,50 +1,11 @@
-class EscapePod {
-	var podObj;	
-	var position;
-	var ambientType;
+#include <AmbientObject.s3d>
+#include <MeshFactory.s3d>
+
+class EscapePod: AmbientObject {
 	
-	var yaw;				/* Angle on Y axis */
-	var pitch;				/* Angle on X axis */
-	var roll;				/* Angle on Z axis */
-	var direction;			
-	var currentLife;		/* Life variable from 0 to 100 */
-	var velocity;
-	
-	init(mesh, type);
-	draw();
-	setPosition(position);
-	update();
+	EscapePod(meshFactory);
 };
 
-function EscapePod::init(mesh, type)
-{
-	yaw = 0;
-	roll = 0;
-	pitch = 0;
-	ambientType = type;
-	direction = [0, 0, 1];
-	position = [0,0,0];
-	velocity = MIN_SPEED;
-	currentLife = 100;
-
-	podObj = CVmObj(mesh);
-}
-
-function EscapePod::setPosition(pos){
-	var i = pos.z;
-	var j = pos.x;
-	var k = pos.y;
-	
-	//TODO: controllo di non collisione
-	
-	position = pos;
-	podObj.setPosition(position);
-}
-
-function EscapePod::draw(){
-	podObj.draw();
-}
-
-function EscapePod::update(){
-	//TODO: continua!
+function EscapePod::EscapePod(meshFactory){
+	AmbientObject::this.init( meshFactory.getAmbientMeshes(ESCAPE_POD), ESCAPE_POD );
 }
