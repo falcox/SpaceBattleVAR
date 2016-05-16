@@ -1,0 +1,42 @@
+#define MAX_LASER_RANGE 500
+#define LASER_SPEED		600
+
+class LaserBeam{
+	var object;
+	var initPos;
+	var finalPos;
+	var shootTime;
+	var collision;
+	var direction;
+	
+	LaserBeam(mesh, begin, end, time);
+	update();
+	getMaxRange();
+};
+
+function LaserBeam::LaserBeam(mesh, begin, end, time){
+	object = CVmObj(mesh);
+	initPos = begin;
+	finalPos = end;
+	shootTime = time;
+	direction = finalPos-initPos;
+	direction = direction / modulus(direction); 
+}
+
+function LaserBeam::getMaxRange(){
+	return MAX_LASER_RANGE;
+}
+
+function LaserBeam::update(){
+	static var time = GetTime();
+	var timeTickSecond = 0.001;
+	var displacement;
+	time -= serverTime;
+	timeTickSecond *= (GetTime() - time);
+	
+	/*---settaggio direzione e posizione--- */
+	displacement = direction*timeTickSecond*LASER_SPEED;
+	object.SetPosition(initPos+displacement);
+	
+	time = GetTime();
+}

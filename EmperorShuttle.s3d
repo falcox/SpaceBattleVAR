@@ -4,8 +4,13 @@
 class EmperorShuttle: AmbientObject {
 	
 	EmperorShuttle(meshFactory);
+	isDestroyable();
 };
 
 function EmperorShuttle::EmperorShuttle(meshFactory){
 	AmbientObject::this.init( meshFactory.getAmbientMeshes(EMPEROR_SHUTTLE), EMPEROR_SHUTTLE );
+}
+
+function EmperorShuttle::isDestroyable() {
+	return true;
 }

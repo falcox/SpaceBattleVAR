@@ -12,7 +12,7 @@ class SkyBox{
 //	var associatedFighter;
 	
 	init();
-	update(x,y,z);
+	update(pos);
 	draw();
 };
 
@@ -33,7 +33,7 @@ function SkyBox::init(){
 	intSkyBoxMesh.centerBoundingBox();
 	intSkyBoxMesh.scale(SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4);
 	
-	yavinBillboard = CVmBillboard("yav4.png", 150, 150);
+	yavinBillboard = CVmBillboard("yav4.png", 200, 200);
 	intSkyBoxObj = CVmObj(intSkyBoxMesh);
 	intSkyBoxObj.linkToBillboard(yavinBillboard);
 }
@@ -43,8 +43,8 @@ function SkyBox::draw(){
 	//yavinBillboard.draw(0,VR_BB_UNLOCK_NONE);
 }
 
-function SkyBox::update(x, y, z){
-	extSkyBoxObj.setPosition(x, y, z);
-	intSkyBoxObj.setPosition(x, y, z);
-	yavinBillboard.setPosition(x, y, z+ SKY_BOX_SIZE/5);
+function SkyBox::update(pos){
+	extSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
+	intSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
+	yavinBillboard.setPosition(pos.x, pos.y, pos.z+ SKY_BOX_SIZE/2);
 }

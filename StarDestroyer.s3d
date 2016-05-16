@@ -1,58 +1,16 @@
-class StarDestroyer{
-	var mesh;
-	var isdObj;	
-	var position;
+#include <AmbientObject.s3d>
+#include <MeshFactory.s3d>
+
+class StarDestroyer: AmbientObject {
 	
-	var yaw;				/* Angle on Y axis */
-	var pitch;				/* Angle on X axis */
-	var roll;				/* Angle on Z axis */
-	var direction;			
-	var currentLife;		/* Life variable from 0 to 100 */
-	var velocity;
-	
-	init();
-	draw();
-	setPosition(position);
-	update();
-	getObject();
+	StarDestroyer(meshFactory);
+	isDestroyable();
 };
 
-function StarDestroyer::init()
-{
-	yaw = 0;
-	roll = 0;
-	pitch = 0;
-	direction = [0, 0, 1];
-	position = [0,0,0];
-	velocity = MIN_SPEED;
-	currentLife = 100;
-	
-	mesh = CVmNewMesh("StarDestroyer.AAM");
-	mesh.centerBoundingBox();
-	mesh.Scale(8,8,8);
-	isdObj = CVmObj(mesh);
+function StarDestroyer::StarDestroyer(meshFactory){
+	AmbientObject::this.init( meshFactory.getAmbientMeshes(STAR_DESTROYER), STAR_DESTROYER );
 }
 
-function StarDestroyer::setPosition(pos){
-	var i = pos.z;
-	var j = pos.x;
-	var k = pos.y;
-	
-	//TODO: controllo di non collisione
-	
-	position = pos;
-	isdObj.setPosition(position);
-}
-
-function StarDestroyer::draw(){
-	isdObj.drawBoundingBox();
-	isdObj.draw();
-}
-
-function StarDestroyer::update(){
-	//TODO: continua!
-}
-
-function StarDestroyer::getobject(){
-	return isdObj;
+function StarDestroyer::isDestroyable() {
+	return false;
 }
