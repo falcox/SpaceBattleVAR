@@ -9,3 +9,4 @@ class EscapePod: AmbientObject {
 function EscapePod::EscapePod(meshFactory){
 	AmbientObject::this.init( meshFactory.getAmbientMeshes(ESCAPE_POD), ESCAPE_POD );
 }
+//Ciaone
