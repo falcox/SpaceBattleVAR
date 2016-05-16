@@ -1,11 +1,11 @@
 class UserInput {
 	var cameraModeAntiBounce;
 	
-	UserInput();
+	init();
 	userControlFighter(obj);
 };
 
-function UserInput::UserInput()
+function UserInput::init()
 {
 	cameraModeAntiBounce = false;
 }
@@ -14,36 +14,44 @@ function UserInput::UserInput()
  * 		- increaseSpeed()
  * 		- decreaseSpeed()
  * 		- changeCameraMode()
- * 		- getAngleStep()
- * 		- setRelativeAngle(roll, pitch, yaw)
+ * 		- update(roll, pitch, yaw)
  */
 function UserInput::userControlFighter(fighter)
 {
 	var y = 0, p = 0, r = 0;
-	var angleStep = fighter.getAngleStep();
+	/* changedOccurred is set true only if a command modifies the fighter pose or velocity */
+	var changedOccurred = false;
 	
 	/*---modifiche al vettore velocità e al frame---*/
-	if(keypressed(VK_SHIFT)) {
-		fighter.increaseSpeed();
+	//TODO: in questo momento questo pezzo di codice modifica changedOccurred a seconda
+	//		della posizione del codice stesso, non va tanto bene...
+	if(keypressed(VK_CONTROL)) {
+		changedOccurred = fighter.increaseSpeed();
 	} else {
-		fighter.decreaseSpeed();
+		changedOccurred = fighter.decreaseSpeed();
 	}
 	
 	/*---modifiche agli angoli--- */
 	if(Keypressed(VK_LEFT) || Keypressed("a")) {
-		r = -angleStep;
+		r = -ANGLE_STEP;
+		changedOccurred = true;
 	} else if(Keypressed(VK_RIGHT) || Keypressed("d")) {
-		r = angleStep;
+		r = ANGLE_STEP;
+		changedOccurred = true;
 	}
 	if(Keypressed(VK_UP) || Keypressed("w")) {
-		p = angleStep;
+		p = ANGLE_STEP;
+		changedOccurred = true;
 	} else if(Keypressed(VK_DOWN) || Keypressed("s")) {
-		p = -angleStep;
+		p = -ANGLE_STEP;
+		changedOccurred = true;
 	}
 	if(Keypressed(VK_RSHIFT) || Keypressed("q")) {
-		y = angleStep;
+		y = ANGLE_STEP;
+		changedOccurred = true;
 	} else if(Keypressed(VK_END) || Keypressed("e")) {
-		y = -angleStep;
+		y = -ANGLE_STEP;
+		changedOccurred = true;
 	}
 	/*---Modify camera mode---*/
 	if(Keypressed("c")) {
@@ -53,6 +61,8 @@ function UserInput::userControlFighter(fighter)
 		cameraModeAntiBounce = false;
 	}
 
-	/*---rotazione oggetto---*/
-	fighter.setRelativeAngle(r, p, y);
+	/*---aggiornamento oggetto---*/
+	fighter.update(r, p, y);
+	
+	return changedOccurred;
 }

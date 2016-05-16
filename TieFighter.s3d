@@ -1,13 +1,57 @@
-#include <FighterJet.s3d>
-#include <MeshFactory.s3d>
-
-class TieFighter: FighterJet {
-	TieFighter(meshFactory);
+class TieFighter {
+	var mesh;
+	var tieObj;	
+	var position;
+	
+	var yaw;				/* Angle on Y axis */
+	var pitch;				/* Angle on X axis */
+	var roll;				/* Angle on Z axis */
+	var direction;			
+	var currentLife;		/* Life variable from 0 to 100 */
+	var velocity;
+	
+	init();
+	draw();
+	setPosition(position);
+	update();
+	getObject();
 };
 
-function TieFighter::TieFighter(meshFactory)
+function TieFighter::init()
 {
-	FighterJet::this.init(meshFactory.getFighterMeshes(TIE_TYPE), TIE_TYPE);
-	//TODO: Fix camera offset
-	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
+	yaw = 0;
+	roll = 0;
+	pitch = 0;
+	direction = [0, 0, 1];
+	position = [0,0,0];
+	velocity = MIN_SPEED;
+	currentLife = 100;
+	
+	mesh = CVmNewMesh("Tie_2.AAM");
+	mesh.centerBoundingBox();
+	tieObj = CVmObj(mesh);
+}
+
+function TieFighter::setPosition(pos){
+	var i = pos.z;
+	var j = pos.x;
+	var k = pos.y;
+	
+	//TODO: controllo di non collisione
+	
+	position = pos;
+	tieObj.setPosition(position);
+}
+
+function TieFighter::draw(){
+	tieObj.drawBoundingBox();
+	tieObj.draw();
+}
+
+function TieFighter::update(){
+	//TODO: continua!
+}
+
+function TieFighter::getObject(){
+	return tieObj;
 }

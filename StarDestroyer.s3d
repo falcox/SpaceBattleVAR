@@ -1,6 +1,6 @@
-class EscapePod {
+class StarDestroyer{
 	var mesh;
-	var podObj;	
+	var isdObj;	
 	var position;
 	
 	var yaw;				/* Angle on Y axis */
@@ -17,7 +17,7 @@ class EscapePod {
 	getObject();
 };
 
-function EscapePod::init()
+function StarDestroyer::init()
 {
 	yaw = 0;
 	roll = 0;
@@ -27,12 +27,13 @@ function EscapePod::init()
 	velocity = MIN_SPEED;
 	currentLife = 100;
 	
-	mesh = CVmNewMesh("escape_pod.AAM");
+	mesh = CVmNewMesh("StarDestroyer.AAM");
 	mesh.centerBoundingBox();
-	podObj = CVmObj(mesh);
+	mesh.Scale(8,8,8);
+	isdObj = CVmObj(mesh);
 }
 
-function EscapePod::setPosition(pos){
+function StarDestroyer::setPosition(pos){
 	var i = pos.z;
 	var j = pos.x;
 	var k = pos.y;
@@ -40,18 +41,18 @@ function EscapePod::setPosition(pos){
 	//TODO: controllo di non collisione
 	
 	position = pos;
-	podObj.setPosition(position);
+	isdObj.setPosition(position);
 }
 
-function EscapePod::draw(){
-	podObj.drawBoundingBox();
-	podObj.draw();
+function StarDestroyer::draw(){
+	isdObj.drawBoundingBox();
+	isdObj.draw();
 }
 
-function EscapePod::update(){
+function StarDestroyer::update(){
 	//TODO: continua!
 }
 
-function EscapePod::getObject(){
-	return podObj;
+function StarDestroyer::getobject(){
+	return isdObj;
 }

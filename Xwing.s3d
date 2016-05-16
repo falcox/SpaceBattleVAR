@@ -1,12 +1,260 @@
-#include <FighterJet.s3d>
-#include <MeshFactory.s3d>
+#define FRAME_STEP 0.5
+#define ANGLE_STEP 	0.5
+//#define MIN_SPEED	0.1
+#define MIN_SPEED	0.4
+#define MAX_SPEED	0.8
+#define SPEED_STEP	0.0025
+#define XWING_TYPE	1
 
-class Xwing: FighterJet {
-	Xwing(meshFactory);
+class xWing{
+	var xWingMesh;
+	var xWingObj;	
+	var xWingPos;
+	var withCamera;
+	var camera;
+	var light;
+	var cameraMode;			/* 0->behind / 1->inside */
+	
+	var yaw;				/* Angle on Y axis */
+	var pitch;				/* Angle on X axis */
+	var roll;				/* Angle on Z axis */
+	var direction;			
+	var currentLife;		/* Life variable from 0 to 100 */
+	var velocity;
+	var currentFrame;
+	var bbox;
+	var collVertex;
+	var colliding;
+	var lastCollisionInfo; 
+	//array: [0] -> contact point [1] -> contact normal [2] -> triangle ID [3] component ID
+	
+	
+	init();
+	draw();
+	setPosition(position);
+	setSpeed(speed);
+	getAngles();
+	increaseSpeed();
+	decreaseSpeed();
+	useCamera(cam);			/*--- cam true if this obj uses camera, otherwise false ---*/
+	changeCameraMode();
+	update(roll_delta, pitch_delta, yaw_delta);
+	getFighterData();
+	getObject();
+	setCollision(bool);
+	updateCollVertex(bbox);
+	getCollVertex();
+	getPosition();
+	setCollisionInfo(collInfo);
+	rotateToDirection(dir);
 };
 
-function Xwing::Xwing(meshFactory)
+function xWing::init(){
+	yaw = 0;
+	roll = 0;
+	pitch = 0;
+	direction = [0, 0, 1];
+	xWingPos = [0,0,0];
+	velocity = MIN_SPEED;
+	currentFrame = 0;
+	currentLife = 100;
+	cameraMode = 0;
+	withCamera = false;
+	colliding = false;
+	collVertex = Array(6);
+	
+	xWingMesh = CVmNewMesh("Xwing.AAM");
+	xWingMesh.centerBoundingBox();
+	xWingObj = CVmObj(xWingMesh);
+	
+	bbox = xWingMesh.getBoundingBox();
+	collVertex = updateCollVertex(bbox);
+}
+
+function xWing::useCamera(cam)
 {
-	FighterJet::this.init(meshFactory.getFighterMeshes(XWING_TYPE), XWING_TYPE);
-	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
+	withCamera = cam;
+	if (cam == true) {
+		camera = CameraGetCurrent();
+		light = CVmLight();
+		light.SetDiffuse(1, 1, 1);
+		light.Enable();
+	} else {
+		camera = void;
+		light.Disable();
+		light = void;
+	}
+}
+
+function xWing::changeCameraMode()
+{
+	cameraMode = 1 - cameraMode;
+}
+
+function xWing::getFighterData()
+{
+	var data = vector(8);
+	data[0] = XWING_TYPE;
+	data[1] = xWingPos.x;
+	data[2] = xWingPos.y;
+	data[3] = xWingPos.z;
+	data[4] = roll;
+	data[5] = pitch;
+	data[6] = yaw;
+	data[7] = velocity;
+	return data;
+}
+
+function xWing::getPosition(){
+	return xWingPos;
+}
+
+function xWing::setPosition(pos){
+	var i = pos.z;
+	var j = pos.x;
+	var k = pos.y;
+	
+	//TODO: controllo di non collisione
+	
+	xWingPos = pos;
+	xWingObj.setPosition(xWingPos);
+}
+
+function xWing::increaseSpeed()
+{
+	var tempVel = velocity;
+	if(currentFrame > 0) {
+		currentFrame -= FRAME_STEP;
+	}
+	velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
+	if (velocity == tempVel) {
+		return false;
+	}
+	return true;
+}
+
+function xWing::decreaseSpeed()
+{
+	var tempVel = velocity;
+	if(currentFrame < 20) {
+		currentFrame += FRAME_STEP;
+	}
+	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
+	if (velocity == tempVel) {
+		return false;
+	}
+	return true;
+}
+
+function xWing::setSpeed(speed)
+{
+	if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
+		velocity = speed;
+	}
+}
+
+function xWing::getAngles()
+{
+	return [roll, pitch, yaw];
+}
+
+function xWing::draw(){
+	/*---only for debug purpose---*/
+	xWingObj.DrawAxis();
+	xWingObj.DrawBoundingBox();
+	
+	xWingObj.draw(VR_FRAMENUMBER, currentFrame);
+}
+
+function xWing::update(roll_delta, pitch_delta, yaw_delta) {
+	var cameraPos;
+	var tmpDir;
+	var tmpMat;
+	
+	/* DEBUG */
+	tmpMat =xWingObj.getRotationMatrix();
+	trace(tmpMat);
+	/* END DEBUG */
+	
+	/*---rotazione oggetto---*/
+	xWingObj.Rotate(pitch_delta, [1,0,0]);
+	xWingObj.Rotate(yaw_delta, [0,1,0]);
+	xWingObj.Rotate(roll_delta, [0,0,1]);
+	pitch = (pitch + pitch_delta) % 360;
+	yaw = (yaw + yaw_delta) % 360;
+	roll = (roll + roll_delta) % 360;
+	
+	/*---settaggio direzione e posizione--- */
+	tmpDir = xWingObj.GetZaxis();
+	if(colliding){
+		/*get the normal and compute the "reflection" */
+		//direction = tmpDir-2*(tmpDir*lastCollisionInfo[1])*lastCollisionInfo[1];
+		direction = tmpDir-(tmpDir*lastCollisionInfo[1])*lastCollisionInfo[1];
+		//tmpMat = xWingObj.getRotationMatrix();
+		rotateToDirection(direction);
+		outputln("collision!!");
+	}else{
+		direction = tmpDir;
+	}
+	setPosition(xWingPos+velocity*direction);
+	bbox = xWingMesh.getBoundingBox();
+	
+	
+	/* Camera and light position and pose */
+	if (withCamera == true) {
+		if (cameraMode == 0) {
+			cameraPos = xWingObj.getPosition() + xWingObj.getYaxis()*10 + xWingObj.getZaxis()*(-60);
+		} else {
+			cameraPos = xWingObj.getPosition() + xWingObj.getYaxis()*2.8 + xWingObj.getZaxis()*(-2.8);
+		}
+		camera.setPosition(cameraPos);
+		camera.setUpVector(xWingObj.GetYaxis());
+		camera.setDirection(direction);
+		
+		light.setPosition(cameraPos);
+	}
+	
+}
+
+function xWing::getObject(){
+	return xWingObj;
+}
+
+/*function xWing::boundBoxColl(obj){
+	var coll = false;
+	coll = xWingObj.isCollidingBBox(obj);
+	return coll;
+}*/
+function xWing::setCollision(bool){
+	colliding = bool;
+}
+
+function xWing::updateCollVertex(bbox){
+	var ret;
+	ret = {[bbox[0],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2], [bbox[3],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2],
+				[(bbox[0]+bbox[3])/2,bbox[1], (bbox[2]+bbox[5])/2], [(bbox[0]+bbox[3])/2,bbox[4], (bbox[2]+bbox[5])/2],
+				[(bbox[0]+bbox[3])/2,(bbox[1]+bbox[4])/2, bbox[2]], [(bbox[0]+bbox[3])/2,(bbox[1]+bbox[4])/2, bbox[5]]	
+				};
+	//ret[0] = [bbox[0],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2];
+	return ret;
+}
+
+function xWing::getCollVertex(){
+	return collVertex;
+}
+
+function xWing::setCollisionInfo(collInfo){
+	lastCollisionInfo = collInfo;
+}
+
+function xWing::rotateToDirection(dir){
+	var u = xWingObj.getYaxis();
+	var r;
+	var b;
+	r = u ^ dir;
+	r = r / modulus(r);
+	b = r ^ u;
+	b = b / modulus(b);
+	u = b ^ r;
+	xWingObj.setRotationMatrix([r.x, r.y, r.z, 0, u.x, u.y, u.z, 0, b.x, b.y, b.z, 0, 0, 0, 0, 1]);
 }

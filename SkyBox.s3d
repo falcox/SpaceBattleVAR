@@ -1,0 +1,50 @@
+#define SKY_BOX_SIZE	2000
+#define N_TILES		5
+
+class SkyBox{
+	var extSkyBoxMesh;
+	var extSkyBoxObj;
+	var intSkyBoxMesh;
+	var intSkyBoxObj;
+	var yavinBillboard;
+	var starsTexture;
+	var starsMaterial;
+//	var associatedFighter;
+	
+	init();
+	update(x,y,z);
+	draw();
+};
+
+function SkyBox::init(){
+	starsTexture = CVmTexture("stars2.jpg");
+	starsMaterial = CVmMaterial();
+	starsMaterial.setTexture(starsTexture);
+	starsMaterial.changeTextureParams(VR_V_TILING, N_TILES, false);
+	starsMaterial.changeTextureParams(VR_U_TILING, N_TILES, false);
+	
+	extSkyBoxMesh = CVmNewMesh(VRP_SPHERE);
+	extSkyBoxMesh.centerBoundingBox();
+	extSkyBoxMesh.scale(SKY_BOX_SIZE,SKY_BOX_SIZE,SKY_BOX_SIZE);
+	extSkyBoxMesh.setMaterial(starsMaterial);
+	extSkyBoxObj = CVmObj(extSkyBoxMesh);
+	
+	intSkyBoxMesh = CVmNewMesh(VRP_SPHERE);
+	intSkyBoxMesh.centerBoundingBox();
+	intSkyBoxMesh.scale(SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4);
+	
+	yavinBillboard = CVmBillboard("yav4.png", 150, 150);
+	intSkyBoxObj = CVmObj(intSkyBoxMesh);
+	intSkyBoxObj.linkToBillboard(yavinBillboard);
+}
+
+function SkyBox::draw(){
+	extSkyBoxObj.Draw(VR_DOUBLEFACE);
+	//yavinBillboard.draw(0,VR_BB_UNLOCK_NONE);
+}
+
+function SkyBox::update(x, y, z){
+	extSkyBoxObj.setPosition(x, y, z);
+	intSkyBoxObj.setPosition(x, y, z);
+	yavinBillboard.setPosition(x, y, z+ SKY_BOX_SIZE/5);
+}

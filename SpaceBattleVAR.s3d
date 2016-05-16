@@ -1,104 +1,124 @@
 /* Include s3d symbols */
 #include <Script3d.h>
 #include <Camera.s3d.h>
-#include <MeshFactory.s3d>
-#include <Networker.s3d>
-#include <UserInput.s3d>
 #include <Xwing.s3d>
 #include <TieFighter.s3d>
-#include <Ywing.s3d>
-#include <Arc170.s3d>
-#include <MillenniumFalcon.s3d>
-#include <EmperorShuttle.s3d>
 #include <EscapePod.s3d>
+#include <Networker.s3d>
+#include <UserInput.s3d>
+#include <World.s3d>
+#include <SkyBox.s3d>
+#include <StarDestroyer.s3d>
 
 #define AMBIENT_SPACESHIP_NUM 10
-#define TIMER_MSEC_TICK 100
+#define BIG_AMBIENT_SPACESHIP_NUM 10
+#define TIMER_MSEC_TICK 10
 #define FRAMERATE 60
 
 /* Set global scene parameters */
-SET SCENE_FOV  = 60;
+SET SCENE_FOV  = 100;
 SET SCENE_NEAR = 0.5;
-SET SCENE_FAR  = 1000;
+SET SCENE_FAR  = 2000;
 
 var myFighter;
+var mySkyBox;
 var networkController =  void;
 var userInputController;
 var enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
 var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
-var meshes;
+var bigAmbientSpaceship = Array(BIG_AMBIENT_SPACESHIP_NUM);
+
 
 /* Function declarations */
+function CameraMoveMouse();
 function DrawGrid(col, size);
+function CollisionDetectionBBox(ClassUnderTest);
+function CollisionDetectionDeep(ClassUnderTest);
 
 function OnDownload()
 {
 	FileDownload("3d_models/Xwing.zip");
 	FileDownload("3d_models/Tie_2.zip");
+	FileDownload("3d_models/EscapePod.zip");
 	FileDownload("3d_models/ywing.zip");
 	FileDownload("3d_models/arc170.zip");
-	FileDownload("3d_models/millennium_falcon.zip");
 	FileDownload("3d_models/emperor_shuttle.zip");
-	FileDownload("3d_models/EscapePod.zip");
+	FileDownload("3d_models/millennium_falcon.zip");
+	FileDownload("3d_models/StarDestroyer.zip");
+	FileDownload("images/spacebackgrounds.zip");
 }
 
 function OnInit(params)
 {
 	networkController = Networker();
+	networkController.init(TIMER_MSEC_TICK);
 	
 	userInputController = UserInput();
+	userInputController.init();
 	
-	meshes = MeshFactory();
-	
-	myFighter = Xwing( meshes );
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_BLEND);
+	mySkyBox = SkyBox();
+	mySkyBox.init(myFighter);	
+		
+	myFighter = Xwing();
+	myFighter.init();
 	myFighter.useCamera(true);
 	myFighter.setPosition([ 50, 0, 0 ]);
 	
-	ambientSpaceship[0] = EmperorShuttle( meshes );
-	ambientSpaceship[0].setCenter([200.0, 0, 0]);
-	ambientSpaceship[0].setRadius(100);
-	ambientSpaceship[0].setOrbitPeriod(20);
-	ambientSpaceship[0].setServerTime(GetTime());
+	/*enemiesFighter[0] = Xwing();
+	enemiesFighter[0].init();
+	enemiesFighter[0].setPosition([30,10,10]);*/
 	
-	/*ambientSpaceship[1] = EscapePod();
+	ambientSpaceship[0] = TieFighter();
+	ambientSpaceship[0].init();
+	ambientSpaceship[0].setPosition([0.0, 10.0, 0.0]);
+	
+	ambientSpaceship[1] = EscapePod();
 	ambientSpaceship[1].init();
-	ambientSpaceship[1].setPosition([100.0, 50.0, 0.0]);*/
+	ambientSpaceship[1].setPosition([100.0, 50.0, 0.0]);
+	
+	bigAmbientSpaceship[0] = StarDestroyer();
+	bigAmbientSpaceship[0].init();
+	bigAmbientSpaceship[0].setPosition([1000.0, 0.0, 1000.0]);
 	
 	/*---Global XVR parameters---*/
 	SetFrameRate(FRAMERATE);	
 	SetTimeStep(TIMER_MSEC_TICK);
-
-	Outputln("START!");
 }
 
 function OnFrame()
 {
-	userInputController.userControlFighter(myFighter);
-	
-	if (networkController != void) {
-		networkController.sendFighterData(myFighter.getFighterData());
-	}
+	/* manage camera */
+	//CameraMoveMouse();
+
 	
 	SceneBegin();
 
-	DrawGrid([0.5, 0.5, 0.5], 10000);
+	DrawGrid([0.5, 0.5, 0.5], 1000);
 
 	/*---here we draw our fighter---*/
-	myFighter.update();
 	myFighter.draw();
+	
+	/*--- draw the skybox --- */
+	mySkyBox.draw();
 	
 	/*---here we draw all enemies fighter---*/
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		if (enemiesFighter[i] != void) {
-			enemiesFighter[i].update();
 			enemiesFighter[i].draw();
 		}
 	}
 	/*---here we draw all ambient spaceships---*/
 	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
 		if (ambientSpaceship[i] != void) {
-			ambientSpaceship[i].update();
 			ambientSpaceship[i].draw();
+		}
+	}
+	
+	for (var i = 0; i < BIG_AMBIENT_SPACESHIP_NUM; i++) {
+		if (bigAmbientSpaceship[i] != void) {
+			bigAmbientSpaceship[i].draw();
 		}
 	}
 	
@@ -112,9 +132,23 @@ function DownloadReady(RequestID)
 
 function OnTimer()
 {
-	if (networkController != void) {
+	var fighterData;
+	var notVoidController = (networkController != void)?true:false;
+	if (notVoidController) {
 		networkController.poll();
 	}
+	CollisionDetectionBBox(myFighter);
+	CollisionDetectionDeep(myFighter);
+	if (userInputController.userControlFighter(myFighter) == true) {
+		if (notVoidController) {
+			fighterData = myFighter.getFighterData();
+			networkController.sendFighterData(fighterData);
+		}
+	}
+	else {
+		fighterData = myFighter.getFighterData();
+	}
+	mySkyBox.update(fighterData[1], fighterData[2], fighterData[3]);
 }
 
 function OnEvent(eventID, wparam, lparam){
@@ -126,17 +160,18 @@ function OnEvent(eventID, wparam, lparam){
 			var id = wparam[0];
 			var type = wparam[1];
 			if (enemiesFighter[id] == void) {
-				if (type == XWING_TYPE) { /* xwing */
-					enemiesFighter[id] = Xwing( meshes );
+				if (type == 1) { /* xwing */
+					enemiesFighter[id] = xWing();
+					enemiesFighter[id].init();
 				} else {
 					Outputln("Error! fighter type does not exists!");
 					return;
 				}
 			}
 			enemiesFighter[id].setPosition([wparam[2], wparam[3], wparam[4]]);
-			enemiesFighter[id].setAngle(wparam[5], wparam[6], wparam[7]);
 			enemiesFighter[id].setSpeed(wparam[8]);
-			enemiesFighter[id].setAnimationFrame(wparam[9]);
+			// TODO: this doesn't work! we must find a better way to rotate the model
+			enemiesFighter[id].update(wparam[5], wparam[6], wparam[7]);
 		}
 		if (eventId == networkController.isEnemyExitEvent()) {
 			enemiesFighter[wparam] = void;
@@ -155,6 +190,11 @@ function OnExit()
 	EraseCache();
 }
 
+function CameraMoveMouse()
+{	
+	CameraMoveMouse_MBL_LC();
+}
+
 function DrawGrid(col, size)
 {
 	/* let's not mess up current OpenGL status */
@@ -165,7 +205,7 @@ function DrawGrid(col, size)
 	glColor(col);
 	var max = size / 2.0;
 	var min = -max;	
-	var step = size / 100.0;
+	var step = size / 10.0;
 	
 	glBegin(GL_LINES);
 		for (var i = min; i <= max; i += step)
@@ -180,4 +220,97 @@ function DrawGrid(col, size)
 	
 	/* polite restoration of previous OpenGL status */
 	glPopAttrib();
+}
+
+/*function CollisionDetection(ObjectUnderTest){
+	var changed = false;
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		if (enemiesFighter[i] != void) {
+			if(ObjectUnderTest.boundBoxColl(enemiesFighter[i])){
+				ObjectUnderTest.colliding = true;
+				changed = true;
+			}
+		}
+	}
+	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+		if (ambientSpaceship[i] != void ) {
+			if(ObjectUnderTest.boundBoxColl(ambientSpaceship[i])){
+				ObjectUnderTest.colliding = true;
+				changed = true;
+			}
+		}
+	}
+	if(!changed){
+		ObjectUnderTest.colliding = false;
+	}
+}*/
+
+function CollisionDetectionBBox(ClassUnderTest){
+	var changed = false;
+	var ObjectUnderTest = ClassUnderTest.getObject();
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		if (enemiesFighter[i] != void) {
+			if(ObjectUnderTest.isCollidingBBox(enemiesFighter[i].getObject())){
+				ClassUnderTest.setCollision(true); //.colliding = true; fa la stessa cosa
+				changed = true;
+			}
+		}
+	}
+	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+		if (ambientSpaceship[i] != void ) {
+			if(ObjectUnderTest.isCollidingBBox(ambientSpaceship[i].getObject())){
+				ClassUnderTest.setCollision(true);
+				changed = true;
+			}
+		}
+	}
+	if(!changed){
+		ClassUnderTest.setCollision(false);
+	}
+}
+
+/* Deep coll detection is for greater object like star destroyer or deathstar. */
+/*function CollisionDetectionDeep(ClassUnderTest){
+	var changed = false;
+	var ObjectUnderTest = ClassUnderTest.getObject();
+	for (var i = 0; i < BIG_AMBIENT_SPACESHIP_NUM; i++) {
+		if (bigAmbientSpaceship[i] != void ) {
+			if(ObjectUnderTest.isCollidingBBox(bigAmbientSpaceship[i].getObject())){
+				var enemyObj = bigAmbientSpaceship[i].getObject();
+				for(var j = 0; j < 6; j++){
+					if(enemyObj.isColliding(ClassUnderTest.getCollVertex()[j],ClassUnderTest.getPosition())){
+						ClassUnderTest.setCollision(true); 
+						changed = true;
+					}
+				}
+			}
+		}
+	}
+	if(!changed){
+		ClassUnderTest.setCollision(false);
+	}
+}*/
+
+function CollisionDetectionDeep(ClassUnderTest){
+	var changed = false;
+	var collisionInfo = array(4);
+	var pos = ClassUnderTest.getPosition();
+	var ObjectUnderTest = ClassUnderTest.getObject();
+	for (var i = 0; i < BIG_AMBIENT_SPACESHIP_NUM; i++) {
+		if (bigAmbientSpaceship[i] != void ) {
+			if(ObjectUnderTest.isCollidingBBox(bigAmbientSpaceship[i].getObject())){
+				var shipObj = bigAmbientSpaceship[i].getObject();
+				for(var j = 0; j < 6; j+=2){
+					if(shipObj.isColliding(pos+ClassUnderTest.getCollVertex()[j+1],pos+ClassUnderTest.getCollVertex()[j], &collisionInfo[0], &collisionInfo[1], &collisionInfo[2], &collisionInfo[3])){
+						ClassUnderTest.setCollision(true); 
+						ClassUnderTest.setCollisionInfo(collisionInfo);
+						changed = true;
+					}
+				}
+			}
+		}
+	}
+	if(!changed){
+		ClassUnderTest.setCollision(false);
+	}
 }
