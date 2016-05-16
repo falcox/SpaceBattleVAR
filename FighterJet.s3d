@@ -112,17 +112,11 @@ function FighterJet::setPosition(pos){
 
 function FighterJet::increaseSpeed()
 {
-	if(currentFrame > 0) {
-		currentFrame -= FRAME_STEP;
-	}
 	velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
 }
 
 function FighterJet::decreaseSpeed()
 {
-	if(currentFrame < 20) {
-		currentFrame += FRAME_STEP;
-	}
 	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
 }
 

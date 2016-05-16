@@ -1,5 +1,8 @@
 #include <AckMsgWindow.s3d>
 
+//#define BROADCAST_ADDRESS "10.0.0.255"
+#define BROADCAST_ADDRESS "192.168.100.255"
+
 #define SERVER_ADV_PDU	1
 #define REQ_ID_PDU		2
 #define ACK_ID_PDU		3
@@ -154,7 +157,7 @@ function Networker::sendBroadcastAdv()
 	PDU[1] = playerId;
 	PDU[2] = next_playerId;
 	PDU[3] = ENEMIES_FIGHTER_NUM;
-	NetVarSendTo("10.0.0.255", 50023, PDU);
+	NetVarSendTo(BROADCAST_ADDRESS, 50023, PDU);
 }
 
 function Networker::sendReqId(req_id)

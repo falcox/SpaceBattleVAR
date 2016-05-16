@@ -3,10 +3,28 @@
 
 class Xwing: FighterJet {
 	Xwing(meshFactory);
+	increaseSpeed();
+	decreaseSpeed();
 };
 
 function Xwing::Xwing(meshFactory)
 {
 	FighterJet::this.init(meshFactory.getFighterMeshes(XWING_TYPE), XWING_TYPE);
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
+}
+
+function Xwing::increaseSpeed()
+{
+	if(currentFrame > 0) {
+		currentFrame -= FRAME_STEP;
+	}
+	FighterJet::this.increaseSpeed();
+}
+
+function Xwing::decreaseSpeed()
+{
+	if(currentFrame < 20) {
+		currentFrame += FRAME_STEP;
+	}
+	FighterJet::this.decreaseSpeed();
 }
