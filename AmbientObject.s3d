@@ -33,6 +33,10 @@ function AmbientObject::init(mesh, type){
 	currentFrame = 0;
 	currentLife = 100;
 	collision = false;
+	pathCenter = [0, 0, 0];
+	pathRadius = 0;
+	orbitPeriod = 1;
+	serverTime = 0;
 	
 	object = CVmObj(mesh);
 }
@@ -43,9 +47,15 @@ function AmbientObject::setCenter(position){
 
 function AmbientObject::getAmbientObjData()
 {
-	var data = vector(2);
+	// ambientType, center, radius, orbitPeriod, serverTime
+	var data = vector(7);
 	data[0] = objType;
-	data[1] = currentLife;
+	data[1] = pathCenter.x;
+	data[2] = pathCenter.y;
+	data[3] = pathCenter.z;
+	data[4] = pathRadius;
+	data[5] = orbitPeriod;
+	data[6] = serverTime;
 	return data;
 }
 
@@ -83,11 +93,10 @@ function AmbientObject::update() {
 	var timeTickSecond = 0.001;
 	var position = [0, 0, 0];
 	time -= serverTime;
-	timeTickSecond *= (GetTime() - time);
+	timeTickSecond *= ( (GetTime()-serverTime) - time);
 	
 	angle += (360.0/orbitPeriod)*timeTickSecond;
 	angle = angle % 360;
-	trace(angle);
 	/*---rotazione oggetto---*/
 	object.SetRotation(-angle, object.GetYaxis());
 	
@@ -99,6 +108,7 @@ function AmbientObject::update() {
 	
 	time = GetTime();
 }
+
 function AmbientObject::getObject() {
 	return object;
 }

@@ -3,11 +3,13 @@
 //#define BROADCAST_ADDRESS "10.0.0.255"
 #define BROADCAST_ADDRESS "192.168.100.255"
 
-#define SERVER_ADV_PDU	1
-#define REQ_ID_PDU		2
-#define ACK_ID_PDU		3
-#define KEEPALIVE_PDU	4
-#define FIGHTER_PDU		5
+#define SERVER_ADV_PDU		1
+#define REQ_ID_PDU			2
+#define ACK_ID_PDU			3
+#define KEEPALIVE_PDU		4
+#define FIGHTER_PDU			5
+#define AMBIENT_PDU			6
+#define AMBIENT_PDU_ACK		7
 
 
 #define ENEMIES_FIGHTER_NUM	10
@@ -27,12 +29,14 @@
 
 
 /*
- * Packets: 	SERVER_ADV_PDU: {1, server_playerId, next_playerId, max_playerId}
- * 				REQ_ID_PDU:		{2, msgId, playerId_requested}
- * 				ACK_ID_PDU:		{3, msgId, playerId_assigned}
- * 				KEEPALIVE_PDU:	{4, playerId}
+ * Packets: 	SERVER_ADV_PDU: 	{1, server_playerId, next_playerId, max_playerId}
+ * 				REQ_ID_PDU:			{2, msgId, playerId_requested}
+ * 				ACK_ID_PDU:			{3, msgId, playerId_assigned}
+ * 				KEEPALIVE_PDU:		{4, playerId}
  * 				
- * 				FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
+ * 				FIGHTER_PDU:		{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
+ * 				AMBIENT_PDU:		{6, msgId, ambientId, ambientType, centerx, centery, centerz, radius, orbitPeriod, serverTime}
+ * 				AMBIENT_PDU_ACK:	{7, msgId, playerId}
  */
 
 class player {
@@ -61,6 +65,7 @@ class Networker {
 	var idEvent;
 	var enemyDataEvent;
 	var enemyExitEvent;
+	var ambientDataEvent;
 	
 	Networker();
 	getId();
@@ -69,13 +74,16 @@ class Networker {
 	isIdEvent();
 	isEnemyDataEvent();
 	isEnemyExitEvent();
+	isAmbientDataEvent();
 	sendFighterData(fighterData);
+	sendAmbientData(ambientId, ambientData);
 	
 	/*private*/
 	playerLost(id);
 	sendBroadcastAdv();
 	sendReqId(req_id);
 	sendAckId(destination, ackIdMsg, ack_id);
+	sendAmbientDataAck(ackIdMsg);
 	sendKeepalive();
 	relayPlayerData(PDU);
 };
@@ -113,6 +121,11 @@ function Networker::isEnemyExitEvent()
 	return enemyExitEvent;
 }
 
+function Networker::isAmbientDataEvent()
+{
+	return ambientDataEvent;
+}
+
 function Networker::Networker()
 {
 	playerId = -1;
@@ -130,6 +143,7 @@ function Networker::Networker()
 	idEvent = Event();
 	enemyDataEvent = Event();
 	enemyExitEvent = Event();
+	ambientDataEvent = Event();
 }
 
 function Networker::getId()
@@ -251,6 +265,42 @@ function Networker::sendFighterData(fighterData)
 	}
 }
 
+function Networker::sendAmbientData(ambientId, ambientData)
+{
+	if (server == false) {
+		return;
+	}
+	//AMBIENT_PDU:		{6, msgId, ambientId, ambientType, centerx, centery, centerz, radius, orbitPeriod, serverTime}
+	var PDU = vector(10);
+	PDU[0] = AMBIENT_PDU;
+	PDU[1] = 0;
+	PDU[2] = ambientId;
+	PDU[3] = ambientData[0];
+	PDU[4] = ambientData[1];
+	PDU[5] = ambientData[2];
+	PDU[6] = ambientData[3];
+	PDU[7] = ambientData[4];
+	PDU[8] = ambientData[5];
+	PDU[9] = ambientData[6];
+	
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		/* Check if there is an entry, then if it is not me send the PDU */
+		if (player_list[i] != void && i != playerId) {
+			resendWindow.add(i, player_list[i].playerIpAddress, PDU);
+		}
+	}
+}
+
+function Networker::sendAmbientDataAck(ackIdMsg)
+{
+	//AMBIENT_PDU_ACK:	{7, msgId, playerId}
+	var PDU = vector(3);
+	PDU[0] = AMBIENT_PDU_ACK;
+	PDU[1] = ackIdMsg;
+	PDU[2] = playerId;
+	NetVarSendTo(serverIp, 50023, PDU);
+}
+
 function Networker::playerLost(id)
 {
 	player_list[id] = void;
@@ -350,33 +400,48 @@ function Networker::poll()
 					if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
 						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
 					}
-				} else {
-					/* Data player packets handling code */
+				} else 
+				/* Data player packets handling code */
+				if (received_data[0] == FIGHTER_PDU) {
 					var id = received_data[1];
-					if (received_data[0] == FIGHTER_PDU) {
-						//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
-						var data = {id, received_data[2], received_data[3], received_data[4], received_data[5],
-							received_data[6], received_data[7], received_data[8], received_data[9], received_data[10]
-						};
-						if (server == true) {
-							/* I'm the server so I know who are players, if it is not in the list don't relay */
-							if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
-								player_list[id].keepaliveTime = KEEPALIVE_MSEC;
-								player_list[id].posx = received_data[3];
-								player_list[id].posy = received_data[4];
-								player_list[id].posz = received_data[5];
-								relayPlayerData(received_data);
-							} else {
-								sendAckId(sender, 0, ACK_ID_ERROR);
-							}
-						} else {
-							/* I'm a client, if I don't know this identificator I create a new record */
-							if (player_list[id] == void) {
-								player_list[id] = Player();
-							}
+					//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
+					var data = {id, received_data[2], received_data[3], received_data[4], received_data[5],
+						received_data[6], received_data[7], received_data[8], received_data[9], received_data[10]
+					};
+					if (server == true) {
+						/* I'm the server so I know who are players, if it is not in the list don't relay */
+						if (player_list[id] != void && player_list[id].playerIpAddress == sender) {
 							player_list[id].keepaliveTime = KEEPALIVE_MSEC;
+							player_list[id].posx = received_data[3];
+							player_list[id].posy = received_data[4];
+							player_list[id].posz = received_data[5];
+							relayPlayerData(received_data);
+						} else {
+							sendAckId(sender, 0, ACK_ID_ERROR);
 						}
-						EventPost(enemyDataEvent, data, 1);
+					} else {
+						/* I'm a client, if I don't know this identificator I create a new record */
+						if (player_list[id] == void) {
+							player_list[id] = Player();
+						}
+						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
+					}
+					EventPost(enemyDataEvent, data, 1);
+				} else
+				if (received_data[0] == AMBIENT_PDU) {
+					if (sender == serverIp) {
+						//AMBIENT_PDU:		{6, msgId, ambientId, ambientType, centerx, centery, centerz, radius, orbitPeriod, serverTime}
+						var data = {received_data[2], received_data[3], received_data[4], received_data[5],
+							received_data[6], received_data[7], received_data[8], received_data[9]
+						};
+						sendAmbientDataAck(received_data[1]);
+						EventPost(ambientDataEvent, data, 1);
+					}
+				} else
+				if (received_data[0] == AMBIENT_PDU_ACK) {
+					//AMBIENT_PDU_ACK:	{7, msgId, playerId}
+					if (server == true) {
+						resendWindow.ackReceived(received_data[2], received_data[1]);
 					}
 				}
 			}

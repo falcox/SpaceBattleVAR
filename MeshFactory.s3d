@@ -83,7 +83,6 @@ function MeshFactory::getAmbientMeshes(ambientType)
 	return ambientMeshes[ambientType];
 }
 
-
 function MeshFactory::getBulletMeshes(bulletType)
 {
 	return bulletMeshes[bulletType];

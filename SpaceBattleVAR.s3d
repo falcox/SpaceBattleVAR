@@ -58,8 +58,6 @@ function OnInit(params)
 	
 	collider = CollisionDetector(AMBIENT_SPACESHIP_NUM, ENEMIES_FIGHTER_NUM);
 	
-	glEnable(GL_NORMALIZE);
-	
 	meshes = MeshFactory();
 	
 	myFighter = Xwing( meshes );
@@ -69,7 +67,7 @@ function OnInit(params)
 	mySkyBox = SkyBox();
 	mySkyBox.init();
 	
-	ambientSpaceship[0] = EmperorShuttle( meshes );
+	/*ambientSpaceship[0] = EmperorShuttle( meshes );
 	ambientSpaceship[0].setCenter([200.0, 0, 0]);
 	ambientSpaceship[0].setRadius(100);
 	ambientSpaceship[0].setOrbitPeriod(20);
@@ -79,7 +77,7 @@ function OnInit(params)
 	ambientSpaceship[1].setCenter([0, 0, 0]);
 	ambientSpaceship[1].setRadius(1000);
 	ambientSpaceship[1].setOrbitPeriod(2000);
-	ambientSpaceship[1].setServerTime(GetTime());
+	ambientSpaceship[1].setServerTime(GetTime());*/
 	
 	/*ambientSpaceship[1] = EscapePod();
 	ambientSpaceship[1].init();
@@ -94,6 +92,20 @@ function OnInit(params)
 
 function OnFrame()
 {
+	static var prem = 0;
+	if (Keypressed("p") && prem == 0) {
+		if (networkController.isServer()) {
+			/* only to try */
+			ambientSpaceship[0] = EmperorShuttle( meshes );
+			ambientSpaceship[0].setCenter([0.0, 0, 0]);
+			ambientSpaceship[0].setRadius(50);
+			ambientSpaceship[0].setOrbitPeriod(20);
+			ambientSpaceship[0].setServerTime(GetTime());
+			networkController.sendAmbientData(0, ambientSpaceship[0].getAmbientObjData());
+			prem = 1;
+		}
+	}
+	
 	SceneBegin();
 
 	DrawGrid([0.5, 0.5, 0.5], 10000);
@@ -170,6 +182,26 @@ function OnEvent(eventID, wparam, lparam){
 		if (eventId == networkController.isEnemyExitEvent()) {
 			enemiesFighter[wparam] = void;
 			Outputln(Sprintf("Player %d is gone!",wparam));
+		}
+		if (eventId == networkController.isAmbientDataEvent()) {
+			var id = wparam[0];
+			var type = wparam[1];
+			if (ambientSpaceship[id] == void) {
+				if (type == ESCAPE_POD) { 
+					ambientSpaceship[id] = EscapePod( meshes );
+				} else if (type == EMPEROR_SHUTTLE) { 
+					ambientSpaceship[id] = EmperorShuttle( meshes );
+				} else if (type == STAR_DESTROYER) { 
+					ambientSpaceship[id] = StarDestroyer( meshes );
+				} else {
+					Outputln("Error! Ambient type does not exists!");
+					return;
+				}
+			}
+			ambientSpaceship[id].setCenter([ wparam[2], wparam[3], wparam[4] ]);
+			ambientSpaceship[id].setRadius(wparam[5]);
+			ambientSpaceship[id].setOrbitPeriod(wparam[6]);
+			ambientSpaceship[id].setServerTime(wparam[7]);
 		}
 	}
 }
