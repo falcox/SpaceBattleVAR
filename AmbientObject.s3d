@@ -2,7 +2,7 @@
 #define AMBIENT_OBJECT
 
 class AmbientObject {
-	var object;	
+	var object;
 	var pathCenter;
 	var pathRadius;
 	var orbitPeriod;
