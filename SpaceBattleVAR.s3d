@@ -10,23 +10,28 @@
 #include <Arc170.s3d>
 #include <MillenniumFalcon.s3d>
 #include <EmperorShuttle.s3d>
+#include <StarDestroyer.s3d>
 #include <EscapePod.s3d>
+#include <SkyBox.s3d>
+#include <CollisionDetector.s3d>
 
 #define AMBIENT_SPACESHIP_NUM 10
-#define TIMER_MSEC_TICK 100
+#define TIMER_MSEC_TICK 10
 #define FRAMERATE 60
 
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
 SET SCENE_NEAR = 0.5;
-SET SCENE_FAR  = 1000;
+SET SCENE_FAR  = 5000;
 
 var myFighter;
 var networkController =  void;
+var collider;
 var userInputController;
 var enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
 var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
 var meshes;
+var mySkyBox;
 
 /* Function declarations */
 function DrawGrid(col, size);
@@ -40,6 +45,9 @@ function OnDownload()
 	FileDownload("3d_models/millennium_falcon.zip");
 	FileDownload("3d_models/emperor_shuttle.zip");
 	FileDownload("3d_models/EscapePod.zip");
+	FileDownload("3d_models/StarDestroyer.zip");
+	FileDownload("images/spacebackgrounds.zip");
+	
 }
 
 function OnInit(params)
@@ -48,17 +56,30 @@ function OnInit(params)
 	
 	userInputController = UserInput();
 	
+	collider = CollisionDetector(AMBIENT_SPACESHIP_NUM, ENEMIES_FIGHTER_NUM);
+	
+	glEnable(GL_NORMALIZE);
+	
 	meshes = MeshFactory();
 	
 	myFighter = Xwing( meshes );
 	myFighter.useCamera(true);
 	myFighter.setPosition([ 50, 0, 0 ]);
 	
+	mySkyBox = SkyBox();
+	mySkyBox.init();
+	
 	ambientSpaceship[0] = EmperorShuttle( meshes );
 	ambientSpaceship[0].setCenter([200.0, 0, 0]);
 	ambientSpaceship[0].setRadius(100);
 	ambientSpaceship[0].setOrbitPeriod(20);
 	ambientSpaceship[0].setServerTime(GetTime());
+	
+	ambientSpaceship[1] = StarDestroyer( meshes );
+	ambientSpaceship[1].setCenter([0, 0, 0]);
+	ambientSpaceship[1].setRadius(1000);
+	ambientSpaceship[1].setOrbitPeriod(2000);
+	ambientSpaceship[1].setServerTime(GetTime());
 	
 	/*ambientSpaceship[1] = EscapePod();
 	ambientSpaceship[1].init();
@@ -73,34 +94,26 @@ function OnInit(params)
 
 function OnFrame()
 {
-	userInputController.userControlFighter(myFighter);
-	
-	if (networkController != void) {
-		networkController.sendFighterData(myFighter.getFighterData());
-	}
-	
 	SceneBegin();
 
 	DrawGrid([0.5, 0.5, 0.5], 10000);
 
 	/*---here we draw our fighter---*/
-	myFighter.update();
 	myFighter.draw();
 	
 	/*---here we draw all enemies fighter---*/
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		if (enemiesFighter[i] != void) {
-			enemiesFighter[i].update();
 			enemiesFighter[i].draw();
 		}
 	}
 	/*---here we draw all ambient spaceships---*/
 	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
 		if (ambientSpaceship[i] != void) {
-			ambientSpaceship[i].update();
 			ambientSpaceship[i].draw();
 		}
 	}
+	mySkyBox.draw();
 	
 	SceneEnd();
 }
@@ -112,9 +125,25 @@ function DownloadReady(RequestID)
 
 function OnTimer()
 {
+	userInputController.userControlFighter(myFighter);
 	if (networkController != void) {
 		networkController.poll();
+		networkController.sendFighterData(myFighter.getFighterData());
 	}
+	
+	collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
+	myFighter.update();	
+	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+		if (enemiesFighter[i] != void) {
+			enemiesFighter[i].update();
+		}
+	}
+	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+		if (ambientSpaceship[i] != void) {
+			ambientSpaceship[i].update();
+		}
+	}
+	mySkyBox.update(myFighter.getPosition());
 }
 
 function OnEvent(eventID, wparam, lparam){

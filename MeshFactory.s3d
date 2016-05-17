@@ -1,6 +1,9 @@
 #ifndef MESH_FACTORY
 #define MESH_FACTORY
 
+#define RED_BEAM			0
+#define GREEN_BEAM			1
+
 #define XWING_TYPE			0
 #define TIE_TYPE			1
 #define YWING_TYPE			2
@@ -9,14 +12,17 @@
 
 #define ESCAPE_POD			0
 #define EMPEROR_SHUTTLE		1
+#define STAR_DESTROYER		2
 
 class MeshFactory {
 	var fighterMeshes;
 	var ambientMeshes;
+	var bulletMeshes;
 	
 	MeshFactory();
 	getFighterMeshes(fighterType);
 	getAmbientMeshes(ambientType);
+	getBulletMeshes(bulletType);
 };
 
 function MeshFactory::MeshFactory()
@@ -37,13 +43,34 @@ function MeshFactory::MeshFactory()
 	fighterMeshes[MILLFALC_TYPE] = CVmNewMesh("millennium_falcon.AAM");
 	fighterMeshes[MILLFALC_TYPE].centerBoundingBox();
 	
-	ambientMeshes = Array(2);
+	ambientMeshes = Array(5);
 	ambientMeshes[ESCAPE_POD] = CVmNewMesh("escape_pod.AAM");
 	ambientMeshes[ESCAPE_POD].centerBoundingBox();
 	ambientMeshes[EMPEROR_SHUTTLE] = CVmNewMesh("emperor_shuttle.AAM");
 	ambientMeshes[EMPEROR_SHUTTLE].centerBoundingBox();
 	ambientMeshes[EMPEROR_SHUTTLE].Scale(0.05);
+	ambientMeshes[STAR_DESTROYER] = CVmNewMesh("StarDestroyer.AAM");
+	ambientMeshes[STAR_DESTROYER].centerBoundingBox();
+	ambientMeshes[STAR_DESTROYER].scale(1);
 	
+	bulletMeshes = Array(2);
+	bulletMeshes[RED_BEAM] = CVmNewMesh(VRP_CYLINDER, 30, 5, 20);
+	bulletMeshes[RED_BEAM].Rotate(90,[1,0,0]);
+	var redMaterial = CVmMaterial();
+	redMaterial.ambient = [1,0,0,1];
+	redMaterial.diffuse = [1,0,0,1];
+	redMaterial.emission = [1,0,0,1];
+	redMaterial.shininess = 128;
+	bulletMeshes[RED_BEAM].setMaterial(redMaterial);
+	
+	bulletMeshes[GREEN_BEAM] = CVmNewMesh(VRP_CYLINDER, 30, 5, 20);
+	bulletMeshes[GREEN_BEAM].Rotate(90,[1,0,0]);
+	var greenMaterial = CVmMaterial();
+	greenMaterial.ambient = [0,1,0,1];
+	greenMaterial.diffuse = [0,1,0,1];
+	greenMaterial.emission = [0,1,0,1];
+	greenMaterial.shininess = 128;
+	bulletMeshes[GREEN_BEAM].setMaterial(greenMaterial);
 }
 
 function MeshFactory::getFighterMeshes(fighterType)
@@ -55,5 +82,12 @@ function MeshFactory::getAmbientMeshes(ambientType)
 {
 	return ambientMeshes[ambientType];
 }
+
+
+function MeshFactory::getBulletMeshes(bulletType)
+{
+	return bulletMeshes[bulletType];
+}
+
 
 #endif

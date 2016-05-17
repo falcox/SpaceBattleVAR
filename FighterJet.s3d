@@ -3,7 +3,7 @@
 
 #define FRAME_STEP 0.5
 #define ANGLE_STEP 	0.5
-#define MIN_SPEED	0
+#define MIN_SPEED	50
 #define MAX_SPEED	300
 #define SPEED_STEP	5
 
@@ -24,6 +24,9 @@ class FighterJet {
 	var currentLife;		/* Life variable from 0 to 100 */
 	var velocity;
 	var currentFrame;
+	var bbox;
+	var collVertex;
+	var colliding;
 	
 	init(mesh, type);
 	draw();
@@ -40,6 +43,13 @@ class FighterJet {
 	changeCameraMode();
 	update();
 	getFighterData();
+	getObject();
+	setCollision(bool);
+	updateCollVertex(bbox);
+	getCollVertex();
+	getAngles();
+	getPosition();
+	
 };
 
 function FighterJet::init(mesh, type) {
@@ -54,8 +64,12 @@ function FighterJet::init(mesh, type) {
 	cameraMode = 0;
 	withCamera = false;
 	cameraModeOffset = {[0, 0], [0, 0]};
+	colliding = false;
+	collVertex = Array(6);
 	
 	FighterObj = CVmObj(mesh);
+	bbox = mesh.getBoundingBox();
+	collVertex = updateCollVertex(bbox);
 }
 
 function FighterJet::useCamera(cam)
@@ -96,6 +110,15 @@ function FighterJet::getFighterData()
 	data[7] = velocity;
 	data[8] = currentFrame;
 	return data;
+}
+
+function FighterJet::getPosition(){
+	return FighterPos;
+}
+
+function FighterJet::getAngles()
+{
+	return [roll, pitch, yaw];
 }
 
 function FighterJet::setPosition(pos){
@@ -179,9 +202,17 @@ function FighterJet::update() {
 	rollDelta = 0;
 	
 	/*---settaggio direzione e posizione--- */
+	if(colliding){
+		outputln("collision!!");
+	}
+	
 	direction = FighterObj.GetZaxis();
 	displacement = velocity * timeTickSecond;
 	setPosition(FighterPos+displacement*direction);
+	
+	/*potrebbe essere utile o no*/
+	//bbox = xWingMesh.getBoundingBox();
+
 	
 	/* Camera and light position and pose */
 	if (withCamera == true) {
@@ -194,6 +225,29 @@ function FighterJet::update() {
 	}
 	
 	time = GetTime();
+}
+
+function FighterJet::getObject(){
+	return FighterObj;
+}
+
+
+function FighterJet::updateCollVertex(bbox){
+	var ret;
+	ret = {[bbox[0],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2], [bbox[3],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2],
+				[(bbox[0]+bbox[3])/2,bbox[1], (bbox[2]+bbox[5])/2], [(bbox[0]+bbox[3])/2,bbox[4], (bbox[2]+bbox[5])/2],
+				[(bbox[0]+bbox[3])/2,(bbox[1]+bbox[4])/2, bbox[2]], [(bbox[0]+bbox[3])/2,(bbox[1]+bbox[4])/2, bbox[5]]	
+				};
+	//ret[0] = [bbox[0],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2];
+	return ret;
+}
+
+function FighterJet::getCollVertex(){
+	return collVertex;
+}
+
+function FighterJet::setCollision(bool){
+	colliding = bool;
 }
 
 #endif

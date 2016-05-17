@@ -45,6 +45,9 @@ function UserInput::userControlFighter(fighter)
 	} else if(Keypressed(VK_END) || Keypressed("e")) {
 		y = -angleStep;
 	}
+	if(Keypressed(VK_SPACE)){
+		fighter.fireBeam();
+	}
 	/*---Modify camera mode---*/
 	if(Keypressed("c")) {
 		cameraModeAntiBounce = true;

@@ -8,6 +8,7 @@ class AmbientObject {
 	var orbitPeriod;
 	var serverTime;
 	var objType;
+	var collision;
 	
 	var currentLife;		/* Life variable from 0 to 100 */
 	var velocity;
@@ -22,6 +23,8 @@ class AmbientObject {
 	setAnimationFrame(frame_number);
 	update();
 	getAmbientObjData();
+	getObject();
+	setCollision(bool);
 };
 
 function AmbientObject::init(mesh, type){
@@ -29,6 +32,7 @@ function AmbientObject::init(mesh, type){
 	velocity = 0;
 	currentFrame = 0;
 	currentLife = 100;
+	collision = false;
 	
 	object = CVmObj(mesh);
 }
@@ -83,7 +87,7 @@ function AmbientObject::update() {
 	
 	angle += (360.0/orbitPeriod)*timeTickSecond;
 	angle = angle % 360;
-	
+	trace(angle);
 	/*---rotazione oggetto---*/
 	object.SetRotation(-angle, object.GetYaxis());
 	
@@ -94,6 +98,13 @@ function AmbientObject::update() {
 	object.SetPosition(position);
 	
 	time = GetTime();
+}
+function AmbientObject::getObject() {
+	return object;
+}
+
+function AmbientObject::setCollision(bool){
+	collision = bool;
 }
 
 #endif
