@@ -284,7 +284,7 @@ function Networker::sendAmbientData(ambientId, ambientData)
 	PDU[9] = ambientData[6];
 	
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
-		/* Check if there is an entry, then if it is not me send the PDU */
+		/* Check if there is an entry, then if it is not me then send the PDU */
 		if (player_list[i] != void && i != playerId) {
 			resendWindow.add(i, player_list[i].playerIpAddress, PDU);
 		}

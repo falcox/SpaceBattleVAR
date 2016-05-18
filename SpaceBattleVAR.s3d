@@ -14,20 +14,22 @@
 #include <EscapePod.s3d>
 #include <SkyBox.s3d>
 #include <CollisionDetector.s3d>
+#include <AmbientEngine.s3d>
 
 #define AMBIENT_SPACESHIP_NUM 10
 #define TIMER_MSEC_TICK 10
 #define FRAMERATE 60
 
 /* Set global scene parameters */
-SET SCENE_FOV  = 60;
+SET SCENE_FOV  = 90;
 SET SCENE_NEAR = 0.5;
-SET SCENE_FAR  = 5000;
+SET SCENE_FAR  = 1000;
 
 var myFighter;
 var networkController =  void;
 var collider;
 var userInputController;
+var ambientController;
 var enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
 var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
 var meshes;
@@ -59,6 +61,8 @@ function OnInit(params)
 	collider = CollisionDetector(AMBIENT_SPACESHIP_NUM, ENEMIES_FIGHTER_NUM);
 	
 	meshes = MeshFactory();
+	
+	ambientController = AmbientEngine(networkController, meshes);
 	
 	myFighter = Xwing( meshes );
 	myFighter.useCamera(true);
@@ -92,19 +96,6 @@ function OnInit(params)
 
 function OnFrame()
 {
-	static var prem = 0;
-	if (Keypressed("p") && prem == 0) {
-		if (networkController.isServer()) {
-			/* only to try */
-			ambientSpaceship[0] = EmperorShuttle( meshes );
-			ambientSpaceship[0].setCenter([0.0, 0, 0]);
-			ambientSpaceship[0].setRadius(50);
-			ambientSpaceship[0].setOrbitPeriod(20);
-			ambientSpaceship[0].setServerTime(GetTime());
-			networkController.sendAmbientData(0, ambientSpaceship[0].getAmbientObjData());
-			prem = 1;
-		}
-	}
 	
 	SceneBegin();
 
@@ -143,8 +134,10 @@ function OnTimer()
 		networkController.sendFighterData(myFighter.getFighterData());
 	}
 	
-	collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
-	myFighter.update();	
+	ambientController.tick(ambientSpaceship);
+	
+	myFighter.update();
+	
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		if (enemiesFighter[i] != void) {
 			enemiesFighter[i].update();
@@ -155,18 +148,24 @@ function OnTimer()
 			ambientSpaceship[i].update();
 		}
 	}
+	
+	collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
+	
 	mySkyBox.update(myFighter.getPosition());
 }
 
 function OnEvent(eventID, wparam, lparam){
 	if (networkController != void) {
 		if (eventId == networkController.isIdEvent()) {
+			ambientController.start();
 			Outputln(Sprintf("GET ID: %d", wparam));
 		}
 		if (eventId == networkController.isEnemyDataEvent()) {
 			var id = wparam[0];
 			var type = wparam[1];
 			if (enemiesFighter[id] == void) {
+				/* New player has joined the game! Share ambient object! */
+				ambientController.advertise();
 				if (type == XWING_TYPE) { /* xwing */
 					enemiesFighter[id] = Xwing( meshes );
 				} else {
