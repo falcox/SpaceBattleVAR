@@ -1,5 +1,6 @@
 class UserInput {
 	var cameraModeAntiBounce;
+	var spaceThresh;
 	
 	UserInput();
 	userControlFighter(obj);
@@ -8,6 +9,7 @@ class UserInput {
 function UserInput::UserInput()
 {
 	cameraModeAntiBounce = false;
+	spaceThresh = false;
 }
 
 /* fighter object must implements those function:
@@ -46,7 +48,11 @@ function UserInput::userControlFighter(fighter)
 		y = -angleStep;
 	}
 	if(Keypressed(VK_SPACE)){
-		fighter.fireBeam();
+		spaceThresh = true;
+	}
+	else if(spaceThresh){
+		fighter.fireBeam();  
+		spaceThresh = false;
 	}
 	/*---Modify camera mode---*/
 	if(Keypressed("c")) {

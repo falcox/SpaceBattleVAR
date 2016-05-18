@@ -1,7 +1,7 @@
 #include <AckMsgWindow.s3d>
 
-//#define BROADCAST_ADDRESS "10.0.0.255"
-#define BROADCAST_ADDRESS "192.168.100.255"
+#define BROADCAST_ADDRESS "10.0.0.255"
+//#define BROADCAST_ADDRESS "192.168.100.255"
 
 #define SERVER_ADV_PDU	1
 #define REQ_ID_PDU		2

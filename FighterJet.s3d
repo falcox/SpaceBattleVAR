@@ -1,11 +1,15 @@
 #ifndef FIGHTER_JET
 #define FIGHTER_JET
 
+#include <LaserBeam.s3d>
+
 #define FRAME_STEP 0.5
 #define ANGLE_STEP 	0.5
-#define MIN_SPEED	50
+#define MIN_SPEED	0
 #define MAX_SPEED	300
 #define SPEED_STEP	5
+#define MAX_LASER_RANGE 600
+#define MAX_BULLET_NUM	10
 
 class FighterJet {
 	var FighterObj;	
@@ -16,6 +20,8 @@ class FighterJet {
 	var light;
 	var cameraMode;			/* 0->behind / 1->inside */
 	var cameraModeOffset;
+	var beamArray;
+	var beamMesh;
 	
 	var yaw;				/* Angle on Y axis */
 	var pitch;				/* Angle on X axis */
@@ -28,7 +34,7 @@ class FighterJet {
 	var collVertex;
 	var colliding;
 	
-	init(mesh, type);
+	init(mesh, type, bulletMesh);
 	draw();
 	setPosition(position);
 	setSpeed(speed);
@@ -49,10 +55,11 @@ class FighterJet {
 	getCollVertex();
 	getAngles();
 	getPosition();
-	
+	fireBeam(offset);
+	drawBeams();
 };
 
-function FighterJet::init(mesh, type) {
+function FighterJet::init(mesh, type, bulletMesh) {
 	yaw = 0;
 	roll = 0;
 	pitch = 0;
@@ -66,6 +73,8 @@ function FighterJet::init(mesh, type) {
 	cameraModeOffset = {[0, 0], [0, 0]};
 	colliding = false;
 	collVertex = Array(6);
+	beamArray = Array(MAX_BULLET_NUM);
+	beamMesh = bulletMesh;
 	
 	FighterObj = CVmObj(mesh);
 	bbox = mesh.getBoundingBox();
@@ -82,7 +91,6 @@ function FighterJet::useCamera(cam)
 		light.Enable();
 	} else {
 		camera = void;
-		light.Disable();
 		light = void;
 	}
 }
@@ -180,6 +188,7 @@ function FighterJet::draw(){
 	FighterObj.DrawBoundingBox();
 	
 	FighterObj.draw(VR_FRAMENUMBER, currentFrame);
+	this.drawBeams();
 }
 
 function FighterJet::update() {
@@ -213,6 +222,14 @@ function FighterJet::update() {
 	/*potrebbe essere utile o no*/
 	//bbox = xWingMesh.getBoundingBox();
 
+	/*--- aggiorna i proiettili ---*/
+	for(var i = 0; i <MAX_BULLET_NUM; i++){
+		if(beamArray[i]!= void){
+			if(beamArray[i].update()){
+				beamArray[i] = void;
+			}
+		}
+	}
 	
 	/* Camera and light position and pose */
 	if (withCamera == true) {
@@ -248,6 +265,32 @@ function FighterJet::getCollVertex(){
 
 function FighterJet::setCollision(bool){
 	colliding = bool;
+}
+
+function FighterJet::fireBeam(offset){
+	var initPos;
+	var dir = FighterObj.getZaxis();
+	var finalPos; 
+	initPos= this.getPosition() + FighterObj.getXaxis() * offset[0]+ FighterObj.getYaxis()*offset[1] + dir*offset[2] ;	
+	dir = dir / modulus(dir);
+	finalPos = this.getPosition() + dir*MAX_LASER_RANGE;
+	
+	for(var i = 0; i < MAX_BULLET_NUM; i++){
+		if(beamArray[i] == void){
+    		beamArray[i] = LaserBeam(beamMesh, initPos, finalPos, GetTime());
+    		//beamArray[i].rotateToDirection(dir);
+			break;
+		}
+	}
+	
+}
+
+function FighterJet::drawBeams(){
+	for(var i  = 0; i < MAX_BULLET_NUM; i++){
+		if(beamArray[i] != void){
+			beamArray[i].draw();
+		}
+	}
 }
 
 #endif

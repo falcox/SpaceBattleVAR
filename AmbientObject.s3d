@@ -87,7 +87,7 @@ function AmbientObject::update() {
 	
 	angle += (360.0/orbitPeriod)*timeTickSecond;
 	angle = angle % 360;
-	trace(angle);
+	//trace(angle);
 	/*---rotazione oggetto---*/
 	object.SetRotation(-angle, object.GetYaxis());
 	

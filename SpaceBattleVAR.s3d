@@ -19,6 +19,9 @@
 #define TIMER_MSEC_TICK 10
 #define FRAMERATE 60
 
+//#define DEBUGGING
+
+
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
 SET SCENE_NEAR = 0.5;
@@ -33,8 +36,11 @@ var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
 var meshes;
 var mySkyBox;
 
+var tmpBullet;
+
 /* Function declarations */
 function DrawGrid(col, size);
+function CameraMoveMouse();
 
 function OnDownload()
 {
@@ -52,18 +58,24 @@ function OnDownload()
 
 function OnInit(params)
 {
+	CameraGetCurrent().SetPosition([20, 0, 0]);
+	
 	networkController = Networker();
 	
 	userInputController = UserInput();
 	
 	collider = CollisionDetector(AMBIENT_SPACESHIP_NUM, ENEMIES_FIGHTER_NUM);
 	
-	glEnable(GL_NORMALIZE);
+	//glEnable(GL_NORMALIZE);
 	
 	meshes = MeshFactory();
 	
 	myFighter = Xwing( meshes );
+#ifdef DEBUGGING
+	myFighter.useCamera(false);
+#else
 	myFighter.useCamera(true);
+#endif
 	myFighter.setPosition([ 50, 0, 0 ]);
 	
 	mySkyBox = SkyBox();
@@ -85,6 +97,8 @@ function OnInit(params)
 	ambientSpaceship[1].init();
 	ambientSpaceship[1].setPosition([100.0, 50.0, 0.0]);*/
 	
+	//tmpBullet = LaserBeam(meshes.getBulletMeshes(RED_BEAM), [50,0,0], [50,0,500], GetTime());
+	
 	/*---Global XVR parameters---*/
 	SetFrameRate(FRAMERATE);	
 	SetTimeStep(TIMER_MSEC_TICK);
@@ -95,7 +109,9 @@ function OnInit(params)
 function OnFrame()
 {
 	SceneBegin();
-
+#ifdef DEBUGGING
+	CameraMoveMouse();
+#endif
 	DrawGrid([0.5, 0.5, 0.5], 10000);
 
 	/*---here we draw our fighter---*/
@@ -114,6 +130,8 @@ function OnFrame()
 		}
 	}
 	mySkyBox.draw();
+	
+	//tmpBullet.draw();
 	
 	SceneEnd();
 }
@@ -144,6 +162,7 @@ function OnTimer()
 		}
 	}
 	mySkyBox.update(myFighter.getPosition());
+	//tmpBullet.update();
 }
 
 function OnEvent(eventID, wparam, lparam){
@@ -183,6 +202,14 @@ function OnExit()
 	// TODO: put your cleanup code here
 	EraseCache();
 }
+
+function CameraMoveMouse()
+{	
+
+	CameraMoveMouse_MBL_LC();
+
+}
+
 
 function DrawGrid(col, size)
 {
