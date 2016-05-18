@@ -9,6 +9,7 @@ class StarDestroyer: AmbientObject {
 
 function StarDestroyer::StarDestroyer(meshFactory){
 	AmbientObject::this.init( meshFactory.getAmbientMeshes(STAR_DESTROYER), STAR_DESTROYER );
+	//object.setScale(10);
 }
 
 function StarDestroyer::isDestroyable() {

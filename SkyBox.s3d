@@ -1,5 +1,5 @@
-#define SKY_BOX_SIZE	2000
-#define N_TILES		5
+#define SKY_BOX_SIZE	10000
+#define N_TILES			6
 
 class SkyBox{
 	var extSkyBoxMesh;

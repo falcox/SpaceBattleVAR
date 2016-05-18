@@ -17,7 +17,9 @@ class LaserBeam{
 	
 	LaserBeam(mesh, begin, end, time);
 	rotateToDirection(dir);
+	setCollided();
 	setRotationMatrix(matrix);
+	isCollidingBBox(obj);
 	update();
 	draw();
 };
@@ -45,6 +47,10 @@ function LaserBeam::rotateToDirection(dir){
 	var u = dir ^ r;
 	r = r / modulus(r);
 	object.setRotationMatrix([r.x, r.y, r.z, 0, u.x, u.y, u.z, 0, dir.x, dir.y, dir.z, 0, 0, 0, 0, 1]);
+}
+
+function LaserBeam::setCollided(){
+	collision = true;
 }
 
 function LaserBeam::update(){
@@ -80,6 +86,10 @@ function LaserBeam::update(){
 	lastCalled = GetTime();
 	//time = GetTime();
 	return killMe;
+}
+
+function LaserBeam::isCollidingBBox(obj){
+	return object.isCollidingBBox(obj);
 }
 
 function LaserBeam::draw(){   

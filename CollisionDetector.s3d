@@ -14,24 +14,40 @@ function CollisionDetector::CollisionDetector(aNum, eNum){
 
 function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArray){
 	var changed = false;
-	var ObjectUnderTest = myFighter.getObject();
+	var myFighterObj = myFighter.getObject();
+	var aliveBeamsNum = myFighter.getAliveBeamsNum();
+	var aliveBeams = myFighter.getAliveBeams();							//array con gli indici dei bullet vivi
 	for (var i = 0; i < enemyFighterNum; i++) {
 		if (enemyArray[i] != void) {
-			if(ObjectUnderTest.isCollidingBBox(enemyArray[i].getObject())){
-				myFighter.setCollision(true); //.colliding = true; fa la stessa cosa
+			if(myFighterObj.isCollidingBBox(enemyArray[i].getObject())){
+				myFighter.setCollision(true); 
 				changed = true;
+			}
+			for(var j = 0; j<aliveBeamsNum; j++){
+				var beam = myFighter.getBeam(AliveBeams[j]);
+				if(beam.isCollidingBBox(enemyArray[i].getObject())){
+					//TODO: gestisci la hit dei nemici
+					beam.setCollided();
+				}
 			}
 		}
 	}
 	for (var i = 0; i < ambientSpaceshipNum; i++) {
 		if (ambientArray[i] != void ) {
 			var shipObj = ambientArray[i].getObject();
-			if(ObjectUnderTest.isCollidingBBox(shipObj)){
+			if(myFighterObj.isCollidingBBox(shipObj)){
 				if(ambientArray[i].isDestroyable()){
 					ambientArray[i].setCollision(true);
 				}
 				else{
 					changed = changed || checkCollisionDeep(myFighter, shipObj);
+				}
+			}
+			for(var j = 0; j<aliveBeamsNum; j++){
+				var beam = myFighter.getBeam(AliveBeams[j]);
+				if(beam.isCollidingBBox(shipObj)){
+					ambientArray[i].setCollision(true);
+					beam.setCollided();
 				}
 			}
 		}
