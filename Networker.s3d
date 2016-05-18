@@ -1,15 +1,17 @@
 #include <AckMsgWindow.s3d>
 
-//#define BROADCAST_ADDRESS "10.0.0.255"
-#define BROADCAST_ADDRESS "192.168.100.255"
+#define BROADCAST_ADDRESS "10.0.0.255"
+//#define BROADCAST_ADDRESS "192.168.100.255"
 
-#define SERVER_ADV_PDU		1
-#define REQ_ID_PDU			2
-#define ACK_ID_PDU			3
-#define KEEPALIVE_PDU		4
-#define FIGHTER_PDU			5
-#define AMBIENT_PDU			6
-#define AMBIENT_PDU_ACK		7
+#define SERVER_ADV_PDU			1
+#define REQ_ID_PDU				2
+#define ACK_ID_PDU				3
+#define KEEPALIVE_PDU			4
+#define FIGHTER_PDU				5
+#define AMBIENT_PDU				6
+#define AMBIENT_PDU_ACK			7
+#define AMBIENT_DESTROYED		8
+#define AMBIENT_DESTROYED_ACK	9
 
 
 #define ENEMIES_FIGHTER_NUM	10
@@ -29,14 +31,16 @@
 
 
 /*
- * Packets: 	SERVER_ADV_PDU: 	{1, server_playerId, next_playerId, max_playerId}
- * 				REQ_ID_PDU:			{2, msgId, playerId_requested}
- * 				ACK_ID_PDU:			{3, msgId, playerId_assigned}
- * 				KEEPALIVE_PDU:		{4, playerId}
+ * Packets: 	SERVER_ADV_PDU: 		{1, server_playerId, next_playerId, max_playerId}
+ * 				REQ_ID_PDU:				{2, msgId, playerId_requested}
+ * 				ACK_ID_PDU:				{3, msgId, playerId_assigned}
+ * 				KEEPALIVE_PDU:			{4, playerId}
  * 				
- * 				FIGHTER_PDU:		{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
- * 				AMBIENT_PDU:		{6, msgId, ambientId, ambientType, centerx, centery, centerz, radius, orbitPeriod, serverTime}
- * 				AMBIENT_PDU_ACK:	{7, msgId, playerId}
+ * 				FIGHTER_PDU:			{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber}
+ * 				AMBIENT_PDU:			{6, msgId, ambientId, ambientType, centerx, centery, centerz, radius, orbitPeriod, serverTime}
+ * 				AMBIENT_PDU_ACK:		{7, msgId, playerId}
+ * 				AMBIENT_DESTROYED		{8, msgId, ambientId}
+ * 				AMBIENT_DESTROYED_ACK	{8, msgId, playerId}
  */
 
 class player {
@@ -66,6 +70,7 @@ class Networker {
 	var enemyDataEvent;
 	var enemyExitEvent;
 	var ambientDataEvent;
+	var ambientDestroyEvent;
 	
 	Networker();
 	getId();
@@ -75,8 +80,10 @@ class Networker {
 	isEnemyDataEvent();
 	isEnemyExitEvent();
 	isAmbientDataEvent();
+	isAmbientDestroyEvent();
 	sendFighterData(fighterData);
 	sendAmbientData(ambientId, ambientData);
+	sendAmbientDestroyData(ambientId, idExcluded);
 	
 	/*private*/
 	playerLost(id);
@@ -84,6 +91,7 @@ class Networker {
 	sendReqId(req_id);
 	sendAckId(destination, ackIdMsg, ack_id);
 	sendAmbientDataAck(ackIdMsg);
+	sendAmbientDestroyAck(destination, ackIdMsg);
 	sendKeepalive();
 	relayPlayerData(PDU);
 };
@@ -126,6 +134,11 @@ function Networker::isAmbientDataEvent()
 	return ambientDataEvent;
 }
 
+function Networker::isAmbientDestroyEvent()
+{
+	return ambientDestroyEvent;
+}
+
 function Networker::Networker()
 {
 	playerId = -1;
@@ -144,6 +157,7 @@ function Networker::Networker()
 	enemyDataEvent = Event();
 	enemyExitEvent = Event();
 	ambientDataEvent = Event();
+	ambientDestroyEvent = Event();
 }
 
 function Networker::getId()
@@ -301,6 +315,37 @@ function Networker::sendAmbientDataAck(ackIdMsg)
 	NetVarSendTo(serverIp, 50023, PDU);
 }
 
+function Networker::sendAmbientDestroyData(ambientId, idExcluded)
+{
+	//AMBIENT_DESTROYED		{8, msgId, ambientId, playerId}
+	var PDU = vector(4);
+	PDU[0] = AMBIENT_DESTROYED;
+	PDU[1] = 0;
+	PDU[2] = ambientId;
+	PDU[3] = playerId;
+	/* If i am the server share information with clients, else send the information to the server */
+	if (server == true) {
+		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+			/* Check if there is an entry, then if it is not me then send the PDU */
+			if (player_list[i] != void && i != playerId && i != idExcluded) {
+				resendWindow.add(i, player_list[i].playerIpAddress, PDU);
+			}
+		}
+	} else {
+		resendWindow.add(serverId, serverIp, PDU);
+	}
+}
+
+function Networker::sendAmbientDestroyAck(destination, ackIdMsg)
+{
+	//AMBIENT_DESTROYED_ACK	{8, msgId, playerId}
+	var PDU = vector(3);
+	PDU[0] = AMBIENT_DESTROYED_ACK;
+	PDU[1] = ackIdMsg;
+	PDU[2] = playerId;
+	NetVarSendTo(destination, 50023, PDU);
+}
+
 function Networker::playerLost(id)
 {
 	player_list[id] = void;
@@ -443,6 +488,17 @@ function Networker::poll()
 					if (server == true) {
 						resendWindow.ackReceived(received_data[2], received_data[1]);
 					}
+				} else
+				if (received_data[0] == AMBIENT_DESTROYED) {
+					/* If i am the server relay information to all client except the sender */
+					if (server == true) {
+						sendAmbientDestroyData(received_data[2], received_data[3]);
+					}
+					sendAmbientDestroyAck(sender, received_data[1]);
+					EventPost(ambientDestroyEvent, received_data[2], 1);
+				} else
+				if (received_data[0] == AMBIENT_DESTROYED_ACK) {
+					resendWindow.ackReceived(received_data[2], received_data[1]);
 				}
 			}
 		} else {

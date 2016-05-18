@@ -1,15 +1,17 @@
 class CollisionDetector{
 	var ambientSpaceshipNum;
 	var enemyFighterNum;
+	var network;
 	
-	CollisionDetector(aNum, eNum);
+	CollisionDetector(aNum, eNum, net);
 	checkCollisionBBox(myFighter, enemyArray, ambientArray);
 	checkCollisionDeep(myFighter, shipObj);
 };
 
-function CollisionDetector::CollisionDetector(aNum, eNum){
+function CollisionDetector::CollisionDetector(aNum, eNum, net) {
 	ambientSpaceshipNum = aNum;
 	enemyFighterNum = eNum;
+	network = net;
 }
 
 function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArray){
@@ -26,25 +28,25 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 	for (var i = 0; i < ambientSpaceshipNum; i++) {
 		if (ambientArray[i] != void ) {
 			var shipObj = ambientArray[i].getObject();
-			if(ObjectUnderTest.isCollidingBBox(shipObj)){
-				if(ambientArray[i].isDestroyable()){
+			if(ObjectUnderTest.isCollidingBBox(shipObj)) {
+				if(ambientArray[i].isDestroyable()) {
 					ambientArray[i].setCollision(true);
-				}
-				else{
+					network.sendAmbientDestroyData(i, -1);
+				} else {
 					changed = changed || checkCollisionDeep(myFighter, shipObj);
 				}
 			}
 		}
 	}
-	if(!changed){
+	if(!changed) {
 		myFighter.setCollision(false);
 	}
 }
 
-function CollisionDetector::checkCollisionDeep(myFighter, shipObj){
+function CollisionDetector::checkCollisionDeep(myFighter, shipObj) {
 	var pos = myFighter.getPosition();
-	for(var j = 0; j < 6; j+=2){
-		if(shipObj.isColliding(pos+myFighter.getCollVertex()[j+1],pos+myFighter.getCollVertex()[j])){
+	for(var j = 0; j < 6; j+=2) {
+		if(shipObj.isColliding(pos+myFighter.getCollVertex()[j+1],pos+myFighter.getCollVertex()[j])) {
 			myFighter.setCollision(true); 
 			//myFighter.setCollisionInfo(collisionInfo);
 			return true;

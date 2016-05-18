@@ -25,6 +25,7 @@ class AmbientObject {
 	getAmbientObjData();
 	getObject();
 	setCollision(bool);
+	isDestroyed();
 };
 
 function AmbientObject::init(mesh, type){
@@ -113,8 +114,12 @@ function AmbientObject::getObject() {
 	return object;
 }
 
-function AmbientObject::setCollision(bool){
+function AmbientObject::setCollision(bool) {
 	collision = bool;
+}
+
+function AmbientObject::isDestroyed() {
+	return collision;
 }
 
 #endif

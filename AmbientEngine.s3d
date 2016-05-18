@@ -2,9 +2,9 @@
 
 #define INSERT_TIME_THRESHOLD	60
 #define MAX_DIE_NUM				2
-#define MAX_RAND_POSX			5000
-#define MAX_RAND_POSY			5000
-#define MAX_RAND_POSZ			5000
+#define MAX_RAND_POSX			500
+#define MAX_RAND_POSY			1
+#define MAX_RAND_POSZ			500
 #define MAX_RAND_RADIUS			200
 #define MIN_RAND_RADIUS			50
 #define MAX_RAND_ORBIT			200
@@ -44,7 +44,8 @@ function AmbientEngine::tick(ambientArray)
 			for (var i = 0; i < ambientLen; i++) {
 				if (ambientArray[i] == void) {
 					/* For the position coordinates can be positive or negative randomly */
-					var type = Rand(MAX_DIE_NUM);
+					//var type = Rand(MAX_DIE_NUM);
+					var type = 1; /* Only for testing */
 					var posx = Rand(MAX_RAND_POSX) * ((Rand(1)==0)?1:-1);
 					var posy = Rand(MAX_RAND_POSY) * ((Rand(1)==0)?1:-1);
 					var posz = Rand(MAX_RAND_POSZ) * ((Rand(1)==0)?1:-1);
@@ -63,7 +64,7 @@ function AmbientEngine::tick(ambientArray)
 					ambientArray[i].setOrbitPeriod(orbitPeriod);
 					ambientArray[i].setServerTime(GetTime());
 					network.sendAmbientData(i, ambientArray[i].getAmbientObjData());
-					Outputln("Created new ambient object!");
+					Outputln(Sprintf("Created new ambient object! [%d,%d,%d]", posx, posy, posz));
 					break;
 				}
 			}

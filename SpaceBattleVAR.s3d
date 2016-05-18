@@ -58,7 +58,7 @@ function OnInit(params)
 	
 	userInputController = UserInput();
 	
-	collider = CollisionDetector(AMBIENT_SPACESHIP_NUM, ENEMIES_FIGHTER_NUM);
+	collider = CollisionDetector(AMBIENT_SPACESHIP_NUM, ENEMIES_FIGHTER_NUM, networkController);
 	
 	meshes = MeshFactory();
 	
@@ -66,7 +66,7 @@ function OnInit(params)
 	
 	myFighter = Xwing( meshes );
 	myFighter.useCamera(true);
-	myFighter.setPosition([ 50, 0, 0 ]);
+	myFighter.setPosition([ 50, 100, 0 ]);
 	
 	mySkyBox = SkyBox();
 	mySkyBox.init();
@@ -118,6 +118,11 @@ function OnFrame()
 	}
 	mySkyBox.draw();
 	
+	/*if (ambientSpaceship[0] != void) {
+		var pos = ambientSpaceship[0].object.getPosition();
+		ConsoleText(0.05,0.9,"Ambient[0] ["+str(pos.x)+","+str(pos.y)+","+str(pos.z)+"]");
+	}*/
+	
 	SceneEnd();
 }
 
@@ -151,6 +156,15 @@ function OnTimer()
 	
 	collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
 	
+	// TEMPORANEO! rimuovo gli elementi ambiente distrutti
+	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+		if (ambientSpaceship[i] != void) {
+			if (ambientSpaceship[i].isDestroyed()) {
+				ambientSpaceship[i] = void;
+			}
+		}
+	}
+	
 	mySkyBox.update(myFighter.getPosition());
 }
 
@@ -165,7 +179,7 @@ function OnEvent(eventID, wparam, lparam){
 			var type = wparam[1];
 			if (enemiesFighter[id] == void) {
 				/* New player has joined the game! Share ambient object! */
-				ambientController.advertise();
+				ambientController.advertise(ambientSpaceship);
 				if (type == XWING_TYPE) { /* xwing */
 					enemiesFighter[id] = Xwing( meshes );
 				} else {
@@ -181,6 +195,10 @@ function OnEvent(eventID, wparam, lparam){
 		if (eventId == networkController.isEnemyExitEvent()) {
 			enemiesFighter[wparam] = void;
 			Outputln(Sprintf("Player %d is gone!",wparam));
+		}
+		if (eventId == networkController.isAmbientDestroyEvent()) {
+			ambientSpaceship[wparam] = void;
+			Outputln(Sprintf("Ambient %d is gone!",wparam));
 		}
 		if (eventId == networkController.isAmbientDataEvent()) {
 			var id = wparam[0];

@@ -1,4 +1,4 @@
-#define SKY_BOX_SIZE	2000
+#define SKY_BOX_SIZE	1500
 #define N_TILES		5
 
 class SkyBox{
@@ -35,7 +35,7 @@ function SkyBox::init(){
 	
 	yavinBillboard = CVmBillboard("yav4.png", 200, 200);
 	intSkyBoxObj = CVmObj(intSkyBoxMesh);
-	intSkyBoxObj.linkToBillboard(yavinBillboard);
+	//intSkyBoxObj.linkToBillboard(yavinBillboard);
 }
 
 function SkyBox::draw(){
@@ -46,5 +46,5 @@ function SkyBox::draw(){
 function SkyBox::update(pos){
 	extSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
 	intSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
-	yavinBillboard.setPosition(pos.x, pos.y, pos.z+ SKY_BOX_SIZE/2);
+	//yavinBillboard.setPosition(pos.x, pos.y, pos.z+ SKY_BOX_SIZE/2);
 }
