@@ -73,7 +73,7 @@ function LaserBeam::update(){
 	//displacement = [0,0,0];
 	actualPos += displacement;
 	object.SetPosition(actualPos);
-	trace(timeTickSecond);
+	//trace(timeTickSecond);
 	
 	/*--- collision detection effettiva del proiettile ---*/
 	

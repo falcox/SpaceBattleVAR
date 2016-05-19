@@ -50,7 +50,7 @@ function MeshFactory::MeshFactory()
 	ambientMeshes[EMPEROR_SHUTTLE].centerBoundingBox();
 	ambientMeshes[EMPEROR_SHUTTLE].Scale(0.05);
 	ambientMeshes[STAR_DESTROYER] = CVmNewMesh("StarDestroyer.AAM");
-	//ambientMeshes[STAR_DESTROYER].Scale(10);
+	ambientMeshes[STAR_DESTROYER].Scale(4);
 	ambientMeshes[STAR_DESTROYER].centerBoundingBox();
 	
 	

@@ -25,7 +25,7 @@
 /* Set global scene parameters */
 SET SCENE_FOV  = 60;
 SET SCENE_NEAR = 0.5;
-SET SCENE_FAR  = 50000;
+SET SCENE_FAR  = 10000;
 
 var myFighter;
 var networkController =  void;
@@ -161,7 +161,7 @@ function OnTimer()
 			ambientSpaceship[i].update();
 		}
 	}
-	mySkyBox.update(myFighter.getPosition());
+	mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
 	//tmpBullet.update();
 }
 

@@ -28,6 +28,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 				if(beam.isCollidingBBox(enemyArray[i].getObject())){
 					//TODO: gestisci la hit dei nemici
 					beam.setCollided();
+					outputln("bullet collided");
 				}
 			}
 		}
@@ -48,6 +49,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 				if(beam.isCollidingBBox(shipObj)){
 					ambientArray[i].setCollision(true);
 					beam.setCollided();
+					outputln("bullet collided");
 				}
 			}
 		}
