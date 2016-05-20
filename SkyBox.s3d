@@ -1,18 +1,19 @@
-#define SKY_BOX_SIZE	1500
-#define N_TILES		5
+#define SKY_BOX_SIZE	5000
+#define N_TILES			6
 
 class SkyBox{
 	var extSkyBoxMesh;
 	var extSkyBoxObj;
-	var intSkyBoxMesh;
-	var intSkyBoxObj;
+//	var intSkyBoxMesh;
+	var yavinObj;
+	var yavinMaterial;
 	var yavinBillboard;
 	var starsTexture;
 	var starsMaterial;
 //	var associatedFighter;
 	
 	init();
-	update(pos);
+	update(pos, roll);
 	draw();
 };
 
@@ -29,22 +30,40 @@ function SkyBox::init(){
 	extSkyBoxMesh.setMaterial(starsMaterial);
 	extSkyBoxObj = CVmObj(extSkyBoxMesh);
 	
-	intSkyBoxMesh = CVmNewMesh(VRP_SPHERE);
+	/*intSkyBoxMesh = CVmNewMesh(VRP_SPHERE);
 	intSkyBoxMesh.centerBoundingBox();
 	intSkyBoxMesh.scale(SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4);
+	*/
 	
-	yavinBillboard = CVmBillboard("yav4.png", 200, 200);
-	intSkyBoxObj = CVmObj(intSkyBoxMesh);
+	yavinObj = CvmObj();
+	yavinBillboard = CVmBillboard();
+	yavinMaterial = CVmMaterial();
+	yavinMaterial.setTexture(CVmTexture("y4.png"));
+	yavinMaterial.changeTextureParams(VR_V_TILING, 1, false);
+	yavinMaterial.changeTextureParams(VR_U_TILING, 1, false);
+	//yavinBillboard = CVmBillboard("yavin4.png", 200, 200);
+	yavinObj.linkToBillboard(yavinBillboard);
+	yavinObj.setScale(200);
+	//yavinbillboard.setTexture(CVmTexture("yav4.png", VR_RGBA_TEXTURE));
+	outputln(sprintf("a:%f, %f, %f, %f, d:%f, %f, %f, %f, ",yavinMaterial.Ambient[0], yavinMaterial.Ambient[1], yavinMaterial.Ambient[2], yavinMaterial.Ambient[3],  yavinMaterial.Diffuse[0], yavinMaterial.Diffuse[1], yavinMaterial.Diffuse[2], yavinMaterial.Diffuse[3]));
+	yavinMaterial.Ambient[0] = 0;
+	yavinMaterial.Diffuse[0] = 0;
+	yavinBillboard.setMaterial(yavinMaterial);
+	//intSkyBoxObj = CVmObj(intSkyBoxMesh);
 	//intSkyBoxObj.linkToBillboard(yavinBillboard);
+
 }
 
 function SkyBox::draw(){
 	extSkyBoxObj.Draw(VR_DOUBLEFACE);
-	//yavinBillboard.draw(0,VR_BB_UNLOCK_NONE);
+//	yavinBillboard.draw(0,VR_BB_UNLOCK_NONE);
+	yavinObj.draw();
 }
 
-function SkyBox::update(pos){
+function SkyBox::update(pos, roll){
 	extSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
-	intSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
-	//yavinBillboard.setPosition(pos.x, pos.y, pos.z+ SKY_BOX_SIZE/2);
+	//intSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
+	yavinObj.setPosition(pos.x, pos.y, pos.z+ SKY_BOX_SIZE/3);
+	yavinObj.setRotation(-roll, [0,0,1]);
+	
 }

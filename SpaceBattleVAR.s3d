@@ -71,22 +71,6 @@ function OnInit(params)
 	mySkyBox = SkyBox();
 	mySkyBox.init();
 	
-	/*ambientSpaceship[0] = EmperorShuttle( meshes );
-	ambientSpaceship[0].setCenter([200.0, 0, 0]);
-	ambientSpaceship[0].setRadius(100);
-	ambientSpaceship[0].setOrbitPeriod(20);
-	ambientSpaceship[0].setServerTime(GetTime());
-	
-	ambientSpaceship[1] = StarDestroyer( meshes );
-	ambientSpaceship[1].setCenter([0, 0, 0]);
-	ambientSpaceship[1].setRadius(1000);
-	ambientSpaceship[1].setOrbitPeriod(2000);
-	ambientSpaceship[1].setServerTime(GetTime());*/
-	
-	/*ambientSpaceship[1] = EscapePod();
-	ambientSpaceship[1].init();
-	ambientSpaceship[1].setPosition([100.0, 50.0, 0.0]);*/
-	
 	/*---Global XVR parameters---*/
 	SetFrameRate(FRAMERATE);	
 	SetTimeStep(TIMER_MSEC_TICK);
@@ -165,7 +149,7 @@ function OnTimer()
 		}
 	}
 	
-	mySkyBox.update(myFighter.getPosition());
+	mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
 }
 
 function OnEvent(eventID, wparam, lparam){
@@ -182,6 +166,14 @@ function OnEvent(eventID, wparam, lparam){
 				ambientController.advertise(ambientSpaceship);
 				if (type == XWING_TYPE) { /* xwing */
 					enemiesFighter[id] = Xwing( meshes );
+				} else if (type == TIE_TYPE) { /* tie */
+					enemiesFighter[id] = TieFighter( meshes );
+				} else if (type == YWING_TYPE) { /* ywing */
+					enemiesFighter[id] = Ywing( meshes );
+				} else if (type == ARC170_TYPE) { /* arc170 */
+					enemiesFighter[id] = Arc170( meshes );
+				} else if (type == MILLFALC_TYPE) { /* millennium falcon */
+					enemiesFighter[id] = MillenniumFalcon( meshes );
 				} else {
 					Outputln("Error! fighter type does not exists!");
 					return;

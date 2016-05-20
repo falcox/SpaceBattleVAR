@@ -1,6 +1,7 @@
 #include <AckMsgWindow.s3d>
 
-#define BROADCAST_ADDRESS "10.0.0.255"
+//#define BROADCAST_ADDRESS "10.0.0.255"
+#define BROADCAST_ADDRESS "10.243.168.255"
 //#define BROADCAST_ADDRESS "192.168.100.255"
 
 #define SERVER_ADV_PDU			1
@@ -12,6 +13,11 @@
 #define AMBIENT_PDU_ACK			7
 #define AMBIENT_DESTROYED		8
 #define AMBIENT_DESTROYED_ACK	9
+/* to be implemented */
+#define LASERBEAM_PDU			10
+#define LASERBEAM_PDU_ACK		11
+#define FIGHTER_DESTROYED		12
+#define FIGHTER_DESTROYED_ACK	13
 
 
 #define ENEMIES_FIGHTER_NUM	10

@@ -7,6 +7,8 @@ class AmbientObject {
 	var pathRadius;
 	var orbitPeriod;
 	var serverTime;
+	var time;
+	var angle;
 	var objType;
 	var collision;
 	
@@ -30,6 +32,8 @@ class AmbientObject {
 
 function AmbientObject::init(mesh, type){
 	objType = type;
+	angle = 0;
+	time = 0;
 	velocity = 0;
 	currentFrame = 0;
 	currentLife = 100;
@@ -89,10 +93,11 @@ function AmbientObject::draw(){
 }
 
 function AmbientObject::update() {
-	static var time = GetTime();
-	static var angle = 0;
 	var timeTickSecond = 0.001;
 	var position = [0, 0, 0];
+	if(time == 0){
+		time = GetTime();
+	}
 	time -= serverTime;
 	timeTickSecond *= ( (GetTime()-serverTime) - time);
 	

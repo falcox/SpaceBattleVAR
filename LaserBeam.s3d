@@ -1,42 +1,95 @@
-#define MAX_LASER_RANGE 500
-#define LASER_SPEED		600
+#ifndef LASER_BEAM
+#define LASER_BEAM
+
+#define LASER_SPEED		1200
+//#define LASER_SPEED		0
 
 class LaserBeam{
 	var object;
 	var initPos;
+	var actualPos;
 	var finalPos;
-	var shootTime;
+	var originTime;
 	var collision;
 	var direction;
+	var posThreshold;
+	var time;
 	
 	LaserBeam(mesh, begin, end, time);
+	rotateToDirection(dir);
+	setCollided();
+	setRotationMatrix(matrix);
+	isCollidingBBox(obj);
 	update();
-	getMaxRange();
+	draw();
 };
 
-function LaserBeam::LaserBeam(mesh, begin, end, time){
+function LaserBeam::LaserBeam(mesh, begin, end, t){
 	object = CVmObj(mesh);
 	initPos = begin;
+	actualPos = begin;
 	finalPos = end;
-	shootTime = time;
+	originTime = t;
 	direction = finalPos-initPos;
-	direction = direction / modulus(direction); 
+	posThreshold = modulus(direction);
+	direction = direction / posThreshold; 
+	collision = false;
+	time = 0;
+	outputln("new bullet!");
 }
 
-function LaserBeam::getMaxRange(){
-	return MAX_LASER_RANGE;
+function LaserBeam::setRotationMatrix(matrix){
+	object.setRotationMatrix(matrix);
+}
+
+function LaserBeam::rotateToDirection(dir){
+	var r = object.getXaxis();
+	var u = dir ^ r;
+	r = r / modulus(r);
+	object.setRotationMatrix([r.x, r.y, r.z, 0, u.x, u.y, u.z, 0, dir.x, dir.y, dir.z, 0, 0, 0, 0, 1]);
+}
+
+function LaserBeam::setCollided(){
+	collision = true;
 }
 
 function LaserBeam::update(){
-	static var time = GetTime();
+	if(time == 0){
+		time = GetTime();
+	}
+	var killMe = false;
 	var timeTickSecond = 0.001;
 	var displacement;
-	time -= serverTime;
-	timeTickSecond *= (GetTime() - time);
+	time -= originTime;
+	timeTickSecond *= ( (GetTime()-originTime) - time);
+	//outputln(sprintf("time :%f, timeTickSecond: %f", time, timeTickSecond));
 	
 	/*---settaggio direzione e posizione--- */
+	this.rotateToDirection(direction);
 	displacement = direction*timeTickSecond*LASER_SPEED;
-	object.SetPosition(initPos+displacement);
+	actualPos += displacement;
+	object.SetPosition(actualPos);
+	
+	/*--- check se distruggere il proiettile ---*/
+	if(modulus(actualPos - initPos) > posThreshold || collision == true){
+		killMe = true;
+		outputln("bullet needs to be killed");
+	}
 	
 	time = GetTime();
+	return killMe;
 }
+
+function LaserBeam::isCollidingBBox(obj){
+	return object.isCollidingBBox(obj);
+}
+
+function LaserBeam::draw(){   
+	object.draw();
+#ifdef DEBUGGING
+	object.drawAxis();
+#endif
+}
+
+
+#endif

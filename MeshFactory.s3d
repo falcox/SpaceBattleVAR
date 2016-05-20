@@ -50,11 +50,12 @@ function MeshFactory::MeshFactory()
 	ambientMeshes[EMPEROR_SHUTTLE].centerBoundingBox();
 	ambientMeshes[EMPEROR_SHUTTLE].Scale(0.05);
 	ambientMeshes[STAR_DESTROYER] = CVmNewMesh("StarDestroyer.AAM");
+	ambientMeshes[STAR_DESTROYER].Scale(4);
 	ambientMeshes[STAR_DESTROYER].centerBoundingBox();
-	ambientMeshes[STAR_DESTROYER].scale(1);
+	
 	
 	bulletMeshes = Array(2);
-	bulletMeshes[RED_BEAM] = CVmNewMesh(VRP_CYLINDER, 30, 5, 20);
+	bulletMeshes[RED_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
 	bulletMeshes[RED_BEAM].Rotate(90,[1,0,0]);
 	var redMaterial = CVmMaterial();
 	redMaterial.ambient = [1,0,0,1];
@@ -63,7 +64,7 @@ function MeshFactory::MeshFactory()
 	redMaterial.shininess = 128;
 	bulletMeshes[RED_BEAM].setMaterial(redMaterial);
 	
-	bulletMeshes[GREEN_BEAM] = CVmNewMesh(VRP_CYLINDER, 30, 5, 20);
+	bulletMeshes[GREEN_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
 	bulletMeshes[GREEN_BEAM].Rotate(90,[1,0,0]);
 	var greenMaterial = CVmMaterial();
 	greenMaterial.ambient = [0,1,0,1];
@@ -82,6 +83,7 @@ function MeshFactory::getAmbientMeshes(ambientType)
 {
 	return ambientMeshes[ambientType];
 }
+
 
 function MeshFactory::getBulletMeshes(bulletType)
 {
