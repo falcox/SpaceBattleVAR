@@ -31,7 +31,7 @@
 /* DATA_SEND_THRESHOLD threshold to decide to whom a pdu will be sended, 
  * based on last player position sended and actual position on PDU */
 #define DATA_SEND_THRESHOLD			1000
-/* DISTANCE_BETWEEN_PDU: threshold to decide a PDU can be sended, 
+/* DISTANCE_BETWEEN_PDU: threshold to decide when a PDU can be sended, 
  * based on last player position sended and actual position on PDU */
 #define DISTANCE_BETWEEN_PDU		10
 
