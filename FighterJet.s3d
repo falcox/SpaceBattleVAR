@@ -18,6 +18,7 @@ class FighterJet {
 	var withCamera;
 	var camera;
 	var light;
+	var time;
 	var cameraMode;			/* 0->behind / 1->inside */
 	var cameraModeOffset;
 	var beamArray;
@@ -68,6 +69,7 @@ function FighterJet::init(mesh, type, bulletMesh) {
 	yaw = 0;
 	roll = 0;
 	pitch = 0;
+	time = 0;
 	FighterType = type;
 	FighterPos = [0,0,0];
 	velocity = MIN_SPEED;
@@ -198,7 +200,9 @@ function FighterJet::draw(){
 }
 
 function FighterJet::update() {
-	static var time = GetTime();
+	if (time == 0) {
+		time = GetTime();
+	}
 	var timeTickSecond = 0.001;
 	var cameraPos;
 	var direction;
@@ -224,9 +228,6 @@ function FighterJet::update() {
 	direction = FighterObj.GetZaxis();
 	displacement = velocity * timeTickSecond;
 	setPosition(FighterPos+displacement*direction);
-	
-	/*potrebbe essere utile o no*/
-	//bbox = xWingMesh.getBoundingBox();
 
 	/*--- aggiorna i proiettili ---*/
 	for(var i = 0; i <MAX_BULLET_NUM; i++){

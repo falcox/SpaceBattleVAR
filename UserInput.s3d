@@ -1,6 +1,8 @@
+#define SHOOT_RATE	100
+
 class UserInput {
 	var cameraModeAntiBounce;
-	var spaceThresh;
+	var fireBeamAntiBounce;
 	
 	UserInput();
 	userControlFighter(obj);
@@ -9,7 +11,7 @@ class UserInput {
 function UserInput::UserInput()
 {
 	cameraModeAntiBounce = false;
-	spaceThresh = false;
+	fireBeamAntiBounce = false;
 }
 
 /* fighter object must implements those function:
@@ -21,9 +23,11 @@ function UserInput::UserInput()
  */
 function UserInput::userControlFighter(fighter)
 {
+	static var time = GetTime();
+	static var fastShoot = 0;
 	var y = 0, p = 0, r = 0;
 	var angleStep = fighter.getAngleStep();
-	
+	fastShoot += GetTime() - time;
 	/*---modifiche al vettore velocità e al frame---*/
 	if(keypressed(VK_LSHIFT)) {
 		fighter.increaseSpeed();
@@ -47,13 +51,18 @@ function UserInput::userControlFighter(fighter)
 	} else if(Keypressed(VK_END) || Keypressed("e")) {
 		y = -angleStep;
 	}
-	if(Keypressed(VK_SPACE)){
-		spaceThresh = true;
+	/*---Shoot---*/
+	if(Keypressed(VK_SPACE) && (fastShoot > SHOOT_RATE)) {
+		fastShoot = 0;
+		fighter.fireBeam();
+		//fireBeamAntiBounce = true;
+	} else if (!Keypressed(VK_SPACE)) {
+		fastShoot = 0;
 	}
-	else if(spaceThresh){
+	/* else if(fireBeamAntiBounce){
 		fighter.fireBeam();  
-		spaceThresh = false;
-	}
+		fireBeamAntiBounce = false;
+	}*/
 	/*---Modify camera mode---*/
 	if(Keypressed("c")) {
 		cameraModeAntiBounce = true;
@@ -64,4 +73,5 @@ function UserInput::userControlFighter(fighter)
 
 	/*---rotazione oggetto---*/
 	fighter.setRelativeAngle(r, p, y);
+	time = GetTime();
 }

@@ -9,11 +9,11 @@ class LaserBeam{
 	var initPos;
 	var actualPos;
 	var finalPos;
-	var shootTime;
+	var originTime;
 	var collision;
 	var direction;
 	var posThreshold;
-	var lastCalled;
+	var time;
 	
 	LaserBeam(mesh, begin, end, time);
 	rotateToDirection(dir);
@@ -29,12 +29,12 @@ function LaserBeam::LaserBeam(mesh, begin, end, t){
 	initPos = begin;
 	actualPos = begin;
 	finalPos = end;
-	shootTime = t;
+	originTime = t;
 	direction = finalPos-initPos;
 	posThreshold = modulus(direction);
 	direction = direction / posThreshold; 
 	collision = false;
-	LastCalled = 0;
+	time = 0;
 	outputln("new bullet!");
 }
 
@@ -54,28 +54,21 @@ function LaserBeam::setCollided(){
 }
 
 function LaserBeam::update(){
-	//static var time = GetTime();
-	if(LastCalled == 0){
-		lastCalled = GetTime();
+	if(time == 0){
+		time = GetTime();
 	}
-	var time = lastCalled;
 	var killMe = false;
 	var timeTickSecond = 0.001;
 	var displacement;
-	//time -= shootTime;
-
-	timeTickSecond *= (GetTime() - time);
+	time -= originTime;
+	timeTickSecond *= ( (GetTime()-originTime) - time);
 	//outputln(sprintf("time :%f, timeTickSecond: %f", time, timeTickSecond));
 	
 	/*---settaggio direzione e posizione--- */
 	this.rotateToDirection(direction);
 	displacement = direction*timeTickSecond*LASER_SPEED;
-	//displacement = [0,0,0];
 	actualPos += displacement;
 	object.SetPosition(actualPos);
-	//trace(timeTickSecond);
-	
-	/*--- collision detection effettiva del proiettile ---*/
 	
 	/*--- check se distruggere il proiettile ---*/
 	if(modulus(actualPos - initPos) > posThreshold || collision == true){
@@ -83,8 +76,7 @@ function LaserBeam::update(){
 		outputln("bullet needs to be killed");
 	}
 	
-	lastCalled = GetTime();
-	//time = GetTime();
+	time = GetTime();
 	return killMe;
 }
 

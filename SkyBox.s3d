@@ -4,30 +4,32 @@
 class SkyBox{
 	var extSkyBoxMesh;
 	var extSkyBoxObj;
-//	var intSkyBoxMesh;
-	var yavinObj;
-	var yavinMaterial;
-	var yavinBillboard;
-	var starsTexture;
-	var starsMaterial;
-//	var associatedFighter;
-	
+	var planetObj;
+	var planetMaterial;
+	var planetBillboard;
+	var skyBoxTexture;
+	var skyBoxMaterial;
+	var starObj;
+	var starMaterial;
+	var starBillboard;
+	var modulationTheta;
+		
 	init();
 	update(pos, roll);
 	draw();
 };
 
 function SkyBox::init(){
-	starsTexture = CVmTexture("stars2.jpg");
-	starsMaterial = CVmMaterial();
-	starsMaterial.setTexture(starsTexture);
-	starsMaterial.changeTextureParams(VR_V_TILING, N_TILES, false);
-	starsMaterial.changeTextureParams(VR_U_TILING, N_TILES, false);
+	skyBoxTexture = CVmTexture("stars2.jpg");
+	skyBoxMaterial = CVmMaterial();
+	skyBoxMaterial.setTexture(skyBoxTexture);
+	skyBoxMaterial.changeTextureParams(VR_V_TILING, N_TILES, false);
+	skyBoxMaterial.changeTextureParams(VR_U_TILING, N_TILES, false);
 	
 	extSkyBoxMesh = CVmNewMesh(VRP_SPHERE);
 	extSkyBoxMesh.centerBoundingBox();
 	extSkyBoxMesh.scale(SKY_BOX_SIZE,SKY_BOX_SIZE,SKY_BOX_SIZE);
-	extSkyBoxMesh.setMaterial(starsMaterial);
+	extSkyBoxMesh.setMaterial(skyBoxMaterial);
 	extSkyBoxObj = CVmObj(extSkyBoxMesh);
 	
 	/*intSkyBoxMesh = CVmNewMesh(VRP_SPHERE);
@@ -35,35 +37,52 @@ function SkyBox::init(){
 	intSkyBoxMesh.scale(SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4);
 	*/
 	
-	yavinObj = CvmObj();
-	yavinBillboard = CVmBillboard();
-	yavinMaterial = CVmMaterial();
-	yavinMaterial.setTexture(CVmTexture("y4.png"));
-	yavinMaterial.changeTextureParams(VR_V_TILING, 1, false);
-	yavinMaterial.changeTextureParams(VR_U_TILING, 1, false);
-	//yavinBillboard = CVmBillboard("yavin4.png", 200, 200);
-	yavinObj.linkToBillboard(yavinBillboard);
-	yavinObj.setScale(200);
-	//yavinbillboard.setTexture(CVmTexture("yav4.png", VR_RGBA_TEXTURE));
-	outputln(sprintf("a:%f, %f, %f, %f, d:%f, %f, %f, %f, ",yavinMaterial.Ambient[0], yavinMaterial.Ambient[1], yavinMaterial.Ambient[2], yavinMaterial.Ambient[3],  yavinMaterial.Diffuse[0], yavinMaterial.Diffuse[1], yavinMaterial.Diffuse[2], yavinMaterial.Diffuse[3]));
-	yavinMaterial.Ambient[0] = 0;
-	yavinMaterial.Diffuse[0] = 0;
-	yavinBillboard.setMaterial(yavinMaterial);
+	planetObj = CvmObj();
+	planetBillboard = CVmBillboard();
+	planetMaterial = CVmMaterial();
+	//planetMaterial.setTexture(CVmTexture("y4.png"));
+	planetMaterial.setTexture(CVmTexture("endor_v3.png"));
+	//planetBillboard = CVmBillboard("yavin4.png", 200, 200);
+	planetObj.linkToBillboard(planetBillboard);
+	planetObj.setScale(500);
+	planetBillboard.setMaterial(planetMaterial);
 	//intSkyBoxObj = CVmObj(intSkyBoxMesh);
-	//intSkyBoxObj.linkToBillboard(yavinBillboard);
-
+	//intSkyBoxObj.linkToBillboard(planetBillboard);
+	
+	starObj = CvmObj();
+	starBillboard = CVmBillboard();
+	starMaterial = CVmMaterial();
+	//starMaterial.setTexture(CVmTexture("y4.png"));
+	starMaterial.setTexture(CVmTexture("star.png"));
+	//starBillboard = CVmBillboard("yavin4.png", 200, 200);
+	starObj.linkToBillboard(starBillboard);
+	starObj.setScale(1000);
+	starBillboard.setMaterial(starMaterial);
+	
+	modulationTheta = 0;
 }
 
 function SkyBox::draw(){
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	//glClear(GL_COLOR_BUFFER_BIT);	
 	extSkyBoxObj.Draw(VR_DOUBLEFACE);
-//	yavinBillboard.draw(0,VR_BB_UNLOCK_NONE);
-	yavinObj.draw();
+	planetObj.draw();
+	//starObj.draw();
+	
+	glPopMatrix();
 }
 
 function SkyBox::update(pos, roll){
 	extSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
 	//intSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
-	yavinObj.setPosition(pos.x, pos.y, pos.z+ SKY_BOX_SIZE/3);
-	yavinObj.setRotation(-roll, [0,0,1]);
+	planetObj.setPosition(pos.x, pos.y, pos.z+ SKY_BOX_SIZE*0.45);
+	planetObj.setRotation(-roll, [0,0,1]);
+	
+	//starMaterial.modulateMaterials(0.5*sin(modulationTheta),0,0,1);
+	
+	//starMaterial.Ambient = [0.5+0.3*sin(modulationTheta),0,0,0];
+	starObj.setPosition(pos.x + SKY_BOX_SIZE*0.4, pos.y, pos.z);
+	starObj.setRotation(-roll, [1,0,0]);
 	
 }

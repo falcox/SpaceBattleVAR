@@ -1,0 +1,100 @@
+#include <MeshFactory.s3d>
+
+#define INSERT_TIME_THRESHOLD	60
+#define MAX_DIE_NUM				2
+#define MAX_RAND_POSX			500
+#define MAX_RAND_POSY			1
+#define MAX_RAND_POSZ			500
+#define MAX_RAND_RADIUS			200
+#define MIN_RAND_RADIUS			50
+#define MAX_RAND_ORBIT			200
+#define MIN_RAND_ORBIT			20
+
+class AmbientEngine {
+	var network;
+	var meshes;
+	var startEngine;
+	var timeSecondElapsed;
+	
+	AmbientEngine(net);
+	tick(ambientArray);
+	advertise(ambientArray);
+	start();
+	stop();
+};
+
+function AmbientEngine::AmbientEngine(net, mesh)
+{
+	network = net;
+	meshes = mesh;
+	startEngine = false;
+	timeSecondElapsed = 0;
+}
+
+function AmbientEngine::tick(ambientArray)
+{
+	/* Maybe every <tot> seconds roll a die to put an ambient object on the field */
+	static var time = GetTime();
+	var timeTickSecond = 0.001;
+	timeTickSecond *= ( GetTime() - time);
+	if (startEngine && network.isServer()) {
+		timeSecondElapsed += timeTickSecond;
+		if (timeSecondElapsed > INSERT_TIME_THRESHOLD) {
+			var ambientLen = len(ambientArray);
+			for (var i = 0; i < ambientLen; i++) {
+				if (ambientArray[i] == void) {
+					/* For the position coordinates can be positive or negative randomly */
+					//var type = Rand(MAX_DIE_NUM);
+					var type = 1; /* Only for testing */
+					var posx = Rand(MAX_RAND_POSX) * ((Rand(1)==0)?1:-1);
+					var posy = Rand(MAX_RAND_POSY) * ((Rand(1)==0)?1:-1);
+					var posz = Rand(MAX_RAND_POSZ) * ((Rand(1)==0)?1:-1);
+					var radius = MIN_RAND_RADIUS + Rand(MAX_RAND_RADIUS);
+					var orbitPeriod = MIN_RAND_ORBIT + Rand(MAX_RAND_ORBIT);
+					/* insert the ambient object */
+					if (type == ESCAPE_POD) { 
+						ambientArray[i] = EscapePod( meshes );
+					} else if (type == EMPEROR_SHUTTLE) { 
+						ambientArray[i] = EmperorShuttle( meshes );
+					} else if (type == STAR_DESTROYER) { 
+						ambientArray[i] = StarDestroyer( meshes );
+					}
+					ambientArray[i].setCenter([posx, posy, posz]);
+					ambientArray[i].setRadius(radius);
+					ambientArray[i].setOrbitPeriod(orbitPeriod);
+					ambientArray[i].setServerTime(GetTime());
+					network.sendAmbientData(i, ambientArray[i].getAmbientObjData());
+					Outputln(Sprintf("Created new ambient object! [%d,%d,%d]", posx, posy, posz));
+					break;
+				}
+			}
+			timeSecondElapsed = 0;
+		}
+	}
+	time = GetTime();
+}
+
+function AmbientEngine::start()
+{
+	startEngine = true;
+	timeSecondElapsed = 0;
+}
+
+function AmbientEngine::stop()
+{
+	startEngine = false;
+	timeSecondElapsed = 0;
+}
+
+function AmbientEngine::advertise(ambientArray)
+{
+	if (startEngine && network.isServer()) {
+		var ambientLen = len(ambientArray);
+		/* Send ambient data to all players! */
+		for (var i = 0; i < ambientLen; i++) {
+			if (ambientArray[i] != void) {
+				network.sendAmbientData(i, ambientArray[i].getAmbientObjData());
+			}
+		}
+	}
+}

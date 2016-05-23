@@ -66,6 +66,7 @@ function AckMsgWindow::ackReceived(id, msgId)
 	for (var i = 0; i < queue_size; i++) {
 		if (messages[id][i].message[1] == msgId) {
 			adel( messages[id], i);
+			break;
 		}
 	}
 }

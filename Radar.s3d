@@ -1,0 +1,137 @@
+#define RADAR_RADIUS	2000
+#define RADAR_POINTS	20
+#define RATIO_H			9.0
+#define RATIO_W			16.0
+#define DOT_SIZE		0.1
+
+//#define ABSOLUTE_DETECTION
+
+class Radar{
+	var pointsArray;
+	var pointsNum;
+	var radarTexture;
+	var dotTexture;
+	
+	update(myFighter, ambientArray, enemyArray);
+	draw();
+	getCamera();
+};
+
+function Radar::Radar(){
+	radarTexture = CVmTexture("radar.png");
+	dotTexture = CVmTexture("whitedot.png");
+	
+	pointsArray = Array(RADAR_POINTS);
+}
+
+function Radar::update(myFighter, ambientArray, enemyArray){
+	var j = 0;
+	var fighterPos;
+	var fighterZ;
+	var fighterX;	
+	var testDist;
+	var testPos;
+	var projection = Vector(2);
+	
+	fighterPos = myFighter.getPosition();
+	fighterZ = myFighter.getObject().getZaxis();
+	fighterX = myFighter.getObject().getXaxis();
+	for(var i = 0; i < ENEMIES_FIGHTER_NUM; i++){
+		if(enemyArray[i]!=void){
+			testPos = enemyArray[i].getPosition();
+			testDist = testPos-fighterPos;
+			if(modulus(testDist)<=RADAR_RADIUS){
+				//pointsArray[j++] = testPos;
+				projection[0] = (testDist*fighterX)*RATIO_W/RADAR_RADIUS;
+				projection[1] = testDist*fighterZ*RATIO_W/RADAR_RADIUS;
+				pointsArray[j++] = projection;
+			}
+		}
+	}
+	
+	for(var i = 0; i < AMBIENT_SPACESHIP_NUM; i++){
+		if(ambientArray[i]!=void){
+			testPos = ambientArray[i].getPosition();
+			testDist = testPos-fighterPos;
+			if(modulus(testDist)<=RADAR_RADIUS){
+				//pointsArray[j++] = testPos;
+#ifdef ABSOLUTE_DETECTION
+				/*--- ABSOLUTE DETECTION ---*/
+				projection[0] = -(testDist.x)*(RATIO_W/16)/RADAR_RADIUS;
+				projection[1] = (testDist.z)*(RATIO_W/16)/RADAR_RADIUS;
+				
+#else				
+				/*--- RELATIVE DETECTION ---*/
+				projection[0] = -(testDist*fighterX)*(RATIO_W/16)/RADAR_RADIUS;
+				projection[1] = (testDist*fighterZ)*(RATIO_W/16)/RADAR_RADIUS;
+#endif
+				pointsArray[j++] = projection;
+			}
+		}
+	}
+	
+	pointsNum = j;
+	
+	/*--- FLUSH ---*/
+	for(var i = j; i<RADAR_POINTS; i++){
+		pointsArray[i] = void;
+	}
+}
+
+function Radar::draw(){
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	//glOrtho(0.0, 15.0, 0.0, 12.0, 0.0, 2.0);
+	glOrtho(0.0, RATIO_W, 0.0, RATIO_H, -1.0, 1.0);		/*TODO: MUST BE RESIZED EVERY TIME THE WINDOW CHANGES! */
+	
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	
+	glDisable(GL_LIGHTING); 
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	
+	glTranslate(RATIO_W*3/4, RATIO_H*5/8);
+	SetActiveTexture(radarTexture);
+	glBegin(GL_QUADS);
+		//glNormal(0, 0, 1);
+		glColor(0, 1.0, 0);
+		glTexCoord(0, 1); glVertex(0, 0);
+		glTexCoord(1, 1); glVertex(RATIO_H/4, 0);
+		glTexCoord(1, 0); glVertex(RATIO_H/4, RATIO_H/4);
+		glTexCoord(0, 0); glVertex(0, RATIO_H/4);
+	glEnd();
+		
+	//glTranslate(RATIO_W/4, RATIO_W/4);
+	//glTranslate(RATIO_W/2, RATIO_H/2);
+
+	glLoadIdentity();
+	glTranslate(RATIO_W*3/4+RATIO_H/8, RATIO_H*5/8 + RATIO_H/8);
+	setActiveTexture(dotTexture);
+	glBegin(GL_QUADS);
+		//glPointSize(150);
+		glColor(0, 1.0, 0);
+		for(var i=0; i<pointsNum; i++){
+			glTexCoord(0, 1); glVertex(pointsArray[i].x-DOT_SIZE/2, pointsArray[i].y-DOT_SIZE/2);
+			glTexCoord(1, 1); glVertex(pointsArray[i].x+DOT_SIZE/2, pointsArray[i].y-DOT_SIZE/2);
+			glTexCoord(1, 0); glVertex(pointsArray[i].x+DOT_SIZE/2, pointsArray[i].y+DOT_SIZE/2);
+			glTexCoord(0, 0); glVertex(pointsArray[i].x-DOT_SIZE/2, pointsArray[i].y+DOT_SIZE/2);
+			//glVertex(pointsArray[i].x, pointsArray[i].y);
+		}
+	glEnd();
+	
+	glDisable(GL_BLEND);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST);
+	glPopMatrix();
+	
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	
+	glMatrixMode(GL_MODELVIEW);
+}
+
+/*function Radar::getCamera(){
+	return camera;
+}*/
