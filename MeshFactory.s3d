@@ -15,7 +15,6 @@
 #define STAR_DESTROYER		2
 #define DEATH_STAR			3
 
-
 class MeshFactory {
 	var fighterMeshes;
 	var ambientMeshes;

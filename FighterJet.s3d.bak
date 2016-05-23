@@ -1,0 +1,330 @@
+#ifndef FIGHTER_JET
+#define FIGHTER_JET
+
+#include <LaserBeam.s3d>
+
+#define FRAME_STEP 0.5
+#define ANGLE_STEP 	0.5
+#define MIN_SPEED	0
+#define MAX_SPEED	300
+#define SPEED_STEP	5
+#define MAX_LASER_RANGE 600
+#define MAX_BULLET_NUM	10
+
+class FighterJet {
+	var FighterObj;	
+	var FighterPos;
+	var FighterType;
+	var withCamera;
+	var camera;
+	var light;
+	var cameraMode;			/* 0->behind / 1->inside */
+	var cameraModeOffset;
+	var beamArray;
+	var beamMesh;
+	var aliveBeams;
+	
+	var yaw;				/* Angle on Y axis */
+	var pitch;				/* Angle on X axis */
+	var roll;				/* Angle on Z axis */
+	var rollDelta, pitchDelta, yawDelta;		
+	var currentLife;		/* Life variable from 0 to 100 */
+	var velocity;
+	var currentFrame;
+	var bbox;
+	var collVertex;
+	var colliding;
+	
+	init(mesh, type, bulletMesh);
+	draw();
+	setPosition(position);
+	setSpeed(speed);
+	setAngle(r, p, y);
+	setRelativeAngle(r, p, y);
+	setAnimationFrame(frame_number);
+	setCameraOffset(offsets);
+	getAngleStep();
+	increaseSpeed();
+	decreaseSpeed();
+	useCamera(cam);			/*--- cam true if this obj uses camera, otherwise false ---*/
+	changeCameraMode();
+	update();
+	getFighterData();
+	getObject();
+	setCollision(bool);
+	updateCollVertex(bbox);
+	getCollVertex();
+	getAngles();
+	getPosition();
+	fireBeam(offset);
+	drawBeams();
+	getBeam(index);
+	getAliveBeams();
+	getAliveBeamsNum();
+	setCollidedBeam(index);
+};
+
+function FighterJet::init(mesh, type, bulletMesh) {
+	yaw = 0;
+	roll = 0;
+	pitch = 0;
+	FighterType = type;
+	FighterPos = [0,0,0];
+	velocity = MIN_SPEED;
+	currentFrame = 0;
+	currentLife = 100;
+	cameraMode = 0;
+	withCamera = false;
+	cameraModeOffset = {[0, 0], [0, 0]};
+	colliding = false;
+	collVertex = Array(6);
+	beamArray = Array(MAX_BULLET_NUM);
+	beamMesh = bulletMesh;
+	aliveBeams = 0;
+	
+	FighterObj = CVmObj(mesh);
+	bbox = mesh.getBoundingBox();
+	collVertex = updateCollVertex(bbox);
+}
+
+function FighterJet::useCamera(cam)
+{
+	withCamera = cam;
+	if (cam == true) {
+		camera = CameraGetCurrent();
+		light = CVmLight();
+		light.SetDiffuse(1, 1, 1);
+		light.Enable();
+	} else {
+		camera = void;
+		light = void;
+	}
+}
+
+function FighterJet::changeCameraMode()
+{
+	cameraMode = 1 - cameraMode;
+}
+
+function FighterJet::getAngleStep()
+{
+	return ANGLE_STEP;
+}
+
+function FighterJet::getFighterData()
+{
+	var data = vector(9);
+	data[0] = fighterType;
+	data[1] = FighterPos.x;
+	data[2] = FighterPos.y;
+	data[3] = FighterPos.z;
+	data[4] = roll;
+	data[5] = pitch;
+	data[6] = yaw;
+	data[7] = velocity;
+	data[8] = currentFrame;
+	return data;
+}
+
+function FighterJet::getPosition(){
+	return FighterPos;
+}
+
+function FighterJet::getAngles()
+{
+	return [roll, pitch, yaw];
+}
+
+function FighterJet::setPosition(pos){
+	var i = pos.z;
+	var j = pos.x;
+	var k = pos.y;
+	
+	//TODO: controllo di non collisione
+	
+	FighterPos = pos;
+	FighterObj.setPosition(FighterPos);
+	
+}
+
+function FighterJet::increaseSpeed()
+{
+	velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
+}
+
+function FighterJet::decreaseSpeed()
+{
+	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
+}
+
+function FighterJet::setSpeed(speed)
+{
+	if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
+		velocity = speed;
+	}
+}
+
+function FighterJet::setAnimationFrame(frame_number)
+{
+	currentFrame = frame_number;
+}
+
+function FighterJet::setAngle(r, p, y)
+{
+	rollDelta = r - roll;
+	pitchDelta = p - pitch;
+	yawDelta = y - yaw;
+}
+
+function FighterJet::setRelativeAngle(r, p, y)
+{
+	rollDelta = r;
+	pitchDelta = p;
+	yawDelta = y;
+}
+
+function FighterJet::setCameraOffset(offsets)
+{
+	cameraModeOffset = offsets;
+}
+
+function FighterJet::draw(){
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	
+	FighterObj.DrawAxis();
+	FighterObj.DrawBoundingBox();
+	FighterObj.draw(VR_FRAMENUMBER, currentFrame);
+	this.drawBeams();
+	
+	glPopMatrix();
+}
+
+function FighterJet::update() {
+	static var time = GetTime();
+	var timeTickSecond = 0.001;
+	var cameraPos;
+	var direction;
+	var displacement;
+	timeTickSecond *= (GetTime() - time);
+
+	/*---rotazione oggetto---*/
+	FighterObj.Rotate(pitchDelta, [1,0,0]);
+	FighterObj.Rotate(yawDelta, [0,1,0]);
+	FighterObj.Rotate(rollDelta, [0,0,1]);
+	pitch = (pitch + pitchDelta) % 360;
+	yaw = (yaw + yawDelta) % 360;
+	roll = (roll + rollDelta) % 360;
+	pitchDelta = 0;
+	yawDelta = 0;
+	rollDelta = 0;
+	
+	/*---settaggio direzione e posizione--- */
+	if(colliding){
+		outputln("collision!!");
+	}
+	
+	direction = FighterObj.GetZaxis();
+	displacement = velocity * timeTickSecond;
+	setPosition(FighterPos+displacement*direction);
+	
+	/*potrebbe essere utile o no*/
+	//bbox = xWingMesh.getBoundingBox();
+
+	/*--- aggiorna i proiettili ---*/
+	for(var i = 0; i <MAX_BULLET_NUM; i++){
+		if(beamArray[i]!= void){
+			if(beamArray[i].update()){
+				beamArray[i] = void;
+				aliveBeams--;
+			}
+		}
+	}
+	
+	/* Camera and light position and pose */
+	if (withCamera == true) {
+		cameraPos = FighterObj.getPosition() + FighterObj.getYaxis()*cameraModeOffset[cameraMode][0] + FighterObj.getZaxis()*cameraModeOffset[cameraMode][1];
+		camera.setPosition(cameraPos);
+		camera.setUpVector(FighterObj.GetYaxis());
+		camera.setDirection(direction);
+		
+		light.setPosition(cameraPos);
+	}
+	
+	time = GetTime();
+}
+
+function FighterJet::getObject(){
+	return FighterObj;
+}
+
+
+function FighterJet::updateCollVertex(bbox){
+	var ret;
+	ret = {[bbox[0],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2], [bbox[3],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2],
+				[(bbox[0]+bbox[3])/2,bbox[1], (bbox[2]+bbox[5])/2], [(bbox[0]+bbox[3])/2,bbox[4], (bbox[2]+bbox[5])/2],
+				[(bbox[0]+bbox[3])/2,(bbox[1]+bbox[4])/2, bbox[2]], [(bbox[0]+bbox[3])/2,(bbox[1]+bbox[4])/2, bbox[5]]	
+				};
+	//ret[0] = [bbox[0],(bbox[1]+bbox[4])/2, (bbox[2]+bbox[5])/2];
+	return ret;
+}
+
+function FighterJet::getCollVertex(){
+	return collVertex;
+}
+
+function FighterJet::setCollision(bool){
+	colliding = bool;
+}
+
+function FighterJet::fireBeam(offset){
+	var initPos;
+	var dir = FighterObj.getZaxis();
+	var finalPos; 
+	initPos= this.getPosition() + FighterObj.getXaxis() * offset[0]+ FighterObj.getYaxis()*offset[1] + dir*offset[2] ;	
+	dir = dir / modulus(dir);
+	finalPos = this.getPosition() + dir*MAX_LASER_RANGE;
+	
+	for(var i = 0; i < MAX_BULLET_NUM; i++){
+		if(beamArray[i] == void){
+    		beamArray[i] = LaserBeam(beamMesh, initPos, finalPos, GetTime());
+    		aliveBeams++;
+			break;
+		}
+	}
+	
+}
+
+function FighterJet::getAliveBeamsNum(){
+	return aliveBeams;
+}
+
+function FighterJet::getAliveBeams(){
+	var aliveBeamsArray = Vector(aliveBeams);
+	var i = 0;
+	for(var j=0; j<MAX_BULLET_NUM; j++){
+		if(beamArray[j]!=void){
+			aliveBeamsArray[i] = j;
+			i++;
+		}
+	}
+	return aliveBeamsArray;
+}
+
+function FighterJet::getBeam(index){
+	return beamArray[index];
+}
+
+/*function FighterJet::setCollidedBeam(index){
+	beamArray[index].setCollided();
+}*/
+
+function FighterJet::drawBeams(){
+	for(var i  = 0; i < MAX_BULLET_NUM; i++){
+		if(beamArray[i] != void){
+			beamArray[i].draw();
+		}
+	}
+}
+
+#endif

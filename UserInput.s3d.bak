@@ -1,0 +1,67 @@
+class UserInput {
+	var cameraModeAntiBounce;
+	var spaceThresh;
+	
+	UserInput();
+	userControlFighter(obj);
+};
+
+function UserInput::UserInput()
+{
+	cameraModeAntiBounce = false;
+	spaceThresh = false;
+}
+
+/* fighter object must implements those function:
+ * 		- increaseSpeed()
+ * 		- decreaseSpeed()
+ * 		- changeCameraMode()
+ * 		- getAngleStep()
+ * 		- setRelativeAngle(roll, pitch, yaw)
+ */
+function UserInput::userControlFighter(fighter)
+{
+	var y = 0, p = 0, r = 0;
+	var angleStep = fighter.getAngleStep();
+	
+	/*---modifiche al vettore velocità e al frame---*/
+	if(keypressed(VK_LSHIFT)) {
+		fighter.increaseSpeed();
+	} else {
+		fighter.decreaseSpeed();
+	}
+	
+	/*---modifiche agli angoli--- */
+	if(Keypressed(VK_LEFT) || Keypressed("a")) {
+		r = -angleStep;
+	} else if(Keypressed(VK_RIGHT) || Keypressed("d")) {
+		r = angleStep;
+	}
+	if(Keypressed(VK_UP) || Keypressed("w")) {
+		p = angleStep;
+	} else if(Keypressed(VK_DOWN) || Keypressed("s")) {
+		p = -angleStep;
+	}
+	if(Keypressed(VK_RSHIFT) || Keypressed("q")) {
+		y = angleStep;
+	} else if(Keypressed(VK_END) || Keypressed("e")) {
+		y = -angleStep;
+	}
+	if(Keypressed(VK_SPACE)){
+		spaceThresh = true;
+	}
+	else if(spaceThresh){
+		fighter.fireBeam();  
+		spaceThresh = false;
+	}
+	/*---Modify camera mode---*/
+	if(Keypressed("c")) {
+		cameraModeAntiBounce = true;
+	} else if (cameraModeAntiBounce == true) {
+		fighter.changeCameraMode();
+		cameraModeAntiBounce = false;
+	}
+
+	/*---rotazione oggetto---*/
+	fighter.setRelativeAngle(r, p, y);
+}

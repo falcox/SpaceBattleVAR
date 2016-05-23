@@ -1,24 +1,22 @@
 class CollisionDetector{
 	var ambientSpaceshipNum;
 	var enemyFighterNum;
-	var network;
 	
-	CollisionDetector(aNum, eNum, net);
+	CollisionDetector(aNum, eNum);
 	checkCollisionBBox(myFighter, enemyArray, ambientArray);
 	checkCollisionDeep(myFighter, shipObj);
 };
 
-function CollisionDetector::CollisionDetector(aNum, eNum, net) {
+function CollisionDetector::CollisionDetector(aNum, eNum){
 	ambientSpaceshipNum = aNum;
 	enemyFighterNum = eNum;
-	network = net;
 }
 
 function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArray){
 	var changed = false;
 	var myFighterObj = myFighter.getObject();
 	var aliveBeamsNum = myFighter.getAliveBeamsNum();
-	var aliveBeams = myFighter.getAliveBeams();						//array con gli indici dei bullet vivi
+	var aliveBeams = myFighter.getAliveBeams();							//array con gli indici dei bullet vivi
 	for (var i = 0; i < enemyFighterNum; i++) {
 		if (enemyArray[i] != void) {
 			if(myFighterObj.isCollidingBBox(enemyArray[i].getObject())){
@@ -41,8 +39,8 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 			if(myFighterObj.isCollidingBBox(shipObj)){
 				if(ambientArray[i].isDestroyable()){
 					ambientArray[i].setCollision(true);
-					network.sendAmbientDestroyData(i, -1);
-				} else {
+				}
+				else{
 					changed = changed || checkCollisionDeep(myFighter, shipObj);
 				}
 			}
@@ -51,9 +49,8 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 				if(beam.isCollidingBBox(shipObj)){
 					if(ambientArray[i].isDestroyable()){
 						ambientArray[i].setCollision(true);
-						network.sendAmbientDestroyData(i, -1);					
 					}
-					beam.setCollided();
+					beam.setCollided();  
 					outputln("bullet collided");
 				}
 			}
@@ -64,10 +61,10 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 	}
 }
 
-function CollisionDetector::checkCollisionDeep(myFighter, shipObj) {
+function CollisionDetector::checkCollisionDeep(myFighter, shipObj){
 	var pos = myFighter.getPosition();
-	for(var j = 0; j < 6; j+=2) {
-		if(shipObj.isColliding(pos+myFighter.getCollVertex()[j+1],pos+myFighter.getCollVertex()[j])) {
+	for(var j = 0; j < 6; j+=2){
+		if(shipObj.isColliding(pos+myFighter.getCollVertex()[j+1],pos+myFighter.getCollVertex()[j])){
 			myFighter.setCollision(true); 
 			//myFighter.setCollisionInfo(collisionInfo);
 			return true;

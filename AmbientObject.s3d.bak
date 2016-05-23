@@ -2,7 +2,7 @@
 #define AMBIENT_OBJECT
 
 class AmbientObject {
-	var object;
+	var object;	
 	var pathCenter;
 	var pathRadius;
 	var orbitPeriod;
@@ -29,7 +29,6 @@ class AmbientObject {
 	getAmbientObjData();
 	getObject();
 	setCollision(bool);
-	isDestroyed();
 };
 
 function AmbientObject::init(mesh, type){
@@ -41,10 +40,6 @@ function AmbientObject::init(mesh, type){
 	currentLife = 100;
 	collision = false;
 	position = [0,0,0];
-	pathCenter = [0, 0, 0];
-	pathRadius = 0;
-	orbitPeriod = 1;
-	serverTime = 0;
 	
 	object = CVmObj(mesh);
 }
@@ -55,15 +50,9 @@ function AmbientObject::setCenter(center){
 
 function AmbientObject::getAmbientObjData()
 {
-	// ambientType, center, radius, orbitPeriod, serverTime
-	var data = vector(7);
+	var data = vector(2);
 	data[0] = objType;
-	data[1] = pathCenter.x;
-	data[2] = pathCenter.y;
-	data[3] = pathCenter.z;
-	data[4] = pathRadius;
-	data[5] = orbitPeriod;
-	data[6] = serverTime;
+	data[1] = currentLife;
 	return data;
 }
 
@@ -130,12 +119,8 @@ function AmbientObject::getObject() {
 	return object;
 }
 
-function AmbientObject::setCollision(bool) {
+function AmbientObject::setCollision(bool){
 	collision = bool;
-}
-
-function AmbientObject::isDestroyed() {
-	return collision;
 }
 
 #endif
