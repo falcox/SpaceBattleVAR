@@ -13,6 +13,7 @@
 #define ESCAPE_POD			0
 #define EMPEROR_SHUTTLE		1
 #define STAR_DESTROYER		2
+#define DEATH_STAR			3
 
 class MeshFactory {
 	var fighterMeshes;
@@ -52,6 +53,9 @@ function MeshFactory::MeshFactory()
 	ambientMeshes[STAR_DESTROYER] = CVmNewMesh("StarDestroyer.AAM");
 	ambientMeshes[STAR_DESTROYER].Scale(4);
 	ambientMeshes[STAR_DESTROYER].centerBoundingBox();
+	ambientMeshes[DEATH_STAR] = CVmNewMesh("DeathStar2.AAM");
+	ambientMeshes[DEATH_STAR].Scale(0.02);
+	ambientMeshes[DEATH_STAR].centerBoundingBox();
 	
 	
 	bulletMeshes = Array(2);

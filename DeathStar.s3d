@@ -1,0 +1,17 @@
+#include <AmbientObject.s3d>
+#include <MeshFactory.s3d>
+
+class DeathStar: AmbientObject {
+	
+	DeathStar(meshFactory);
+	isDestroyable();
+};
+
+function DeathStar::DeathStar(meshFactory){
+	AmbientObject::this.init( meshFactory.getAmbientMeshes(DEATH_STAR), DEATH_STAR);
+	//object.setScale(10);
+}
+
+function DeathStar::isDestroyable() {
+	return false;
+}

@@ -11,6 +11,7 @@ class AmbientObject {
 	var angle;
 	var objType;
 	var collision;
+	var position;
 	
 	var currentLife;		/* Life variable from 0 to 100 */
 	var velocity;
@@ -24,6 +25,7 @@ class AmbientObject {
 	setServerTime(time);
 	setAnimationFrame(frame_number);
 	update();
+	getPosition();
 	getAmbientObjData();
 	getObject();
 	setCollision(bool);
@@ -38,6 +40,7 @@ function AmbientObject::init(mesh, type){
 	currentFrame = 0;
 	currentLife = 100;
 	collision = false;
+	position = [0,0,0];
 	pathCenter = [0, 0, 0];
 	pathRadius = 0;
 	orbitPeriod = 1;
@@ -46,8 +49,8 @@ function AmbientObject::init(mesh, type){
 	object = CVmObj(mesh);
 }
 
-function AmbientObject::setCenter(position){
-	pathCenter = position;
+function AmbientObject::setCenter(center){
+	pathCenter = center;
 }
 
 function AmbientObject::getAmbientObjData()
@@ -94,15 +97,19 @@ function AmbientObject::draw(){
 
 function AmbientObject::update() {
 	var timeTickSecond = 0.001;
-	var position = [0, 0, 0];
+	//var position = [0, 0, 0];
 	if(time == 0){
 		time = GetTime();
 	}
 	time -= serverTime;
-	timeTickSecond *= ( (GetTime()-serverTime) - time);
+	timeTickSecond *= ((GetTime()-serverTime) - time);
 	
 	angle += (360.0/orbitPeriod)*timeTickSecond;
 	angle = angle % 360;
+	var a = (360.0/orbitPeriod);
+	/*trace(a);
+	trace(timeTicksecond);
+	trace(angle);*/
 	/*---rotazione oggetto---*/
 	object.SetRotation(-angle, object.GetYaxis());
 	
@@ -113,6 +120,10 @@ function AmbientObject::update() {
 	object.SetPosition(position);
 	
 	time = GetTime();
+}
+
+function AmbientObject::getPosition() {
+	return position;
 }
 
 function AmbientObject::getObject() {
