@@ -13,29 +13,32 @@ class LaserBeam{
 	var collision;
 	var direction;
 	var posThreshold;
-	var lastCalled;
+	var time;
+	var damage;
 	
-	LaserBeam(mesh, begin, end, time);
+	LaserBeam(mesh, begin, end, originTime, dmg);
 	rotateToDirection(dir);
 	setCollided();
 	setRotationMatrix(matrix);
 	isCollidingBBox(obj);
+	getDamage();
 	update();
 	draw();
 };
 
-function LaserBeam::LaserBeam(mesh, begin, end, t){
+function LaserBeam::LaserBeam(mesh, begin, end, originTime, dmg){
 	object = CVmObj(mesh);
 	initPos = begin;
 	actualPos = begin;
 	finalPos = end;
-	shootTime = t;
+	shootTime = originTime;
 	direction = finalPos-initPos;
 	posThreshold = modulus(direction);
 	direction = direction / posThreshold; 
 	collision = false;
-	LastCalled = 0;
-	outputln("new bullet!");
+	time = 0;
+	//outputln("new bullet!");
+	damage = dmg;
 }
 
 function LaserBeam::setRotationMatrix(matrix){
@@ -54,34 +57,28 @@ function LaserBeam::setCollided(){
 }
 
 function LaserBeam::update(){
-	//static var time = GetTime();
-	if(LastCalled == 0){
-		lastCalled = GetTime();
+	if(time == 0){
+		time = GetTime();
 	}
-	var time = lastCalled;
 	var killMe = false;
 	var timeTickSecond = 0.001;
 	var displacement;
-	//time -= shootTime;
-
-	timeTickSecond *= (GetTime() - time);
-	//outputln(sprintf("time :%f, timeTickSecond: %f", time, timeTickSecond));
+	time -= shootTime;
+	timeTickSecond *= ( (GetTime()-shootTime) - time);
 	
 	/*---settaggio direzione e posizione--- */
 	this.rotateToDirection(direction);
 	displacement = direction*timeTickSecond*LASER_SPEED;
-	//displacement = [0,0,0];
 	actualPos += displacement;
 	object.SetPosition(actualPos);
-	//trace(timeTickSecond);
 		
 	/*--- check se distruggere il proiettile ---*/
 	if(modulus(actualPos - initPos) > posThreshold || collision == true){
 		killMe = true;
-		outputln("bullet needs to be killed");
+		//outputln("bullet needs to be killed");
 	}
 	
-	lastCalled = GetTime();
+	time = GetTime();
 	return killMe;
 }
 
@@ -89,12 +86,15 @@ function LaserBeam::isCollidingBBox(obj){
 	return object.isCollidingBBox(obj);
 }
 
-function LaserBeam::draw(){   
+function LaserBeam::draw() {   
 	object.draw();
 #ifdef DEBUGGING
 	object.drawAxis();
 #endif
 }
 
+function LaserBeam::getDamage() {
+	return damage;
+}
 
 #endif

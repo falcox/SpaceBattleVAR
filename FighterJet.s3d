@@ -10,6 +10,7 @@
 #define SPEED_STEP	5
 #define MAX_LASER_RANGE 600
 #define MAX_BULLET_NUM	10
+#define MIN_DAMAGE		10
 
 class FighterJet {
 	var FighterObj;	
@@ -24,6 +25,7 @@ class FighterJet {
 	var beamArray;
 	var beamMesh;
 	var aliveBeams;
+	var network;
 	
 	var yaw;				/* Angle on Y axis */
 	var pitch;				/* Angle on X axis */
@@ -34,7 +36,7 @@ class FighterJet {
 	var currentFrame;
 	var bbox;
 	var collVertex;
-	var colliding;
+	var destroyed;
 	
 	init(mesh, type, bulletMesh);
 	draw();
@@ -44,6 +46,7 @@ class FighterJet {
 	setRelativeAngle(r, p, y);
 	setAnimationFrame(frame_number);
 	setCameraOffset(offsets);
+	addNetwork(net);
 	getAngleStep();
 	increaseSpeed();
 	decreaseSpeed();
@@ -58,11 +61,15 @@ class FighterJet {
 	getAngles();
 	getPosition();
 	fireBeam(offset);
+	addBeam(init_pos, end_pos, origin_time, dmg);
 	drawBeams();
 	getBeam(index);
 	getAliveBeams();
 	getAliveBeamsNum();
 	setCollidedBeam(index);
+	setCurrentLife(life);
+	decreaseLife(delta);
+	increaseLife(delta);
 };
 
 function FighterJet::init(mesh, type, bulletMesh) {
@@ -78,7 +85,7 @@ function FighterJet::init(mesh, type, bulletMesh) {
 	cameraMode = 0;
 	withCamera = false;
 	cameraModeOffset = {[0, 0], [0, 0]};
-	colliding = false;
+	destroyed = false;
 	collVertex = Array(6);
 	beamArray = Array(MAX_BULLET_NUM);
 	beamMesh = bulletMesh;
@@ -190,6 +197,11 @@ function FighterJet::setCameraOffset(offsets)
 	cameraModeOffset = offsets;
 }
 
+function FighterJet::addNetwork(net)
+{
+	network = net;
+}
+
 function FighterJet::draw(){
 	/*---only for debug purpose---*/
 	FighterObj.DrawAxis();
@@ -221,7 +233,7 @@ function FighterJet::update() {
 	rollDelta = 0;
 	
 	/*---settaggio direzione e posizione--- */
-	if(colliding){
+	if(destroyed){
 		outputln("collision!!");
 	}
 	
@@ -272,7 +284,7 @@ function FighterJet::getCollVertex(){
 }
 
 function FighterJet::setCollision(bool){
-	colliding = bool;
+	destroyed = bool;
 }
 
 function FighterJet::fireBeam(offset){
@@ -285,12 +297,25 @@ function FighterJet::fireBeam(offset){
 	
 	for(var i = 0; i < MAX_BULLET_NUM; i++){
 		if(beamArray[i] == void){
-    		beamArray[i] = LaserBeam(beamMesh, initPos, finalPos, GetTime());
+			var origin_time = GetTime();
+    		beamArray[i] = LaserBeam(beamMesh, initPos, finalPos, origin_time, MIN_DAMAGE);		//TODO: il danno deve essere "dinamico"
+			var data = {initPos.x, initPos.y, initPos.z, finalPos.x, finalPos.y, finalPos.z, origin_time, MIN_DAMAGE};
+    		network.sendLaserBeamData(data, -1);
     		aliveBeams++;
 			break;
 		}
 	}
-	
+}
+
+function FighterJet::addBeam(init_pos, end_pos, origin_time, dmg)
+{
+	for(var i = 0; i < MAX_BULLET_NUM; i++){
+		if(beamArray[i] == void){
+    		beamArray[i] = LaserBeam(beamMesh, init_pos, end_pos, origin_time, dmg);
+    		aliveBeams++;
+			break;
+		}
+	}
 }
 
 function FighterJet::getAliveBeamsNum(){
@@ -324,5 +349,25 @@ function FighterJet::drawBeams(){
 		}
 	}
 }
+
+function FighterJet::decreaseLife(delta){
+	currentLife-=delta;
+	if(currentLife<=0){
+		currentLife = 0;
+		destroyed = true;
+	}
+}
+function FighterJet::increaseLife(delta){
+	currentLife+=delta;
+	if(currentLife>100){
+		currentLife=100;
+	}
+}
+
+function FighterJet::setCurrentLife(life)
+{
+	currentLife = life;
+}
+
 
 #endif

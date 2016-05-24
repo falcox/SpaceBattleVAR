@@ -1,17 +1,53 @@
-#define DYNAMIC_LIGHTS	7
+#define ENVIRONMENT_LIGHTS	7
+#define RED_LIGHT		0
+#define GREEN_LIGHT		1
+
 
 class LightGenerator{
 	var LightArray;
+	var LightIsBusy;
 	
 	LightGenerator();
-	getLight();
+	requestLight(lightType);
+	releaseLight(idx);
+	setLightPostition(position, idx);
 };
 
 function LightGenerator::LightGenerator(){
-	LightArray = Array(DYNAMIC_LIGHTS);
-	
+	LightArray = Array(ENVIRONMENT_LIGHTS);
+	LightIsUsed = Array(ENVIRONMENT_LIGHTS);
+	for(var i=0; i<ENVIRONMENT_LIGHTS; i++){
+		LightArray[i] = CVmLight();
+		LightIsBusy[i] = false;
+	}
 }
 
-function getLight(){
-	
+function LightGenerator::requestLight(lightType){
+	var idx;
+	for(var i = 0; i < ENVIRONMENT_LIGHTS; i++){
+		if(!LightIsBusy[i]){
+			//allocala:
+			LightArray[i].setAmbient();
+			LightArray[i].setDiffuse();
+			LightArray[i].Enable();
+			LightIsBusy[i] = true;
+			
+			idx = i;
+		}
+	}
+}
+
+function LightGenerator::releaseLight(idx){
+	if(LightIsBusy[idx]){
+		LightArray[i].Disable();
+		LightIsBusy[i] = false;
+	}else{
+		outputln(sprintf("error in releasing light %d", idx));
+	}
+}
+
+function LightGenerator::setLightPostition(idx, position){
+	if(LightIsBusy[i]){
+		LightArray[i].setPosition(position);
+	}
 }

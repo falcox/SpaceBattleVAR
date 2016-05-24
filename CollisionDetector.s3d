@@ -19,6 +19,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 	var myFighterObj = myFighter.getObject();
 	var aliveBeamsNum = myFighter.getAliveBeamsNum();
 	var aliveBeams = myFighter.getAliveBeams();						//array con gli indici dei bullet vivi
+	var enemyBeams;
 	for (var i = 0; i < enemyFighterNum; i++) {
 		if (enemyArray[i] != void) {
 			if(myFighterObj.isCollidingBBox(enemyArray[i].getObject())){
@@ -28,9 +29,18 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 			for(var j = 0; j<aliveBeamsNum; j++){
 				var beam = myFighter.getBeam(AliveBeams[j]);
 				if(beam.isCollidingBBox(enemyArray[i].getObject())){
-					//TODO: gestisci la hit dei nemici
+					//TODO: gestisci la hit dei nemici (sarà il nemico a dirmi che l'ho preso, qui faccio sparire solo il proiettile)
 					beam.setCollided();
-					outputln("bullet collided");
+					//outputln("Hit enemy!");
+				}
+			}
+			enemyBeams = enemyArray[i].getAliveBeams();
+			for(var j = 0; j<len(enemyBeams); j++) {
+				var beam = enemyArray[i].getBeam(enemyBeams[j]);
+				if(beam.isCollidingBBox(myFighterObj)){
+					myFighter.decreaseLife(beam.getDamage());
+					beam.setCollided();
+					outputln("I've been hit!");
 				}
 			}
 		}
