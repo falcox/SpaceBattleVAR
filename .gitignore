@@ -29,3 +29,6 @@ Thumbs.db
 *.bin
 *.dbg
 
+# Winmerge backup files #
+#########################
+*.bak
