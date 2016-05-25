@@ -40,6 +40,7 @@ var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
 var meshes;
 var mySkyBox;
 var myRadar;
+var myHud;
 
 
 /* Function declarations */
@@ -91,6 +92,9 @@ function OnInit(params)
 	
 	myRadar = Radar();
 	
+	myHud = Hud();
+	myHud.increaseKillCounter(4);
+	myHud.increaseKillCounter(5);
 
 	/*ambientSpaceship[0] = DeathStar( meshes );
 	ambientSpaceship[0].setCenter([2500, 2000, 2500]);
@@ -137,10 +141,7 @@ function OnFrame()
 	
 	myRadar.draw();
 	
-	if (ambientSpaceship[0] != void) {
-		var pos = ambientSpaceship[0].object.getPosition();
-		ConsoleText(0.05,0.9,"Ambient[0] ["+str(pos.x)+","+str(pos.y)+","+str(pos.z)+"]");
-	}
+	myHud.draw();
 	
 	SceneEnd();
 	
@@ -258,6 +259,12 @@ function OnEvent(eventID, wparam, lparam){
 		if (eventId == networkController.isFighterDestroyedEvent()) {
 			// [dead_playerId, killer_playerId]
 			outputln(sprintf("Player %d has killed player %d", wparam[0], wparam[1]));
+			if (wparam[0] != networkController.getId()) {
+				enemiesFighter.setDestroyed(true);
+			}
+			if (wparam[1] == networkController.getId()) {
+				myHud.increaseKillCounter();
+			}
 		} else
 		if (eventId == networkController.isIdEvent()) {
 			if (wparam != -2) {

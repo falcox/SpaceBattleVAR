@@ -57,6 +57,7 @@ class FighterJet {
 	getFighterData();
 	getObject();
 	setCollision(bool);
+	setDestroyed(bool);
 	updateCollVertex(bbox);
 	getCollVertex();
 	getAngles();
@@ -214,6 +215,7 @@ function FighterJet::draw(){
 }
 
 function FighterJet::update() {
+	//TODO: se destroyed è true facciamo return false e da fuori si respawna
 	if (time == 0) {
 		time = GetTime();
 	}
@@ -264,6 +266,11 @@ function FighterJet::update() {
 	}
 	
 	time = GetTime();
+}
+
+function FighterJet::setDestroyed(bool)
+{
+	destroyed = bool;
 }
 
 function FighterJet::getObject(){

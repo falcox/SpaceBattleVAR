@@ -1,5 +1,89 @@
-class Hud {
-	
-	
-	
+#define ROWSPAN 		0.03
+#define MSG_LIFETIME 	5000
+#define MSG_QUEUE_LEN	20
+
+class Message {
+	var msg;
+	var lifetime;
 };
+
+class Hud {
+	var deathNumber;
+	var killNumber;
+	var msgPool;
+	
+	Hud();
+	increaseDeathCounter(playerId);
+	increaseKillCounter(playerId);
+	appendMessage(message);
+	draw();
+	resetHud();
+};
+
+function Hud::Hud()
+{
+	deathNumber = 0;
+	killNumber = 0;
+	msgPool = Array(MSG_QUEUE_LEN);
+}
+
+function Hud::draw()
+{
+	static var time = GetTime();
+	static var tick = 0;
+	var rowy = 0.07;
+	tick = GetTime() - time;
+	glEnable(GL_BLEND);
+	ConsoleColor(0.1, 1, 0.1, 0.3);
+	ConsoleFilledRect(0.1, 0.1, 0.7, 0.1 );
+	for (var i = 0; i < MSG_QUEUE_LEN; i++) {
+		if (msgPool[i] != void) {
+			ConsoleColor(1, 1, 1, 1);
+			ConsoleText (0.11, rowy, msgPool[i].msg);
+			rowy -= ROWSPAN;
+			msgPool[i].lifetime -= tick;
+			if (msgPool[i].lifetime <= 0) {
+				msgPool[i] = void;
+			}
+		}
+	}
+	
+	time = GetTime();
+}
+
+function Hud::resetHud()
+{
+	deathNumber = 0;
+	killNumber = 0;
+}
+
+function Hud::appendMessage(string)
+{
+	for (var i = 0; i < MSG_QUEUE_LEN; i++) {
+		if (msgPool[i] == void) {
+			var msg = Message();
+			msg.msg = string;
+			msg.lifetime = MSG_LIFETIME;
+			msgPool[i] = msg;
+			break;
+		}
+	}
+}
+
+function Hud::increaseDeathCounter(playerId)
+{
+	deathNumber++;
+	var msg = sprintf("Player %d has killed you!", playerId);
+	appendMessage(msg);
+}
+
+function Hud::increaseKillCounter(playerId)
+{
+	killNumber++;
+	var msg = sprintf("Killed player %d!", playerId);
+	appendMessage(msg);
+}
+
+	
+	
+	
