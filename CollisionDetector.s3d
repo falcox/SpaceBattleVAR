@@ -38,7 +38,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 			for(var j = 0; j<len(enemyBeams); j++) {
 				var beam = enemyArray[i].getBeam(enemyBeams[j]);
 				if(beam.isCollidingBBox(myFighterObj)){
-					myFighter.decreaseLife(beam.getDamage());
+					myFighter.decreaseLife(beam.getDamage(), i);
 					beam.setCollided();
 					outputln("I've been hit!");
 				}

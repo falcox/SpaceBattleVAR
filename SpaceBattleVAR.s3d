@@ -23,6 +23,7 @@
 #include <Radar.s3d>
 #include <CollisionDetector.s3d>
 #include <AmbientEngine.s3d>
+#include <Hud.s3d>
 
 /* Set global scene parameters */
 SET SCENE_FOV  = 90;
@@ -189,10 +190,6 @@ function OnTimer()
 
 function OnEvent(eventID, wparam, lparam){
 	if (networkController != void) {
-		if (eventId == networkController.isIdEvent()) {
-			ambientController.start();
-			Outputln(Sprintf("GET ID: %d", wparam));
-		} else
 		if (eventId == networkController.isEnemyDataEvent()) {
 			var id = wparam[0];
 			var type = wparam[1];
@@ -219,6 +216,16 @@ function OnEvent(eventID, wparam, lparam){
 			enemiesFighter[id].setSpeed(wparam[8]);
 			enemiesFighter[id].setAnimationFrame(wparam[9]);
 			enemiesFighter[id].setCurrentLife(wparam[10]);
+		} else
+		if (eventId == networkController.isLaserBeamEvent()) {
+			var player = wparam[0];
+			var ipos = [wparam[1], wparam[2], wparam[3]];
+			var epos = [wparam[4], wparam[5], wparam[6]];
+			var serverTime = wparam[7];
+			var dmg = wparam[8];
+			if (enemiesFighter[player] != void) {
+				enemiesFighter[player].addBeam(ipos, epos, serverTime, dmg);
+			}
 		} else
 		if (eventId == networkController.isEnemyExitEvent()) {
 			enemiesFighter[wparam] = void;
@@ -248,17 +255,18 @@ function OnEvent(eventID, wparam, lparam){
 			ambientSpaceship[id].setOrbitPeriod(wparam[6]);
 			ambientSpaceship[id].setServerTime(wparam[7]);
 		} else
-		if (eventId == networkController.isLaserBeamEvent()) {
-			var player = wparam[0];
-			var ipos = [wparam[1], wparam[2], wparam[3]];
-			var epos = [wparam[4], wparam[5], wparam[6]];
-			var serverTime = wparam[7];
-			var dmg = wparam[8];
-			if (enemiesFighter[player] != void) {
-				enemiesFighter[player].addBeam(ipos, epos, serverTime, dmg);
+		if (eventId == networkController.isFighterDestroyedEvent()) {
+			// [dead_playerId, killer_playerId]
+			outputln(sprintf("Player %d has killed player %d", wparam[0], wparam[1]));
+		} else
+		if (eventId == networkController.isIdEvent()) {
+			if (wparam != -2) {
+				ambientController.start();
+				Outputln(Sprintf("GET ID: %d", wparam));
+			} else {
+				//TODO: errore troppi giocatori
 			}
 		}
-		
 	}
 }
 

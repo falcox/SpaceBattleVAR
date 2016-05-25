@@ -36,6 +36,7 @@ class FighterJet {
 	var currentFrame;
 	var bbox;
 	var collVertex;
+	var collided;
 	var destroyed;
 	
 	init(mesh, type, bulletMesh);
@@ -68,7 +69,7 @@ class FighterJet {
 	getAliveBeamsNum();
 	setCollidedBeam(index);
 	setCurrentLife(life);
-	decreaseLife(delta);
+	decreaseLife(delta, enemy_id_hit);
 	increaseLife(delta);
 };
 
@@ -85,6 +86,7 @@ function FighterJet::init(mesh, type, bulletMesh) {
 	cameraMode = 0;
 	withCamera = false;
 	cameraModeOffset = {[0, 0], [0, 0]};
+	collided = false;
 	destroyed = false;
 	collVertex = Array(6);
 	beamArray = Array(MAX_BULLET_NUM);
@@ -233,7 +235,7 @@ function FighterJet::update() {
 	rollDelta = 0;
 	
 	/*---settaggio direzione e posizione--- */
-	if(destroyed){
+	if(collided){
 		outputln("collision!!");
 	}
 	
@@ -284,7 +286,7 @@ function FighterJet::getCollVertex(){
 }
 
 function FighterJet::setCollision(bool){
-	destroyed = bool;
+	collided = bool;
 }
 
 function FighterJet::fireBeam(offset){
@@ -350,11 +352,13 @@ function FighterJet::drawBeams(){
 	}
 }
 
-function FighterJet::decreaseLife(delta){
+function FighterJet::decreaseLife(delta, enemy_id_hit) {
 	currentLife-=delta;
-	if(currentLife<=0){
+	if(currentLife <= 0 && destroyed == false){
 		currentLife = 0;
 		destroyed = true;
+		outputln("Ho mandato il pacchetto");
+		network.sendFighterDestroyedData(-1, enemy_id_hit);
 	}
 }
 function FighterJet::increaseLife(delta){

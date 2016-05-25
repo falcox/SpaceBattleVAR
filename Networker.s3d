@@ -2,7 +2,8 @@
 
 //#define BROADCAST_ADDRESS "10.0.0.255"
 //#define BROADCAST_ADDRESS "10.1.197.255"
-#define BROADCAST_ADDRESS "10.30.3.255"
+//#define BROADCAST_ADDRESS "10.30.3.255"
+#define BROADCAST_ADDRESS "192.168.225.255"
 //#define BROADCAST_ADDRESS "192.168.100.255"
 
 #define SERVER_ADV_PDU			1
@@ -14,9 +15,9 @@
 #define AMBIENT_PDU_ACK			7
 #define AMBIENT_DESTROYED		8
 #define AMBIENT_DESTROYED_ACK	9
-/* to be implemented */
 #define LASERBEAM_PDU			10
 #define LASERBEAM_PDU_ACK		11
+/* to be implemented */
 #define FIGHTER_DESTROYED		12
 #define FIGHTER_DESTROYED_ACK	13
 
@@ -48,8 +49,10 @@
  * 				AMBIENT_PDU_ACK:		{7, msgId, playerId}
  * 				AMBIENT_DESTROYED		{8, msgId, ambientId}
  * 				AMBIENT_DESTROYED_ACK	{9, msgId, playerId}
- * 				LASERBEAM_PDU			{10, msgId, origin_playerId, iposx, iposy, iposz, eposx, eposy, eposz, originTime, damage}
+ * 				LASERBEAM_PDU			{10, msgId, playerId, origin_playerId, iposx, iposy, iposz, eposx, eposy, eposz, originTime, damage}
  * 				LASERBEAM_PDU_ACK		{11, msgId, playerId}
+ * 				FIGHTER_DESTROYED		{12, msgId, sender_playerId, dead_playerId, killer_playerId} 
+ * 				FIGHTER_DESTROYED_ACK	{13, msgId, playerId}
  */
 
 class player {
@@ -81,6 +84,7 @@ class Networker {
 	var ambientDataEvent;
 	var ambientDestroyEvent;
 	var laserBeamEvent;
+	var fighterDestroyedEvent;
 	
 	Networker();
 	getId();
@@ -92,10 +96,15 @@ class Networker {
 	isAmbientDataEvent();
 	isAmbientDestroyEvent();
 	isLaserBeamEvent();
+	isFighterDestroyedEvent();
 	sendFighterData(fighterData);
 	sendAmbientData(ambientId, ambientData);
 	sendAmbientDestroyData(ambientId, idExcluded);
+	sendAmbientDestroyAck(destination, ackIdMsg);
 	sendLaserBeamData(laserData, idExcluded);
+	sendLaserBeamAck(destination, ackIdMsg);
+	sendFighterDestroyedData(dead_player, killer_player);
+	sendFighterDestroyedAck(destination, ackIdMsg);
 	
 	/*private*/
 	playerLost(id);
@@ -103,8 +112,6 @@ class Networker {
 	sendReqId(req_id);
 	sendAckId(destination, ackIdMsg, ack_id);
 	sendAmbientDataAck(ackIdMsg);
-	sendAmbientDestroyAck(destination, ackIdMsg);
-	sendLaserBeamAck(destination, ackIdMsg);
 	sendKeepalive();
 	relayPlayerData(PDU);
 };
@@ -157,6 +164,11 @@ function Networker::isLaserBeamEvent()
 	return laserBeamEvent;
 }
 
+function Networker::isFighterDestroyedEvent()
+{
+	return fighterDestroyedEvent;
+}
+
 function Networker::Networker()
 {
 	playerId = -1;
@@ -177,6 +189,7 @@ function Networker::Networker()
 	ambientDataEvent = Event();
 	ambientDestroyEvent = Event();
 	laserBeamEvent = Event();
+	fighterDestroyedEvent = Event();
 }
 
 function Networker::getId()
@@ -411,6 +424,45 @@ function Networker::sendLaserBeamAck(destination, ackIdMsg)
 	NetVarSendTo(destination, 50023, PDU);
 }
 
+function Networker::sendFighterDestroyedData(dead_player, killer_player)
+{
+	//FIGHTER_DESTROYED		{12, msgId, sender_playerId, dead_playerId, killer_playerId} 
+	var PDU = vector(5);
+	PDU[0] = FIGHTER_DESTROYED;
+	PDU[1] = 0;
+	PDU[2] = playerId;
+	PDU[3] = dead_player;
+	PDU[4] = killer_player;
+	/* If i am the server share information with clients, else send the information to the server */
+	if (server == true) {
+		if (dead_player == -1) {
+			PDU[3] = playerId;
+		}
+		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+			/* Check if there is an entry, then if it is not me then send the PDU */
+			/* Because we receive the packet from the destroyed player, we will not resend this packet to him */
+			if (player_list[i] != void && i != playerId && i != dead_player) {
+				resendWindow.add(i, player_list[i].playerIpAddress, PDU);
+			}
+		}
+	} else {
+		/* if I am not server, we are sending this packet so I am the one destroyed */
+		PDU[3] = playerId;
+		/* We are not a server so send this packet to the server */
+		resendWindow.add(serverId, serverIp, PDU);
+	}
+}
+
+function Networker::sendFighterDestroyedAck(destination, ackIdMsg)
+{
+	//FIGHTER_DESTROYED_ACK	{13, msgId, playerId}
+	var PDU = vector(3);
+	PDU[0] = FIGHTER_DESTROYED_ACK;
+	PDU[1] = ackIdMsg;
+	PDU[2] = playerId;
+	NetVarSendTo(destination, 50023, PDU);
+}
+
 function Networker::playerLost(id)
 {
 	player_list[id] = void;
@@ -432,6 +484,7 @@ function Networker::poll()
 	while(data_ready) {
 		var sender = "................";
 		var received_data = NetVarReceiveFrom(advServerChannel,&sender);
+		var debug_pkt_loss = Rand(100); // TODO: pkt loss debug
 		if(received_data != void) {
 			if(received_data[1] != playerId) {
 				//trace(received_data);
@@ -446,6 +499,7 @@ function Networker::poll()
 						} else {
 							//TODO ERRORE! troppi giocatori
 							Outputln("MAX PLAYER NUMBER REACHED!");
+							EventPost(idEvent,-2,1);
 						}
 					}
 					if (server == true) {
@@ -578,6 +632,19 @@ function Networker::poll()
 					EventPost(laserBeamEvent, data, 1);
 				} else
 				if (received_data[0] == LASERBEAM_PDU_ACK) {
+					resendWindow.ackReceived(received_data[2], received_data[1]);
+				} else
+				if (received_data[0] == FIGHTER_DESTROYED) {
+					//FIGHTER_DESTROYED		{12, msgId, sender_playerId, dead_playerId, killer_playerId}
+					if (server == true) {
+						sendFighterDestroyedData(received_data[3], received_data[4]);
+					}
+					sendFighterDestroyedAck(sender, received_data[1]);
+					var data = {received_data[3], received_data[4]};
+					EventPost(fighterDestroyedEvent, data, 1);
+				} else
+				if (received_data[0] == FIGHTER_DESTROYED_ACK) {
+					//FIGHTER_DESTROYED_ACK	{13, msgId, playerId}
 					resendWindow.ackReceived(received_data[2], received_data[1]);
 				}
 			}
