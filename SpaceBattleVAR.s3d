@@ -60,7 +60,7 @@ function OnDownload()
 	FileDownload("3d_models/StarDestroyer3.zip");
 	FileDownload("images/spacebackgrounds.zip");
 	FileDownload("images/billboards.zip");
-	
+	FileDownload("avi/explosion.zip");
 }
 
 function OnInit(params)
@@ -124,12 +124,18 @@ function OnFrame()
 
 	/*---here we draw our fighter---*/
 	mySkyBox.draw();
-	myFighter.draw();
+	
+	if (myFighter.draw() == false) {
+		myFighter.resetFighter();
+		myFighter.SetPosition([rand(500),rand(500),rand(500)]);
+	}
 	
 	/*---here we draw all enemies fighter---*/
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		if (enemiesFighter[i] != void) {
-			enemiesFighter[i].draw();
+			if (enemiesFighter[i].draw() == false) {
+				enemiesFighter[i].resetFighter();
+			}
 		}
 	}
 	/*---here we draw all ambient spaceships---*/
@@ -165,7 +171,7 @@ function OnTimer()
 	}
 	
 	ambientController.tick(ambientSpaceship);
-	collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
+	
 	myFighter.update();	
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		if (enemiesFighter[i] != void) {
@@ -179,6 +185,9 @@ function OnTimer()
 	}
 	mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
 	myRadar.update(myFighter, ambientSpaceship, enemiesFighter);
+	
+	collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
+	
 	// TEMPORANEO! rimuovo gli elementi ambiente distrutti
 	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
 		if (ambientSpaceship[i] != void) {
@@ -258,12 +267,14 @@ function OnEvent(eventID, wparam, lparam){
 		} else
 		if (eventId == networkController.isFighterDestroyedEvent()) {
 			// [dead_playerId, killer_playerId]
-			outputln(sprintf("Player %d has killed player %d", wparam[0], wparam[1]));
+			outputln(sprintf("Player %d has killed player %d", wparam[1], wparam[0]));
 			if (wparam[0] != networkController.getId()) {
-				enemiesFighter.setDestroyed(true);
+				enemiesFighter[ wparam[0] ].setDestroyed(true);
+			} else {
+				myHud.increaseDeathCounter(wparam[1]);
 			}
 			if (wparam[1] == networkController.getId()) {
-				myHud.increaseKillCounter();
+				myHud.increaseKillCounter(wparam[0]);
 			}
 		} else
 		if (eventId == networkController.isIdEvent()) {

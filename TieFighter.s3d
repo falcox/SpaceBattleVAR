@@ -7,7 +7,7 @@ class TieFighter: FighterJet {
 
 function TieFighter::TieFighter(meshFactory)
 {
-	FighterJet::this.init(meshFactory.getFighterMeshes(TIE_TYPE), TIE_TYPE);
+	FighterJet::this.init(meshFactory, TIE_TYPE);
 	//TODO: Fix camera offset
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
 }

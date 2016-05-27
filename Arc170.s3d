@@ -7,7 +7,7 @@ class Arc170: FighterJet {
 
 function Arc170::Arc170(meshFactory)
 {
-	FighterJet::this.init(meshFactory.getFighterMeshes(ARC170_TYPE), ARC170_TYPE);
+	FighterJet::this.init(meshFactory, ARC170_TYPE);
 	//TODO: Fix camera offset
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
 }

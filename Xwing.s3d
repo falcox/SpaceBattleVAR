@@ -17,7 +17,7 @@ function Xwing::Xwing(meshFactory)
 	BeamOffsetsFrameZero = Array(4);
 	BeamOffsetsFrameTwenty = {[17.5,4.5,2],[-17.5,4.5,2],[17.5,-4.5,2],[-17.5,-4.5,2]};
 	BeamOffsetsFrameZero = {[18.2,1.3,2], [-18.2,1.3,2], [18.2,-1.3,2], [-18.2,-1.3,2]};
-	FighterJet::this.init(meshFactory.getFighterMeshes(XWING_TYPE), XWING_TYPE, meshFactory.getBulletMeshes(RED_BEAM));
+	FighterJet::this.init(meshFactory, XWING_TYPE, RED_BEAM);
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
 }
 

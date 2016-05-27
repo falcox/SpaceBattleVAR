@@ -33,6 +33,7 @@ function AmbientEngine::AmbientEngine(net, mesh)
 
 function AmbientEngine::tick(ambientArray)
 {
+	var objType = -1;
 	/* Maybe every <tot> seconds roll a die to put an ambient object on the field */
 	static var time = GetTime();
 	var timeTickSecond = 0.001;

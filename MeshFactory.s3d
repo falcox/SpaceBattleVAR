@@ -15,15 +15,19 @@
 #define STAR_DESTROYER		2
 #define DEATH_STAR			3
 
+#define EXPLOSION			0
+
 class MeshFactory {
 	var fighterMeshes;
 	var ambientMeshes;
 	var bulletMeshes;
+	var aviResources;
 	
 	MeshFactory();
 	getFighterMeshes(fighterType);
 	getAmbientMeshes(ambientType);
 	getBulletMeshes(bulletType);
+	getAviResources(type);
 };
 
 function MeshFactory::MeshFactory()
@@ -76,6 +80,9 @@ function MeshFactory::MeshFactory()
 	greenMaterial.emission = [0,1,0,1];
 	greenMaterial.shininess = 128;
 	bulletMeshes[GREEN_BEAM].setMaterial(greenMaterial);
+	
+	aviResources = Array(1);
+	aviResources[EXPLOSION] = CVmBillboard("explosion.avi");
 }
 
 function MeshFactory::getFighterMeshes(fighterType)
@@ -88,11 +95,14 @@ function MeshFactory::getAmbientMeshes(ambientType)
 	return ambientMeshes[ambientType];
 }
 
-
 function MeshFactory::getBulletMeshes(bulletType)
 {
 	return bulletMeshes[bulletType];
 }
 
+function MeshFactory::getAviResources(type)
+{
+	return aviResources[type];
+}
 
 #endif

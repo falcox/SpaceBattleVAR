@@ -38,8 +38,9 @@ class FighterJet {
 	var collVertex;
 	var collided;
 	var destroyed;
+	var expl;
 	
-	init(mesh, type, bulletMesh);
+	init(meshes, fType, beamType);
 	draw();
 	setPosition(position);
 	setSpeed(speed);
@@ -72,14 +73,16 @@ class FighterJet {
 	setCurrentLife(life);
 	decreaseLife(delta, enemy_id_hit);
 	increaseLife(delta);
+	resetFighter();
 };
 
-function FighterJet::init(mesh, type, bulletMesh) {
+function FighterJet::init(meshes, fType, beamType) {
+	var fighterMesh = meshes.getFighterMeshes(fType);
 	yaw = 0;
 	roll = 0;
 	pitch = 0;
 	time = 0;
-	FighterType = type;
+	FighterType = fType;
 	FighterPos = [0,0,0];
 	velocity = MIN_SPEED;
 	currentFrame = 0;
@@ -91,11 +94,12 @@ function FighterJet::init(mesh, type, bulletMesh) {
 	destroyed = false;
 	collVertex = Array(6);
 	beamArray = Array(MAX_BULLET_NUM);
-	beamMesh = bulletMesh;
+	beamMesh = meshes.getBulletMeshes(beamType);
 	aliveBeams = 0;
+	expl = meshes.getAviResources(EXPLOSION);
 	
-	FighterObj = CVmObj(mesh);
-	bbox = mesh.getBoundingBox();
+	FighterObj = CVmObj(fighterMesh);
+	bbox = fighterMesh.getBoundingBox();
 	collVertex = updateCollVertex(bbox);
 }
 
@@ -205,17 +209,36 @@ function FighterJet::addNetwork(net)
 	network = net;
 }
 
-function FighterJet::draw(){
+function FighterJet::draw() {
 	/*---only for debug purpose---*/
 	FighterObj.DrawAxis();
 	FighterObj.DrawBoundingBox();
 	
-	FighterObj.draw(VR_FRAMENUMBER, currentFrame);
+	if (!destroyed) {
+		FighterObj.draw(VR_FRAMENUMBER, currentFrame);
+	} else if (expl.GetAviFrame() < expl.GetAviTotalFrame()-1) {
+		expl.SetSize(50.0, 50.0);
+		expl.SetPosition(FighterObj.GetPosition());
+		glColor(1.0, 1.0, 1.0, 1.0);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+   		glDepthMask(GL_FALSE);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		expl.Draw(VR_NOLOOP);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glEnable(GL_DEPTH_TEST);
+   		glDepthMask(GL_TRUE);
+   		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		return false;
+	}
+	
 	this.drawBeams();
+	return true;
 }
 
 function FighterJet::update() {
-	//TODO: se destroyed è true facciamo return false e da fuori si respawna
 	if (time == 0) {
 		time = GetTime();
 	}
@@ -225,25 +248,27 @@ function FighterJet::update() {
 	var displacement;
 	timeTickSecond *= (GetTime() - time);
 
-	/*---rotazione oggetto---*/
-	FighterObj.Rotate(pitchDelta, [1,0,0]);
-	FighterObj.Rotate(yawDelta, [0,1,0]);
-	FighterObj.Rotate(rollDelta, [0,0,1]);
-	pitch = (pitch + pitchDelta) % 360;
-	yaw = (yaw + yawDelta) % 360;
-	roll = (roll + rollDelta) % 360;
-	pitchDelta = 0;
-	yawDelta = 0;
-	rollDelta = 0;
-	
-	/*---settaggio direzione e posizione--- */
-	if(collided){
-		outputln("collision!!");
+	if (destroyed == false) {
+		/*---rotazione oggetto---*/
+		FighterObj.Rotate(pitchDelta, [1,0,0]);
+		FighterObj.Rotate(yawDelta, [0,1,0]);
+		FighterObj.Rotate(rollDelta, [0,0,1]);
+		pitch = (pitch + pitchDelta) % 360;
+		yaw = (yaw + yawDelta) % 360;
+		roll = (roll + rollDelta) % 360;
+		pitchDelta = 0;
+		yawDelta = 0;
+		rollDelta = 0;
+		
+		/*---settaggio direzione e posizione--- */
+		if(collided){
+			outputln("collision!!");
+		}
+		
+		direction = FighterObj.GetZaxis();
+		displacement = velocity * timeTickSecond;
+		setPosition(FighterPos+displacement*direction);
 	}
-	
-	direction = FighterObj.GetZaxis();
-	displacement = velocity * timeTickSecond;
-	setPosition(FighterPos+displacement*direction);
 
 	/*--- aggiorna i proiettili ---*/
 	for(var i = 0; i <MAX_BULLET_NUM; i++){
@@ -276,7 +301,6 @@ function FighterJet::setDestroyed(bool)
 function FighterJet::getObject(){
 	return FighterObj;
 }
-
 
 function FighterJet::updateCollVertex(bbox){
 	var ret;
@@ -360,24 +384,42 @@ function FighterJet::drawBeams(){
 }
 
 function FighterJet::decreaseLife(delta, enemy_id_hit) {
-	currentLife-=delta;
+	currentLife -= delta;
 	if(currentLife <= 0 && destroyed == false){
 		currentLife = 0;
 		destroyed = true;
-		outputln("Ho mandato il pacchetto");
-		network.sendFighterDestroyedData(-1, enemy_id_hit);
+		network.sendFighterDestroyedData(network.GetId(), enemy_id_hit);
 	}
 }
+
 function FighterJet::increaseLife(delta){
-	currentLife+=delta;
-	if(currentLife>100){
-		currentLife=100;
+	currentLife += delta;
+	if(currentLife > 100){
+		currentLife = 100;
 	}
 }
 
 function FighterJet::setCurrentLife(life)
 {
 	currentLife = life;
+}
+
+function FighterJet::resetFighter()
+{
+	expl.SetAviFrame(0);
+	destroyed = false;
+	currentLife = 100;
+	for(var i = 0; i < MAX_BULLET_NUM; i++) {
+		beamArray[i] = void;
+	}
+	aliveBeams = 0;
+	FighterObj.SetRotationMatrix([	1, 0, 0, 0, 
+									0, 1, 0, 0, 
+									0, 0, 1, 0, 
+									0, 0, 0, 1
+	]);
+	setSpeed(MIN_SPEED);
+	setAnimationFrame(0);
 }
 
 

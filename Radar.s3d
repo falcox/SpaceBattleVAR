@@ -93,7 +93,8 @@ function Radar::draw(){
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	
-	glTranslate(RATIO_W*3/4, RATIO_H*5/8);
+	//glTranslate(RATIO_W*3/4, RATIO_H*5/8);
+	glTranslate(RATIO_W*27/32, RATIO_H*12/16);
 	SetActiveTexture(radarTexture);
 	glBegin(GL_QUADS);
 		//glNormal(0, 0, 1);
@@ -108,7 +109,8 @@ function Radar::draw(){
 	//glTranslate(RATIO_W/2, RATIO_H/2);
 
 	glLoadIdentity();
-	glTranslate(RATIO_W*3/4+RATIO_H/8, RATIO_H*5/8 + RATIO_H/8);
+	//glTranslate(RATIO_W*3/4+RATIO_H/8, RATIO_H*5/8 + RATIO_H/8);
+	glTranslate(RATIO_W*27/32+RATIO_H/8, RATIO_H*12/16 + RATIO_H/8);
 	setActiveTexture(dotTexture);
 	glBegin(GL_QUADS);
 		//glPointSize(150);
