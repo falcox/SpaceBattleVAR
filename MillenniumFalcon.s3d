@@ -7,7 +7,7 @@ class MillenniumFalcon: FighterJet {
 
 function MillenniumFalcon::MillenniumFalcon(meshFactory)
 {
-	FighterJet::this.init(meshFactory.getFighterMeshes(MILLFALC_TYPE), MILLFALC_TYPE);
+	FighterJet::this.init(meshFactory, MILLFALC_TYPE);
 	//TODO: Fix camera offset
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
 }

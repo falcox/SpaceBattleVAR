@@ -2,13 +2,13 @@
 #include <MeshFactory.s3d>
 
 class TieFighter: FighterJet {
-	TieFighter(meshFactory);
+	TieFighter(meshFactory, lights);
 	fireBeam();
 };
 
 function TieFighter::TieFighter(meshFactory, lights)
 {
-	FighterJet::this.init(meshFactory.getFighterMeshes(TIE_TYPE), lights, TIE_TYPE, meshFactory.getBulletMeshes(GREEN_BEAM));
+	FighterJet::this.init(meshFactory, lights, TIE_TYPE, GREEN_BEAM);
 	//TODO: Fix camera offset
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
 	lightType = GREEN_LIGHT;

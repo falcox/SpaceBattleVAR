@@ -45,12 +45,12 @@ function Radar::update(myFighter, ambientArray, enemyArray){
 			testDist = testPos-fighterPos;
 			if(modulus(testDist)<=RADAR_RADIUS){
 				//pointsArray[j++] = testPos;
-				projection[0] = (testDist*fighterX)*RATIO_W/RADAR_RADIUS;
-				projection[1] = testDist*fighterZ*RATIO_W/RADAR_RADIUS;
+				projection[0] = (testDist*fighterX)*(RATIO_W/16)/RADAR_RADIUS;
+				projection[1] = (testDist*fighterZ)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[2] = abs(testDist*fighterY)/modulus(testDist);
-				outputln(sprintf("alpha intensity: %f", projection.z));
+//				outputln(sprintf("alpha intensity: %f", projection.z));
 				pointsArray[j++] = projection;
-				outputln(sprintf("alpha stored: %f", pointsArray[i].z));
+//				outputln(sprintf("alpha stored: %f", pointsArray[j-1].z));
 			}
 		}
 	}
@@ -71,7 +71,7 @@ function Radar::update(myFighter, ambientArray, enemyArray){
 				projection[0] = -(testDist*fighterX)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[1] = (testDist*fighterZ)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[2] = abs(testDist*fighterY)/modulus(testDist);
-				outputln(sprintf("alpha intensity: %f", projection[2]));
+//				outputln(sprintf("alpha intensity: %f", projection[2]));
 				pointsArray[j++] = projection;
 //				outputln(sprintf("alpha stored: %f", pointsArray[j].z));
 #endif

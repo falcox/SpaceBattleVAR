@@ -15,15 +15,19 @@
 #define STAR_DESTROYER		2
 #define DEATH_STAR			3
 
+#define EXPLOSION			0
+
 class MeshFactory {
 	var fighterMeshes;
 	var ambientMeshes;
 	var bulletMeshes;
+	var aviResources;
 	
 	MeshFactory();
 	getFighterMeshes(fighterType);
 	getAmbientMeshes(ambientType);
 	getBulletMeshes(bulletType);
+	getAviResources(type);
 };
 
 function MeshFactory::MeshFactory()
@@ -42,7 +46,7 @@ function MeshFactory::MeshFactory()
 	fighterMeshes[ARC170_TYPE].centerBoundingBox();
 	
 	fighterMeshes[MILLFALC_TYPE] = CVmNewMesh("millennium_falcon.AAM");
-	fighterMeshes[MILLFALC_TYPE].centerBoundingBox(); 
+	fighterMeshes[MILLFALC_TYPE].centerBoundingBox();
 	
 	ambientMeshes = Array(5);
 	ambientMeshes[ESCAPE_POD] = CVmNewMesh("escape_pod.AAM");
@@ -57,9 +61,7 @@ function MeshFactory::MeshFactory()
 	ambientMeshes[DEATH_STAR].Scale(0.02);
 	ambientMeshes[DEATH_STAR].centerBoundingBox();
 	
-	/*glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();*/
+	
 	bulletMeshes = Array(2);
 	bulletMeshes[RED_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
 	bulletMeshes[RED_BEAM].Rotate(90,[1,0,0]);
@@ -80,7 +82,9 @@ function MeshFactory::MeshFactory()
 	greenMaterial.transparency = 0.9;
 	greenMaterial.shininess = 128;
 	bulletMeshes[GREEN_BEAM].setMaterial(greenMaterial);
-	/*glPopMatrix();*/
+	
+	aviResources = Array(1);
+	aviResources[EXPLOSION] = CVmBillboard("explosion.avi");
 }
 
 function MeshFactory::getFighterMeshes(fighterType)
@@ -93,11 +97,14 @@ function MeshFactory::getAmbientMeshes(ambientType)
 	return ambientMeshes[ambientType];
 }
 
-
 function MeshFactory::getBulletMeshes(bulletType)
 {
 	return bulletMeshes[bulletType];
 }
 
+function MeshFactory::getAviResources(type)
+{
+	return aviResources[type];
+}
 
 #endif

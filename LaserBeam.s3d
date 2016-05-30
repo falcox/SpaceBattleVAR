@@ -1,13 +1,12 @@
 #ifndef LASER_BEAM
 #define LASER_BEAM
 
-#define LASER_SPEED			1200
+#define LASER_SPEED		1200
 //#define LASER_SPEED		0
 
 class LaserBeam{
 	var object;
 	var lightIndex;
-	//var lightFactory;
 	var initPos;
 	var actualPos;
 	var finalPos;
@@ -15,10 +14,10 @@ class LaserBeam{
 	var collision;
 	var direction;
 	var posThreshold;
-	var lastCalled;
+	var time;
 	var damage;
+	var CollVertex;
 	
-	//LaserBeam(mesh, lights, lightIdx, begin, end, originTime, dmg);
 	LaserBeam(mesh, lightIdx, begin, end, originTime, dmg);
 	rotateToDirection(dir);
 	setCollided();
@@ -27,11 +26,12 @@ class LaserBeam{
 	getObject();
 	getDamage();
 	getLightIndex();
+	getCollVertex();
 	update();
 	draw();
 };
 
-function LaserBeam::LaserBeam(mesh, /*lights,*/ lightIdx, begin, end, originTime, dmg){
+function LaserBeam::LaserBeam(mesh, lightIdx, begin, end, originTime, dmg) {
 	object = CVmObj(mesh);
 	initPos = begin;
 	actualPos = begin;
@@ -41,10 +41,12 @@ function LaserBeam::LaserBeam(mesh, /*lights,*/ lightIdx, begin, end, originTime
 	posThreshold = modulus(direction);
 	direction = direction / posThreshold; 
 	collision = false;
-	LastCalled = 0;
-	outputln("new bullet!");
+	time = 0;
+	CollVertex = Array(2);
+	CollVertex[0] = -direction*15;
+	CollVertex[1] = direction*15;
+	//outputln("new bullet!");
 	damage = dmg;
-	//LightFactory = lights;
 	LightIndex = lightIdx;
 }
 
@@ -55,6 +57,7 @@ function LaserBeam::setRotationMatrix(matrix){
 function LaserBeam::rotateToDirection(dir){
 	var r = object.getXaxis();
 	var u = dir ^ r;
+	r = u ^ dir;
 	r = r / modulus(r);
 	object.setRotationMatrix([r.x, r.y, r.z, 0, u.x, u.y, u.z, 0, dir.x, dir.y, dir.z, 0, 0, 0, 0, 1]);
 }
@@ -64,36 +67,29 @@ function LaserBeam::setCollided(){
 }
 
 function LaserBeam::update(){
-	//static var time = GetTime();
-	if(LastCalled == 0){
-		lastCalled = GetTime();
+	if(time == 0){
+		time = GetTime();
 	}
-	var time = lastCalled;
 	var killMe = false;
 	var timeTickSecond = 0.001;
 	var displacement;
-	//time -= shootTime;
-
-	timeTickSecond *= (GetTime() - time);
-	//outputln(sprintf("time :%f, timeTickSecond: %f", time, timeTickSecond));
+	time -= shootTime;
+	timeTickSecond *= ( (GetTime()-shootTime) - time);
 	
 	/*---settaggio direzione e posizione--- */
 	this.rotateToDirection(direction);
 	displacement = direction*timeTickSecond*LASER_SPEED;
-	//displacement = [0,0,0];
 	actualPos += displacement;
 	object.SetPosition(actualPos);
-	//lightFactory.setLightPosition(lightIndex, actualPos);
-	//trace(timeTickSecond);
-		
+//	CollVertex = [actualPos-direction*15, actualPos+direction*15];
+	
 	/*--- check se distruggere il proiettile ---*/
 	if(modulus(actualPos - initPos) > posThreshold || collision == true){
 		killMe = true;
-		//lightFactory.releaseLight(lightIndex);
-		outputln("bullet needs to be killed");
+		//outputln("bullet needs to be killed");
 	}
 	
-	lastCalled = GetTime();
+	time = GetTime();
 	return killMe;
 }
 
@@ -101,22 +97,26 @@ function LaserBeam::isCollidingBBox(obj){
 	return object.isCollidingBBox(obj);
 }
 
-function LaserBeam::draw(){   
+function LaserBeam::draw() {   
 	object.draw();
 #ifdef DEBUGGING
 	object.drawAxis();
 #endif
 }
 
-function LaserBeam::getDamage(){
+function LaserBeam::getDamage() {
 	return damage;
 }
 
-function LaserBeam::getObject(){
+function LaserBeam::getObject() {
 	return object;
 }
 
-function LaserBeam::getLightIndex(){
+function LaserBeam::getCollVertex(){
+	return CollVertex;
+}
+
+function LaserBeam::getLightIndex() {
 	return lightIndex;
 }
 

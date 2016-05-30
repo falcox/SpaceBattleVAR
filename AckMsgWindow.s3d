@@ -63,11 +63,17 @@ function AckMsgWindow::ackReceived(id, msgId)
 {
 	/* Remove the acked message from player queue */
 	var queue_size = len(messages[id]);
+	var deletedIndexMessage = Array(0);
 	for (var i = 0; i < queue_size; i++) {
 		if (messages[id][i].message[1] == msgId) {
-			adel( messages[id], i);
-			break;
+			aadd(deletedIndexMessage, i);
 		}
+	}
+	
+	/* removing messages */
+	queue_size = len(deletedIndexMessage);
+	for (var i = 0; i < queue_size; i++) {
+		adel( messages[id], deletedIndexMessage[i]);
 	}
 }
 

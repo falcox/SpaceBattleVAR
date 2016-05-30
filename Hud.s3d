@@ -1,0 +1,96 @@
+#define ROWSPAN 		0.03
+#define MSG_LIFETIME 	5000
+#define MSG_QUEUE_LEN	20
+
+class Message {
+	var msg;
+	var lifetime;
+	var fixed;
+};
+
+class Hud {
+	var deathNumber;
+	var killNumber;
+	var msgPool;
+	
+	Hud();
+	increaseDeathCounter(playerId);
+	increaseKillCounter(playerId);
+	appendMessage(message, fixed);
+	draw();
+	resetHud();
+};
+
+function Hud::Hud()
+{
+	deathNumber = 0;
+	killNumber = 0;
+	msgPool = Array(0);
+}
+
+function Hud::draw()
+{
+	static var time = GetTime();
+	static var tick = 0;
+	var rowy = 0.07;
+	tick = GetTime() - time;
+	glEnable(GL_BLEND);
+	ConsoleColor(0.1, 1, 0.1, 0.3);
+	ConsoleFilledRect(0.1, 0.1, 0.7, 0.1 );
+	var queueLen = len(msgPool);
+	var deletedIndexArray = Array(0);
+	for (var i = 0; i < queueLen; i++) {
+		ConsoleColor(1, 1, 1, 1);
+		ConsoleText (0.11, rowy, msgPool[i].msg);
+		rowy -= ROWSPAN;
+		if (msgPool[i].fixed == false) {
+			msgPool[i].lifetime -= tick;
+		}
+		if (msgPool[i].lifetime <= 0) {
+			/* Add index to remember which message delete */
+			aadd(deletedIndexArray, i);
+		}
+	}
+	
+	/* delete messages */
+	queueLen = len(deletedIndexArray);
+	for (var i = 0; i < queueLen; i++) {
+		adel(msgPool, deletedIndexArray[i]);
+	}
+	
+	time = GetTime();
+}
+
+function Hud::resetHud()
+{
+	deathNumber = 0;
+	killNumber = 0;
+	msgPool = Array(0);
+}
+
+function Hud::appendMessage(string, fixed)
+{
+	var msg = Message();
+	msg.msg = string;
+	msg.lifetime = MSG_LIFETIME;
+	msg.fixed = fixed;
+	aadd(msgPool, msg);
+}
+
+function Hud::increaseDeathCounter(playerId)
+{
+	deathNumber++;
+	var msg = sprintf("Player %d has killed you!", playerId);
+	appendMessage(msg, false);
+}
+
+function Hud::increaseKillCounter(playerId)
+{
+	killNumber++;
+	var msg = sprintf("Killed player %d!", playerId);
+	appendMessage(msg, false);
+}
+
+	
+	
+	

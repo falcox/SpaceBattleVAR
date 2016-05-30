@@ -6,7 +6,6 @@ class CollisionDetector{
 	CollisionDetector(aNum, eNum, net);
 	checkCollisionBBox(myFighter, enemyArray, ambientArray);
 	checkCollisionDeep(myFighter, shipObj);
-//	checkWorldBounds(myFighter);
 };
 
 function CollisionDetector::CollisionDetector(aNum, eNum, net) {
@@ -30,17 +29,16 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 			for(var j = 0; j<aliveBeamsNum; j++){
 				var beam = myFighter.getBeam(AliveBeams[j]);
 				if(beam.isCollidingBBox(enemyArray[i].getObject())){
-					//TODO: gestisci la hit dei nemici
+					//TODO: gestisci la hit dei nemici (sarà il nemico a dirmi che l'ho preso, qui faccio sparire solo il proiettile)
 					beam.setCollided();
-					outputln("Hit enemy!");
+					//outputln("Hit enemy!");
 				}
 			}
 			enemyBeams = enemyArray[i].getAliveBeams();
-			for(var j = 0; j<len(enemyBeams); j++){
+			for(var j = 0; j<len(enemyBeams); j++) {
 				var beam = enemyArray[i].getBeam(enemyBeams[j]);
-				if(beam.isCollidingBBox(myFighter)){
-					myFighter.decreaseLife(beam.getDamage());
-					
+				if(beam.isCollidingBBox(myFighterObj)) {
+					myFighter.decreaseLife(beam.getDamage(), i);
 					beam.setCollided();
 					outputln("I've been hit!");
 				}
@@ -63,10 +61,17 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 				if(beam.isCollidingBBox(shipObj)){
 					if(ambientArray[i].isDestroyable()){
 						ambientArray[i].setCollision(true);
-						network.sendAmbientDestroyData(i, -1);					
+						network.sendAmbientDestroyData(i, -1);	
+						beam.setCollided();				
 					}
-					beam.setCollided();
-					outputln("bullet collided");
+					else{
+						var cv = beam.getCollVertex();
+						var p = beam.getObject().getPosition();
+						if(shipObj.isColliding(p+cv[0], p+cv[1])){
+							beam.setCollided();
+							outputln("bullet collided");
+						}
+					}
 				}
 			}
 		}
@@ -87,25 +92,3 @@ function CollisionDetector::checkCollisionDeep(myFighter, shipObj) {
 	}
 	return false;
 }
-
-/*function CollisionDetector::checkWorldBounds(myFighter){
-	var fighterPos = myFighter.getPosition();
-	var fighterDir = myFighter.getDirection();
-	var tmpDir = Vector(3);
-	if(((fighterPos.x>=BOUND_VOLUME_X) && (fighterDir.x>0)) || ((fighterPos.x<=-BOUND_VOLUME_X) && (fighterDir.x<0))){
-		tmpDir.x = 0;
-	}else{
-		tmpDir.x = fighterDir.x;
-	}
-	if(((fighterPos.y>=BOUND_VOLUME_Y) && (fighterDir.y>0)) || ((fighterPos.y<=-BOUND_VOLUME_Y) && (fighterDir.y<0))){
-		tmpDir.y = 0;
-	}else{
-		tmpDir.y = fighterDir.y;
-	}
-	if(((fighterPos.z>=BOUND_VOLUME_Z) && (fighterDir.z>0)) || ((fighterPos.z<=-BOUND_VOLUME_Z) && (fighterDir.z<0))){
-		tmpDir.z = 0;
-	}else{
-		tmpDir.z = fighterDir.z;
-	}
-	myFighter.setDirection(tmpDir);
-}*/

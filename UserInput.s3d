@@ -5,7 +5,8 @@ class UserInput {
 	var fireBeamAntiBounce;
 	
 	UserInput();
-	userControlFighter(obj);
+	userControlFighter(fighter);
+	userControlGameMenu();
 };
 
 function UserInput::UserInput()
@@ -74,4 +75,17 @@ function UserInput::userControlFighter(fighter)
 	/*---rotazione oggetto---*/
 	fighter.setRelativeAngle(r, p, y);
 	time = GetTime();
+}
+
+function UserInput::userControlGameMenu()
+{
+	/* TODO: usare una funzione per i comandi del menu di selezione */
+	static var changeFighterModel = false;
+	if(Keypressed("j")) {
+		changeFighterModel = true;
+	} else if (changeFighterModel == true) {
+		return 1;
+		changeFighterModel = false;
+	}
+	return 0;
 }
