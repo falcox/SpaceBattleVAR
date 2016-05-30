@@ -4,13 +4,8 @@
 class EscapePod: AmbientObject {
 	
 	EscapePod(meshFactory);
-	isDestroyable();
 };
 
 function EscapePod::EscapePod(meshFactory){
 	AmbientObject::this.init( meshFactory.getAmbientMeshes(ESCAPE_POD), ESCAPE_POD );
-}
-
-function EscapePod::isDestroyable() {
-	return true;
 }

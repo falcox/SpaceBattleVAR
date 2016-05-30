@@ -70,7 +70,7 @@ function SkyBox::draw(){
 	//glClear(GL_COLOR_BUFFER_BIT);	
 	extSkyBoxObj.Draw(VR_DOUBLEFACE);
 	planetObj.draw();
-	starObj.draw();
+	//starObj.draw();
 	
 	glPopMatrix();
 }

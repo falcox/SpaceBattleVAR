@@ -6,6 +6,7 @@ class CollisionDetector{
 	CollisionDetector(aNum, eNum, net);
 	checkCollisionBBox(myFighter, enemyArray, ambientArray);
 	checkCollisionDeep(myFighter, shipObj);
+//	checkWorldBounds(myFighter);
 };
 
 function CollisionDetector::CollisionDetector(aNum, eNum, net) {
@@ -19,6 +20,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 	var myFighterObj = myFighter.getObject();
 	var aliveBeamsNum = myFighter.getAliveBeamsNum();
 	var aliveBeams = myFighter.getAliveBeams();						//array con gli indici dei bullet vivi
+	var enemyBeams;
 	for (var i = 0; i < enemyFighterNum; i++) {
 		if (enemyArray[i] != void) {
 			if(myFighterObj.isCollidingBBox(enemyArray[i].getObject())){
@@ -30,7 +32,17 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 				if(beam.isCollidingBBox(enemyArray[i].getObject())){
 					//TODO: gestisci la hit dei nemici
 					beam.setCollided();
-					outputln("bullet collided");
+					outputln("Hit enemy!");
+				}
+			}
+			enemyBeams = enemyArray[i].getAliveBeams();
+			for(var j = 0; j<len(enemyBeams); j++){
+				var beam = enemyArray[i].getBeam(enemyBeams[j]);
+				if(beam.isCollidingBBox(myFighter)){
+					myFighter.decreaseLife(beam.getDamage());
+					
+					beam.setCollided();
+					outputln("I've been hit!");
 				}
 			}
 		}
@@ -75,3 +87,25 @@ function CollisionDetector::checkCollisionDeep(myFighter, shipObj) {
 	}
 	return false;
 }
+
+/*function CollisionDetector::checkWorldBounds(myFighter){
+	var fighterPos = myFighter.getPosition();
+	var fighterDir = myFighter.getDirection();
+	var tmpDir = Vector(3);
+	if(((fighterPos.x>=BOUND_VOLUME_X) && (fighterDir.x>0)) || ((fighterPos.x<=-BOUND_VOLUME_X) && (fighterDir.x<0))){
+		tmpDir.x = 0;
+	}else{
+		tmpDir.x = fighterDir.x;
+	}
+	if(((fighterPos.y>=BOUND_VOLUME_Y) && (fighterDir.y>0)) || ((fighterPos.y<=-BOUND_VOLUME_Y) && (fighterDir.y<0))){
+		tmpDir.y = 0;
+	}else{
+		tmpDir.y = fighterDir.y;
+	}
+	if(((fighterPos.z>=BOUND_VOLUME_Z) && (fighterDir.z>0)) || ((fighterPos.z<=-BOUND_VOLUME_Z) && (fighterDir.z<0))){
+		tmpDir.z = 0;
+	}else{
+		tmpDir.z = fighterDir.z;
+	}
+	myFighter.setDirection(tmpDir);
+}*/

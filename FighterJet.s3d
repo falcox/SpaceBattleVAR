@@ -10,6 +10,8 @@
 #define SPEED_STEP	5
 #define MAX_LASER_RANGE 600
 #define MAX_BULLET_NUM	10
+#define MIN_DAMAGE		10
+#define ENABLE_MAIN_LIGHTING
 
 class FighterJet {
 	var FighterObj;	
@@ -17,13 +19,17 @@ class FighterJet {
 	var FighterType;
 	var withCamera;
 	var camera;
-	var light;
+//	var lightIndex;
 	var time;
 	var cameraMode;			/* 0->behind / 1->inside */
 	var cameraModeOffset;
 	var beamArray;
 	var beamMesh;
 	var aliveBeams;
+	var lightFactory;
+	var lightType;
+	var direction;
+	
 	
 	var yaw;				/* Angle on Y axis */
 	var pitch;				/* Angle on X axis */
@@ -34,9 +40,9 @@ class FighterJet {
 	var currentFrame;
 	var bbox;
 	var collVertex;
-	var colliding;
+	var destroyed;
 	
-	init(mesh, type, bulletMesh);
+	init(mesh, lights, type, bulletMesh);
 	draw();
 	setPosition(position);
 	setSpeed(speed);
@@ -57,15 +63,21 @@ class FighterJet {
 	getCollVertex();
 	getAngles();
 	getPosition();
-	fireBeam(offset);
+//	getDirection();
+//	setDirection(dir);
+	updatePosition(disp);
+//	checkWorldBounds();
+	fireBeam(offset/* , lightFactory, lightIndex*/);
 	drawBeams();
 	getBeam(index);
 	getAliveBeams();
 	getAliveBeamsNum();
 	setCollidedBeam(index);
+	decreaseLife(delta);
+	increaseLife(delta);
 };
 
-function FighterJet::init(mesh, type, bulletMesh) {
+function FighterJet::init(mesh, lights, type, bulletMesh) {
 	yaw = 0;
 	roll = 0;
 	pitch = 0;
@@ -78,11 +90,13 @@ function FighterJet::init(mesh, type, bulletMesh) {
 	cameraMode = 0;
 	withCamera = false;
 	cameraModeOffset = {[0, 0], [0, 0]};
-	colliding = false;
+	destroyed = false;
 	collVertex = Array(6);
 	beamArray = Array(MAX_BULLET_NUM);
 	beamMesh = bulletMesh;
 	aliveBeams = 0;
+	lightFactory = lights;
+	direction = [0,0,0];
 	
 	FighterObj = CVmObj(mesh);
 	bbox = mesh.getBoundingBox();
@@ -93,13 +107,23 @@ function FighterJet::useCamera(cam)
 {
 	withCamera = cam;
 	if (cam == true) {
+		//glPushAttrib(GL_LIGHTING_BIT);
 		camera = CameraGetCurrent();
-		light = CVmLight();
-		light.SetDiffuse(1, 1, 1);
-		light.Enable();
+		
+//		lightIndex = lightFactory.requestLight(WHITE_LIGHT);
+		lightFactory.requestCameraLight(camera);
+//		if(lightIndex>=0){
+//			lightFactory.linkObject(camera, lightIndex);
+//		}else{
+//			outputln("ERROR IN MAIN LIGHT INITIALIZATION");
+//		}
+		/*fighterLight = CVmLight();
+		fighterLight.SetDiffuse(1, 1, 1);
+		fighterLight.Enable();*/
+		//glPopAttrib();	
 	} else {
 		camera = void;
-		light = void;
+//		lightIndex = -1;
 	}
 }
 
@@ -205,7 +229,6 @@ function FighterJet::update() {
 	}
 	var timeTickSecond = 0.001;
 	var cameraPos;
-	var direction;
 	var displacement;
 	timeTickSecond *= (GetTime() - time);
 
@@ -221,18 +244,22 @@ function FighterJet::update() {
 	rollDelta = 0;
 	
 	/*---settaggio direzione e posizione--- */
-	if(colliding){
+	if(destroyed){
 		outputln("collision!!");
 	}
 	
 	direction = FighterObj.GetZaxis();
+//	checkWorldBounds();
 	displacement = velocity * timeTickSecond;
-	setPosition(FighterPos+displacement*direction);
-
+//	setPosition(FighterPos+displacement*direction);
+	updatePosition(displacement);
+	
+	
 	/*--- aggiorna i proiettili ---*/
 	for(var i = 0; i <MAX_BULLET_NUM; i++){
 		if(beamArray[i]!= void){
 			if(beamArray[i].update()){
+				LightFactory.releaseLight(beamArray[i].getLightIndex());
 				beamArray[i] = void;
 				aliveBeams--;
 			}
@@ -245,11 +272,30 @@ function FighterJet::update() {
 		camera.setPosition(cameraPos);
 		camera.setUpVector(FighterObj.GetYaxis());
 		camera.setDirection(direction);
-		
-		light.setPosition(cameraPos);
+		//lightFactory.setLightPosition(LightIndex);
 	}
 	
 	time = GetTime();
+}
+
+function FighterJet::updatePosition(disp){
+	var tmpDir = Vector(3);
+	if(((fighterPos.x>=BOUND_VOLUME_X) && (direction.x>0)) || ((fighterPos.x<=-BOUND_VOLUME_X) && (direction.x<0))){
+		tmpDir.x = 0;
+	}else{
+		tmpDir.x = direction.x;
+	}
+	if(((fighterPos.y>=BOUND_VOLUME_Y) && (direction.y>0)) || ((fighterPos.y<=-BOUND_VOLUME_Y) && (direction.y<0))){
+		tmpDir.y = 0;
+	}else{
+		tmpDir.y = direction.y;
+	}
+	if(((fighterPos.z>=BOUND_VOLUME_Z) && (direction.z>0)) || ((fighterPos.z<=-BOUND_VOLUME_Z) && (direction.z<0))){
+		tmpDir.z = 0;
+	}else{
+		tmpDir.z = direction.z;
+	}
+	setPosition(FighterPos+disp*tmpDir);
 }
 
 function FighterJet::getObject(){
@@ -272,7 +318,7 @@ function FighterJet::getCollVertex(){
 }
 
 function FighterJet::setCollision(bool){
-	colliding = bool;
+	destroyed = bool;
 }
 
 function FighterJet::fireBeam(offset){
@@ -285,7 +331,11 @@ function FighterJet::fireBeam(offset){
 	
 	for(var i = 0; i < MAX_BULLET_NUM; i++){
 		if(beamArray[i] == void){
-    		beamArray[i] = LaserBeam(beamMesh, initPos, finalPos, GetTime());
+			var idx = lightFactory.requestLight(lightType);
+     		beamArray[i] = LaserBeam(beamMesh, /*lightFactory,*/ idx, initPos, finalPos, GetTime(), MIN_DAMAGE);		//TODO: il danno deve essere "dinamico"
+    		if(idx>=0){
+				lightFactory.linkObject(beamArray[i].getObject(), idx);
+			}
     		aliveBeams++;
 			break;
 		}
@@ -318,11 +368,56 @@ function FighterJet::getBeam(index){
 }*/
 
 function FighterJet::drawBeams(){
+	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_LIGHTING_BIT);
+//	glPushAttrib(GL_COLOR_BUFFER_BIT);
 	for(var i  = 0; i < MAX_BULLET_NUM; i++){
 		if(beamArray[i] != void){
 			beamArray[i].draw();
 		}
 	}
+	glPopAttrib();
 }
+
+function FighterJet:: decreaseLife(delta){
+	currentLife-=delta;
+	if(currentLife<=0){
+		currentLife = 0;
+		destroyed = true;
+	}
+}
+function FighterJet::increaseLife(delta){
+	currentLife+=delta;
+	if(currentLife>100){
+		currentLife=100;
+	}
+}
+
+/*function FighterJet::getDirection(){
+	return direction;
+}
+
+function FighterJet::setDirection(dir){
+	direction = dir;
+}*/
+
+/*function FighterJet::checkWorldBounds(){
+	var tmpDir = Vector(3);
+	if(((fighterPos.x>=BOUND_VOLUME_X) && (direction.x>0)) || ((fighterPos.x<=-BOUND_VOLUME_X) && (direction.x<0))){
+		tmpDir.x = 0;
+	}else{
+		tmpDir.x = direction.x;
+	}
+	if(((fighterPos.y>=BOUND_VOLUME_Y) && (direction.y>0)) || ((fighterPos.y<=-BOUND_VOLUME_Y) && (direction.y<0))){
+		tmpDir.y = 0;
+	}else{
+		tmpDir.y = direction.y;
+	}
+	if(((fighterPos.z>=BOUND_VOLUME_Z) && (direction.z>0)) || ((fighterPos.z<=-BOUND_VOLUME_Z) && (direction.z<0))){
+		tmpDir.z = 0;
+	}else{
+		tmpDir.z = direction.z;
+	}
+	direction = tmpDir;
+}*/
 
 #endif

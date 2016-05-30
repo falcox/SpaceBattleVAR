@@ -1,24 +1,29 @@
 #include <FighterJet.s3d>
 #include <MeshFactory.s3d>
 
+//#define RED				0
+
 class Xwing: FighterJet {
 	var BeamOffsetsFrameTwenty;
 	var BeamOffsetsFrameZero;
+	var seqNumber;
 	
-	Xwing(meshFactory);
+	Xwing(meshFactory, lights);
 	increaseSpeed();
 	decreaseSpeed();
 	fireBeam();
 };
 
-function Xwing::Xwing(meshFactory)
+function Xwing::Xwing(meshFactory , lights)
 {
 	BeamOffsetsFrameTwenty = Array(4);
 	BeamOffsetsFrameZero = Array(4);
 	BeamOffsetsFrameTwenty = {[17.5,4.5,2],[-17.5,4.5,2],[17.5,-4.5,2],[-17.5,-4.5,2]};
 	BeamOffsetsFrameZero = {[18.2,1.3,2], [-18.2,1.3,2], [18.2,-1.3,2], [-18.2,-1.3,2]};
-	FighterJet::this.init(meshFactory.getFighterMeshes(XWING_TYPE), XWING_TYPE, meshFactory.getBulletMeshes(RED_BEAM));
+	FighterJet::this.init(meshFactory.getFighterMeshes(XWING_TYPE),lights, XWING_TYPE, meshFactory.getBulletMeshes(RED_BEAM));
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
+	lightType = RED_LIGHT;
+	seqNumber = 0;
 }
 
 function Xwing::increaseSpeed()
@@ -39,10 +44,12 @@ function Xwing::decreaseSpeed()
 
 function Xwing::fireBeam(){
 	/* calcola la pos iniziale */
-	static var seqNumber = 0;
 	var BeamOffsets;
+	//var lightIndex;
+	//var lightType = 0;
 	BeamOffsets = ((currentFrame)*BeamOffsetsFrameTwenty[seqNumber]+(20-currentFrame)*BeamOffsetsFrameZero[seqNumber])/20;
+	//lightIndex = lightFactory.requestLight(0);
 	
-	FighterJet::this.fireBeam(BeamOffsets);
+	FighterJet::this.fireBeam(BeamOffsets/*, lightFactory, lightIndex */);
 	seqNumber = (seqNumber+1)%4;
 }

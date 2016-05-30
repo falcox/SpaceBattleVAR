@@ -1,11 +1,13 @@
 #ifndef LASER_BEAM
 #define LASER_BEAM
 
-#define LASER_SPEED		1200
+#define LASER_SPEED			1200
 //#define LASER_SPEED		0
 
 class LaserBeam{
 	var object;
+	var lightIndex;
+	//var lightFactory;
 	var initPos;
 	var actualPos;
 	var finalPos;
@@ -14,28 +16,36 @@ class LaserBeam{
 	var direction;
 	var posThreshold;
 	var lastCalled;
+	var damage;
 	
-	LaserBeam(mesh, begin, end, time);
+	//LaserBeam(mesh, lights, lightIdx, begin, end, originTime, dmg);
+	LaserBeam(mesh, lightIdx, begin, end, originTime, dmg);
 	rotateToDirection(dir);
 	setCollided();
 	setRotationMatrix(matrix);
 	isCollidingBBox(obj);
+	getObject();
+	getDamage();
+	getLightIndex();
 	update();
 	draw();
 };
 
-function LaserBeam::LaserBeam(mesh, begin, end, t){
+function LaserBeam::LaserBeam(mesh, /*lights,*/ lightIdx, begin, end, originTime, dmg){
 	object = CVmObj(mesh);
 	initPos = begin;
 	actualPos = begin;
 	finalPos = end;
-	shootTime = t;
+	shootTime = originTime;
 	direction = finalPos-initPos;
 	posThreshold = modulus(direction);
 	direction = direction / posThreshold; 
 	collision = false;
 	LastCalled = 0;
 	outputln("new bullet!");
+	damage = dmg;
+	//LightFactory = lights;
+	LightIndex = lightIdx;
 }
 
 function LaserBeam::setRotationMatrix(matrix){
@@ -73,11 +83,13 @@ function LaserBeam::update(){
 	//displacement = [0,0,0];
 	actualPos += displacement;
 	object.SetPosition(actualPos);
+	//lightFactory.setLightPosition(lightIndex, actualPos);
 	//trace(timeTickSecond);
 		
 	/*--- check se distruggere il proiettile ---*/
 	if(modulus(actualPos - initPos) > posThreshold || collision == true){
 		killMe = true;
+		//lightFactory.releaseLight(lightIndex);
 		outputln("bullet needs to be killed");
 	}
 	
@@ -96,5 +108,16 @@ function LaserBeam::draw(){
 #endif
 }
 
+function LaserBeam::getDamage(){
+	return damage;
+}
+
+function LaserBeam::getObject(){
+	return object;
+}
+
+function LaserBeam::getLightIndex(){
+	return lightIndex;
+}
 
 #endif

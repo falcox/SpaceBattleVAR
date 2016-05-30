@@ -42,7 +42,7 @@ function MeshFactory::MeshFactory()
 	fighterMeshes[ARC170_TYPE].centerBoundingBox();
 	
 	fighterMeshes[MILLFALC_TYPE] = CVmNewMesh("millennium_falcon.AAM");
-	fighterMeshes[MILLFALC_TYPE].centerBoundingBox();
+	fighterMeshes[MILLFALC_TYPE].centerBoundingBox(); 
 	
 	ambientMeshes = Array(5);
 	ambientMeshes[ESCAPE_POD] = CVmNewMesh("escape_pod.AAM");
@@ -57,7 +57,9 @@ function MeshFactory::MeshFactory()
 	ambientMeshes[DEATH_STAR].Scale(0.02);
 	ambientMeshes[DEATH_STAR].centerBoundingBox();
 	
-	
+	/*glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();*/
 	bulletMeshes = Array(2);
 	bulletMeshes[RED_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
 	bulletMeshes[RED_BEAM].Rotate(90,[1,0,0]);
@@ -66,6 +68,7 @@ function MeshFactory::MeshFactory()
 	redMaterial.diffuse = [1,0,0,1];
 	redMaterial.emission = [1,0,0,1];
 	redMaterial.shininess = 128;
+	redMaterial.transparency = 0.9;
 	bulletMeshes[RED_BEAM].setMaterial(redMaterial);
 	
 	bulletMeshes[GREEN_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
@@ -74,8 +77,10 @@ function MeshFactory::MeshFactory()
 	greenMaterial.ambient = [0,1,0,1];
 	greenMaterial.diffuse = [0,1,0,1];
 	greenMaterial.emission = [0,1,0,1];
+	greenMaterial.transparency = 0.9;
 	greenMaterial.shininess = 128;
 	bulletMeshes[GREEN_BEAM].setMaterial(greenMaterial);
+	/*glPopMatrix();*/
 }
 
 function MeshFactory::getFighterMeshes(fighterType)
