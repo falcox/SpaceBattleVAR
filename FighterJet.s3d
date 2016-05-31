@@ -115,7 +115,7 @@ function FighterJet::init(meshes, lights, fType, beamType) {
 	direction = [0,0,0];
 	fireSound = CVmVRAWav("laser.wav");
 	hitSound = CVmVRAWav("hit.mp3");
-	explSound = CVmVRAWav("expl.wav");
+	explSound = CVmVRAWav("explosion.wav");
 	
 	FighterObj = CVmObj(fighterMesh);
 	bbox = fighterMesh.getBoundingBox();
