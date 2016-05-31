@@ -6,6 +6,7 @@
 
 class LaserBeam{
 	var object;
+	var lightIndex;
 	var initPos;
 	var actualPos;
 	var finalPos;
@@ -15,18 +16,22 @@ class LaserBeam{
 	var posThreshold;
 	var time;
 	var damage;
+	var CollVertex;
 	
-	LaserBeam(mesh, begin, end, originTime, dmg);
+	LaserBeam(mesh, lightIdx, begin, end, originTime, dmg);
 	rotateToDirection(dir);
 	setCollided();
 	setRotationMatrix(matrix);
 	isCollidingBBox(obj);
+	getObject();
 	getDamage();
+	getLightIndex();
+	getCollVertex();
 	update();
 	draw();
 };
 
-function LaserBeam::LaserBeam(mesh, begin, end, originTime, dmg){
+function LaserBeam::LaserBeam(mesh, lightIdx, begin, end, originTime, dmg) {
 	object = CVmObj(mesh);
 	initPos = begin;
 	actualPos = begin;
@@ -37,8 +42,12 @@ function LaserBeam::LaserBeam(mesh, begin, end, originTime, dmg){
 	direction = direction / posThreshold; 
 	collision = false;
 	time = 0;
+	CollVertex = Array(2);
+	CollVertex[0] = -direction*15;
+	CollVertex[1] = direction*15;
 	//outputln("new bullet!");
 	damage = dmg;
+	LightIndex = lightIdx;
 }
 
 function LaserBeam::setRotationMatrix(matrix){
@@ -48,6 +57,7 @@ function LaserBeam::setRotationMatrix(matrix){
 function LaserBeam::rotateToDirection(dir){
 	var r = object.getXaxis();
 	var u = dir ^ r;
+	r = u ^ dir;
 	r = r / modulus(r);
 	object.setRotationMatrix([r.x, r.y, r.z, 0, u.x, u.y, u.z, 0, dir.x, dir.y, dir.z, 0, 0, 0, 0, 1]);
 }
@@ -95,6 +105,18 @@ function LaserBeam::draw() {
 
 function LaserBeam::getDamage() {
 	return damage;
+}
+
+function LaserBeam::getObject() {
+	return object;
+}
+
+function LaserBeam::getCollVertex(){
+	return CollVertex;
+}
+
+function LaserBeam::getLightIndex() {
+	return lightIndex;
 }
 
 #endif

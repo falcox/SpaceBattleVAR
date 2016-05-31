@@ -1,51 +1,165 @@
 #define ROWSPAN 		0.03
 #define MSG_LIFETIME 	5000
 #define MSG_QUEUE_LEN	20
+#define AIM_SIZE		0.25
+#define HEALTHBAR_W		4.0
+#define HEALTHBAR_H		(HEALTHBAR_W / 8)
+#define BATTERYBAR_W	3.0
+#define BATTERYBAR_H	(BATTERYBAR_W / 8)
 
 class Message {
 	var msg;
 	var lifetime;
+	var fixed;
 };
 
 class Hud {
 	var deathNumber;
 	var killNumber;
 	var msgPool;
+	var time;
+	var tick;
+	var aimTexture;
+	var lifeContainerTexture;
+//	var battContainerTexture;
+	var lifeHpTexture;
+	var batteryTexture;
+	var myFighter;
 	
-	Hud();
+	Hud(fighter);
 	increaseDeathCounter(playerId);
 	increaseKillCounter(playerId);
-	appendMessage(message);
+	appendMessage(message, fixed);
 	draw();
 	resetHud();
 };
 
-function Hud::Hud()
+function Hud::Hud(fighter)
 {
 	deathNumber = 0;
 	killNumber = 0;
-	msgPool = Array(MSG_QUEUE_LEN);
+	msgPool = Array(0);
+	myFighter = fighter;
+	time = GetTime();
+	tick = 0;
+	
+	aimTexture = CVmTexture("aim3.png");
+	lifeHpTexture = CVmTexture("lifebar-hp3.png");
+	lifeContainerTexture = CVmTexture("grey-lifebar-container.png");
+//	battContainerTexture = CVmTexture("grey-lifebar-container2.png");
+	batteryTexture = CVmTexture("lifebar-battery2.png");
 }
 
 function Hud::draw()
 {
-	static var time = GetTime();
-	static var tick = 0;
+//	static var time = GetTime();
+//	static var tick = 0;
 	var rowy = 0.07;
 	tick = GetTime() - time;
 	glEnable(GL_BLEND);
 	ConsoleColor(0.1, 1, 0.1, 0.3);
 	ConsoleFilledRect(0.1, 0.1, 0.7, 0.1 );
-	for (var i = 0; i < MSG_QUEUE_LEN; i++) {
-		if (msgPool[i] != void) {
-			ConsoleColor(1, 1, 1, 1);
-			ConsoleText (0.11, rowy, msgPool[i].msg);
-			rowy -= ROWSPAN;
+	var queueLen = len(msgPool);
+	var deletedIndexArray = Array(0);
+	for (var i = 0; i < queueLen; i++) {
+		ConsoleColor(1, 1, 1, 1);
+		ConsoleText (0.11, rowy, msgPool[i].msg);
+		rowy -= ROWSPAN;
+		if (msgPool[i].fixed == false) {
 			msgPool[i].lifetime -= tick;
-			if (msgPool[i].lifetime <= 0) {
-				msgPool[i] = void;
-			}
 		}
+		if (msgPool[i].lifetime <= 0) {
+			/* Add index to remember which message delete */
+			aadd(deletedIndexArray, i);
+		}
+	}
+	glDisable(GL_BLEND);
+	
+	var lifeStat = myFighter.getCurrentLife() / 100.0;
+	var battStat = myFighter.getCurrentBattery() / 100.0;
+	
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0.0, RATIO_W, 0.0, RATIO_H, -1.0, 1.0);		/*TODO: MUST BE RESIZED EVERY TIME THE WINDOW CHANGES! */
+	
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	
+	glDisable(GL_LIGHTING); 
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	
+	glTranslate(RATIO_W/2, RATIO_H/2 - 0.15);
+	SetActiveTexture(aimTexture);
+	glBegin(GL_QUADS);
+		//glNormal(0, 0, 1);
+		glColor(1.0, 0.0, 0, 0.5);
+		glTexCoord(0, 1); glVertex(-AIM_SIZE, -AIM_SIZE, 1);
+		glTexCoord(1, 1); glVertex(AIM_SIZE, -AIM_SIZE, 1);
+		glTexCoord(1, 0); glVertex(AIM_SIZE, AIM_SIZE, 1);
+		glTexCoord(0, 0); glVertex(-AIM_SIZE, AIM_SIZE, 1);
+	glEnd();
+	
+	glLoadIdentity();
+	glTranslate(RATIO_W/16, RATIO_H*14/16);
+	SetActiveTexture(lifeHpTexture);
+	glBegin(GL_QUADS);
+		glColor(1,1,1,1);
+		glTexCoord(0, 1); glVertex(0, 0);
+		glTexCoord(lifeStat, 1); glVertex(HEALTHBAR_W*lifeStat, 0);
+		glTexCoord(lifeStat, 0); glVertex(HEALTHBAR_W*lifeStat, HEALTHBAR_W/8);
+		glTexCoord(0, 0); glVertex(0, HEALTHBAR_W/8);
+	glEnd();
+	
+//	glEnable(GL_BLEND);
+//	glLoadIdentity();
+//	glTranslate(RATIO_W/16, RATIO_H*14/16-BATTERYBAR_H);
+	SetActiveTexture(batteryTexture);
+	glBegin(GL_QUADS);
+//		glColor(1,1,1,1);
+		glTexCoord(0, 1); glVertex(0, -BATTERYBAR_H);
+		glTexCoord(battStat, 1); glVertex(BATTERYBAR_W*battStat, -BATTERYBAR_H);
+		glTexCoord(battStat, 0); glVertex(BATTERYBAR_W*battStat, 0);
+		glTexCoord(0, 0); glVertex(0, 0);
+	glEnd();
+	
+	
+
+	SetActiveTexture(lifeContainerTexture);
+	glBegin(GL_QUADS);
+		glColor(1,1,1,0.8);
+		glTexCoord(0, 1); glVertex(0, 0);
+		glTexCoord(1, 1); glVertex(HEALTHBAR_W, 0);
+		glTexCoord(1, 0); glVertex(HEALTHBAR_W, HEALTHBAR_H);
+		glTexCoord(0, 0); glVertex(0, HEALTHBAR_H);
+//	glEnd();
+//	SetActiveTexture(battContainerTexture);
+//	glBegin(GL_QUADS);
+//		glNormal(0, 0, 1);
+		glColor(1,1,1,0.8);
+		glTexCoord(0, 1); glVertex(0, -BATTERYBAR_H);
+		glTexCoord(1, 1); glVertex(BATTERYBAR_W, -BATTERYBAR_H);
+		glTexCoord(1, 0); glVertex(BATTERYBAR_W, 0);
+		glTexCoord(0, 0); glVertex(0, 0);
+	glEnd();
+	
+	
+	glDisable(GL_BLEND);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST);
+	glPopMatrix();
+	
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	
+	glMatrixMode(GL_MODELVIEW);
+	
+	
+	/* delete messages */
+	queueLen = len(deletedIndexArray);
+	for (var i = 0; i < queueLen; i++) {
+		adel(msgPool, deletedIndexArray[i]);
 	}
 	
 	time = GetTime();
@@ -55,33 +169,30 @@ function Hud::resetHud()
 {
 	deathNumber = 0;
 	killNumber = 0;
+	msgPool = Array(0);
 }
 
-function Hud::appendMessage(string)
+function Hud::appendMessage(string, fixed)
 {
-	for (var i = 0; i < MSG_QUEUE_LEN; i++) {
-		if (msgPool[i] == void) {
-			var msg = Message();
-			msg.msg = string;
-			msg.lifetime = MSG_LIFETIME;
-			msgPool[i] = msg;
-			break;
-		}
-	}
+	var msg = Message();
+	msg.msg = string;
+	msg.lifetime = MSG_LIFETIME;
+	msg.fixed = fixed;
+	aadd(msgPool, msg);
 }
 
 function Hud::increaseDeathCounter(playerId)
 {
 	deathNumber++;
 	var msg = sprintf("Player %d has killed you!", playerId);
-	appendMessage(msg);
+	appendMessage(msg, false);
 }
 
 function Hud::increaseKillCounter(playerId)
 {
 	killNumber++;
 	var msg = sprintf("Killed player %d!", playerId);
-	appendMessage(msg);
+	appendMessage(msg, false);
 }
 
 	

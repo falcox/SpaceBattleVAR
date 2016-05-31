@@ -31,7 +31,7 @@
 #define RESEND_WAIT_MSEC			3500
 /* DATA_SEND_THRESHOLD threshold to decide to whom a pdu will be sended, 
  * based on last player position sended and actual position on PDU */
-#define DATA_SEND_THRESHOLD			1000
+#define DATA_SEND_THRESHOLD			2000
 /* DISTANCE_BETWEEN_PDU: threshold to decide when a PDU can be sended, 
  * based on last player position sended and actual position on PDU */
 #define DISTANCE_BETWEEN_PDU		10
@@ -57,6 +57,7 @@
 class player {
 	var playerIpAddress;
 	var keepaliveTime;
+	var lastSeqNumberReceived;
 	var posx;
 	var posy;
 	var posz;
@@ -72,6 +73,7 @@ class Networker {
 	var player_list;
 	var player_number;
 	var lastPlayerDataSended;
+	var seqNumber;
 	
 	var resendWindow;
 	var keepaliveTimeElapsed;
@@ -113,6 +115,7 @@ class Networker {
 	sendAmbientDataAck(ackIdMsg);
 	sendKeepalive();
 	relayPlayerData(PDU);
+	handleSequenceNumber(player_id, receivedSeqNumber);
 };
 
 function euclideanDistance(position1, position2)
@@ -173,6 +176,7 @@ function Networker::Networker()
 	playerId = -1;
 	serverId = -1;
 	server = false;
+	seqNumber = 0;
 	advServerChannel = NetCreateChannel(50023,"0.0.0.0",VR_NO_BLOCKING);
 	player_list = Array(ENEMIES_FIGHTER_NUM);
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
@@ -261,9 +265,9 @@ function Networker::relayPlayerData(PDU)
 		/* Check if there is an entry, then if it is not me and if it is not the player that sent the PDU */
 		if (player_list[i] != void && i != playerId && i != PDU[1]) {
 			var playerpos = [player_list[i].posx, player_list[i].posy, player_list[i].posz];
-			if (euclideanDistance(playerpos, pdupos) < DATA_SEND_THRESHOLD) {
+			//if (euclideanDistance(playerpos, pdupos) < DATA_SEND_THRESHOLD) {
 				NetVarSendTo(player_list[i].playerIpAddress, 50023, PDU);
-			}
+			//}
 		}
 	}
 }
@@ -274,7 +278,7 @@ function Networker::sendFighterData(fighterData)
 		return;
 	}
 	//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife}
-	var PDU = vector(12);
+	var PDU = vector(13);
 	PDU[0] = FIGHTER_PDU;
 	PDU[1] = playerId;
 	PDU[2] = fighterData[0];
@@ -287,6 +291,7 @@ function Networker::sendFighterData(fighterData)
 	PDU[9] = fighterData[7];
 	PDU[10] = fighterData[8];
 	PDU[11] = fighterData[9];
+	
 	
 	var changed = false;
 	var lastPos = [lastPlayerDataSended[3], lastPlayerDataSended[4], lastPlayerDataSended[5]];
@@ -301,6 +306,8 @@ function Networker::sendFighterData(fighterData)
 		changed = true;
 	}
 	if (changed == true) {
+		PDU[12] = seqNumber;
+		//outputln(sprintf("mandato roll: %f, pitch: %f, yaw: %f", fighterData[4],fighterData[5],fighterData[6]));
 		if (server == true) {
 			relayPlayerData(PDU);
 		} else {
@@ -308,6 +315,7 @@ function Networker::sendFighterData(fighterData)
 		}
 		lastPlayerDataSended = PDU;
 		keepaliveTimeElapsed = 0;
+		seqNumber++;
 	}
 }
 
@@ -335,6 +343,9 @@ function Networker::sendAmbientData(ambientId, ambientData)
 			resendWindow.add(i, player_list[i].playerIpAddress, PDU);
 		}
 	}
+	//TODO fix!!!
+	var data = {ambientId, ambientData[0]};
+	//EventPost(ambientDataEvent, data, 1);
 }
 
 function Networker::sendAmbientDataAck(ackIdMsg)
@@ -350,6 +361,9 @@ function Networker::sendAmbientDataAck(ackIdMsg)
 function Networker::sendAmbientDestroyData(ambientId, idExcluded)
 {
 	//AMBIENT_DESTROYED		{8, msgId, ambientId, playerId}
+	if (playerId == -1) {
+		return;
+	}
 	var PDU = vector(4);
 	PDU[0] = AMBIENT_DESTROYED;
 	PDU[1] = 0;
@@ -381,6 +395,9 @@ function Networker::sendAmbientDestroyAck(destination, ackIdMsg)
 function Networker::sendLaserBeamData(laserData, idExcluded)
 {
 	// LASERBEAM_PDU {10, msgId, playerId, origin_playerId, iposx, iposy, iposz, eposx, eposy, eposz, originTime, damage}
+	if (playerId == -1) {
+		return;
+	}
 	var PDU = vector(12);
 	PDU[0] = LASERBEAM_PDU;
 	PDU[1] = 0;
@@ -425,7 +442,10 @@ function Networker::sendLaserBeamAck(destination, ackIdMsg)
 
 function Networker::sendFighterDestroyedData(dead_player, killer_player)
 {
-	//FIGHTER_DESTROYED		{12, msgId, sender_playerId, dead_playerId, killer_playerId} 
+	//FIGHTER_DESTROYED		{12, msgId, sender_playerId, dead_playerId, killer_playerId}
+	if (playerId == -1) {
+		return;
+	}
 	var PDU = vector(5);
 	PDU[0] = FIGHTER_DESTROYED;
 	PDU[1] = 0;
@@ -468,6 +488,22 @@ function Networker::playerLost(id)
 	player_number--;
 	resendWindow.emptyQueue(id);
 	EventPost(enemyExitEvent, id, 1);
+}
+
+function Networker::handleSequenceNumber(player_id, receivedSeqNumber)
+{
+	if (player_list[player_id] == void) {
+		return false;
+	}
+	var lastSeqNum = player_list[player_id].lastSeqNumberReceived;
+	/* Accept the packet only if the sequence number is greater than the last received sequence number
+	 * or if we are near the overflow border and the receiver seq number is less than 100
+	 */
+	if ( (receivedSeqNumber > lastSeqNum) || ( (lastSeqNum > 2147483547) && (receivedSeqNumber < 100) ) ) {
+		player_list[player_id].lastSeqNumberReceived = receivedSeqNumber;
+		return true;
+	}
+	return false;
 }
 
 function Networker::poll()
@@ -542,6 +578,7 @@ function Networker::poll()
 								player_list[i] = player();
 								player_list[i].playerIpAddress = sender;
 								player_list[i].keepaliveTime = KEEPALIVE_MSEC;
+								player_list[i].lastSeqNumberReceived = -1;
 								player_list[i].posx = 0;
 								player_list[i].posy = 0;
 								player_list[i].posz = 0;
@@ -566,8 +603,9 @@ function Networker::poll()
 				} else 
 				/* Data player packets handling code */
 				if (received_data[0] == FIGHTER_PDU) {
+					var checkSeqNum = false;
 					var id = received_data[1];
-					//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife}
+					//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife, seqNumber}
 					var data = {id, received_data[2], received_data[3], received_data[4], received_data[5],
 						received_data[6], received_data[7], received_data[8], received_data[9], received_data[10],
 						received_data[11]
@@ -587,10 +625,13 @@ function Networker::poll()
 						/* I'm a client, if I don't know this identificator I create a new record */
 						if (player_list[id] == void) {
 							player_list[id] = Player();
+							player_list[id].lastSeqNumberReceived = -1;
 						}
 						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
 					}
-					EventPost(enemyDataEvent, data, 1);
+					if (handleSequenceNumber(id, received_data[12])) {
+						EventPost(enemyDataEvent, data, 1);
+					}
 				} else
 				if (received_data[0] == AMBIENT_PDU) {
 					if (sender == serverIp) {

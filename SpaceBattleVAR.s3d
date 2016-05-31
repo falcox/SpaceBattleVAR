@@ -1,6 +1,18 @@
 #define AMBIENT_SPACESHIP_NUM 10
-#define TIMER_MSEC_TICK 10
+#define TIMER_MSEC_TICK 15
 #define FRAMERATE 60
+#define RED_LIGHT	0
+#define GREEN_LIGHT	1
+#define WHITE_LIGHT 2
+#define BOUND_VOLUME_X	5000
+#define BOUND_VOLUME_Y	2500
+#define BOUND_VOLUME_Z	5000
+#define FAR_PLANE		4000
+#define RATIO_H			9.0
+#define RATIO_W			16.0
+
+#define GAME_MODE_MENU	0
+#define GAME_MODE_PLAY	1
 
 //#define DEBUGGING
 
@@ -23,6 +35,7 @@
 #include <Radar.s3d>
 #include <CollisionDetector.s3d>
 #include <AmbientEngine.s3d>
+#include <LightEngine.s3d>
 #include <Hud.s3d>
 
 /* Set global scene parameters */
@@ -38,14 +51,18 @@ var ambientController;
 var enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
 var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
 var meshes;
+var myLightEngine;
 var mySkyBox;
 var myRadar;
 var myHud;
+var gameMode;
 
 
 /* Function declarations */
 function DrawGrid(col, size);
+function DrawWorldBounds();
 function CameraMoveMouse();
+function respawn(fighter);
 
 function OnDownload()
 {
@@ -61,12 +78,16 @@ function OnDownload()
 	FileDownload("images/spacebackgrounds.zip");
 	FileDownload("images/billboards.zip");
 	FileDownload("avi/explosion.zip");
+	FileDownload("sounds/sounds.zip");
+	FileDownload("sounds/music.zip");
 }
 
 function OnInit(params)
 {
+	glEnable(GL_NORMALIZE);
+	
 #ifdef DEBUGGING
-	CameraGetCurrent().SetPosition([20, 0, 0]);
+	CameraGetCurrent().SetPosition([0, 0, 100]);
 #endif
 	networkController = Networker();
 	
@@ -76,36 +97,30 @@ function OnInit(params)
 	
 	meshes = MeshFactory();
 	
+	myLightEngine = LightEngine();
 	ambientController = AmbientEngine(networkController, meshes);
 	
-	myFighter = Xwing( meshes );
+	myFighter = Xwing( meshes, myLightEngine );
 #ifdef DEBUGGING
 	myFighter.useCamera(false);
 #else
 	myFighter.useCamera(true);
 #endif
-	myFighter.setPosition([ 50, 100, 0 ]);
+	myFighter.setPosition([ 0, 0, 0 ]);
+
 	myFighter.addNetwork(networkController);
 	
 	mySkyBox = SkyBox();
 	mySkyBox.init();
 	
-	myRadar = Radar();
+	myRadar = Radar(myFighter, ambientSpaceship, enemiesFighter);
 	
-	myHud = Hud();
-	myHud.increaseKillCounter(4);
-	myHud.increaseKillCounter(5);
-
-	/*ambientSpaceship[0] = DeathStar( meshes );
-	ambientSpaceship[0].setCenter([2500, 2000, 2500]);
-	ambientSpaceship[0].setRadius(0);
-	ambientSpaceship[0].setOrbitPeriod(500.0);
-	ambientSpaceship[0].setServerTime(GetTime());
-	ambientSpaceship[1] = StarDestroyer( meshes );
-	ambientSpaceship[1].setCenter([0, 0, 0]);
-	ambientSpaceship[1].setRadius(500);
-	ambientSpaceship[1].setOrbitPeriod(5000.0);
-	ambientSpaceship[1].setServerTime(GetTime());*/
+	myHud = Hud(myFighter);
+	MMMp3.Load("galactic-empire.mp3");
+	MMMp3.SetVolume(0.2);
+	MMMp3.Play(true);
+	
+	gameMode = GAME_MODE_MENU;
 	
 	/*---Global XVR parameters---*/
 	SetFrameRate(FRAMERATE);	
@@ -120,21 +135,22 @@ function OnFrame()
 #ifdef DEBUGGING
 	CameraMoveMouse();
 #endif
-	DrawGrid([0.5, 0.5, 0.5], 10000);	
-
+	//DrawGrid([0.5, 0.5, 0.5], 10000);	
+	DrawWorldBounds();
 	/*---here we draw our fighter---*/
 	mySkyBox.draw();
 	
 	if (myFighter.draw() == false) {
 		myFighter.resetFighter();
-		myFighter.SetPosition([rand(500),rand(500),rand(500)]);
+		respawn(myFighter);
 	}
 	
 	/*---here we draw all enemies fighter---*/
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		if (enemiesFighter[i] != void) {
 			if (enemiesFighter[i].draw() == false) {
-				enemiesFighter[i].resetFighter();
+				//enemiesFighter[i].resetFighter();
+				enemiesFighter[i] = void;
 			}
 		}
 	}
@@ -149,12 +165,10 @@ function OnFrame()
 	
 	myHud.draw();
 	
-	SceneEnd();
+	myLightEngine.update();
 	
-	/*SceneBeginRel(0.8,0.2,0.15,0.15, VR_LEAVE_COLOR);
-		myRadar.draw();
-		//minimap drawing
-	SceneEnd();*/
+	SceneEnd();
+
 }
 
 function DownloadReady(RequestID)
@@ -164,58 +178,116 @@ function DownloadReady(RequestID)
 
 function OnTimer()
 {
-	userInputController.userControlFighter(myFighter);
-	if (networkController != void) {
-		networkController.poll();
-		networkController.sendFighterData(myFighter.getFighterData());
-	}
-	
-	ambientController.tick(ambientSpaceship);
-	
-	myFighter.update();	
-	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
-		if (enemiesFighter[i] != void) {
-			enemiesFighter[i].update();
+	if (gameMode == GAME_MODE_PLAY) {
+		userInputController.userControlFighter(myFighter);
+		if (networkController != void) {
+			networkController.poll();
+			networkController.sendFighterData(myFighter.getFighterData());
 		}
-	}
-	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
-		if (ambientSpaceship[i] != void) {
-			ambientSpaceship[i].update();
-		}
-	}
-	mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
-	myRadar.update(myFighter, ambientSpaceship, enemiesFighter);
 	
-	collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
-	
-	// TEMPORANEO! rimuovo gli elementi ambiente distrutti
-	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
-		if (ambientSpaceship[i] != void) {
-			if (ambientSpaceship[i].isDestroyed()) {
-				ambientSpaceship[i] = void;
+		ambientController.tick(ambientSpaceship);
+		
+		myFighter.update();	
+		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+			if (enemiesFighter[i] != void) {
+				enemiesFighter[i].update();
 			}
+		}
+		for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+			if (ambientSpaceship[i] != void) {
+				ambientSpaceship[i].update();
+			}
+		}
+		mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
+		myRadar.update();
+		
+		collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
+		
+		// TEMPORANEO! rimuovo gli elementi ambiente distrutti
+		for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+			if (ambientSpaceship[i] != void) {
+				if (ambientSpaceship[i].isDestroyed()) {
+					ambientSpaceship[i] = void;
+				}
+			}
+		}
+	} else {
+		/* Network controller must work either in menu mode to fetch the id */
+		networkController.poll();
+		myFighter.setSpeed(0);
+		myFighter.update();
+		mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
+		var command = userInputController.userControlGameMenu();
+		var type;
+		var changedFighter;
+		switch (command) {
+			case 1:
+			case 2:
+				if (command == 1) {
+					type = (myFighter.FighterType - 1) % 5;
+					if (type < 0) {
+						type = 4;
+					}
+				} else {
+					type = (myFighter.FighterType + 1) % 5;
+				}
+				if (type == XWING_TYPE) { /* xwing */
+					changedFighter = Xwing( meshes, myLightEngine );
+				} else if (type == TIE_TYPE) { /* tie */
+					changedFighter = TieFighter( meshes, myLightEngine );
+				} else if (type == YWING_TYPE) { /* ywing */
+					changedFighter = Ywing( meshes, myLightEngine );
+				} else if (type == ARC170_TYPE) { /* arc170 */
+					changedFighter = Arc170( meshes, myLightEngine );
+				} else if (type == MILLFALC_TYPE) { /* millennium falcon */
+					changedFighter = MillenniumFalcon( meshes, myLightEngine );
+				}
+				#ifdef DEBUGGING
+					changedFighter.useCamera(false);
+				#else
+					changedFighter.useCamera(true);
+				#endif
+				changedFighter.setPosition(myFighter.getPosition());
+				changedFighter.addNetwork(networkController);
+				myFighter = changedFighter;
+			break;
+			case 3:
+				gameMode = GAME_MODE_PLAY;
+				/* Create main ambient object */
+				ambientSpaceship[0] = DeathStar( meshes );
+				ambientSpaceship[0].setCenter([2500, 2000, 2500]);
+				ambientSpaceship[0].setRadius(0);
+				ambientSpaceship[0].setOrbitPeriod(500.0);
+				ambientSpaceship[0].setServerTime(GetTime());
+				ambientSpaceship[1] = StarDestroyer( meshes );
+				ambientSpaceship[1].setCenter([0, 0, 0]);
+				ambientSpaceship[1].setRadius(500);
+				ambientSpaceship[1].setOrbitPeriod(5000.0);
+				ambientSpaceship[1].setServerTime(GetTime());
+				respawn(myFighter);
+			break;
 		}
 	}
 }
 
 function OnEvent(eventID, wparam, lparam){
 	if (networkController != void) {
-		if (eventId == networkController.isEnemyDataEvent()) {
+		if (eventId == networkController.isEnemyDataEvent() && gameMode == GAME_MODE_PLAY) {
 			var id = wparam[0];
 			var type = wparam[1];
 			if (enemiesFighter[id] == void) {
 				/* New player has joined the game! Share ambient object! */
 				ambientController.advertise(ambientSpaceship);
 				if (type == XWING_TYPE) { /* xwing */
-					enemiesFighter[id] = Xwing( meshes );
+					enemiesFighter[id] = Xwing( meshes, myLightEngine );
 				} else if (type == TIE_TYPE) { /* tie */
-					enemiesFighter[id] = TieFighter( meshes );
+					enemiesFighter[id] = TieFighter( meshes, myLightEngine );
 				} else if (type == YWING_TYPE) { /* ywing */
-					enemiesFighter[id] = Ywing( meshes );
+					enemiesFighter[id] = Ywing( meshes, myLightEngine );
 				} else if (type == ARC170_TYPE) { /* arc170 */
-					enemiesFighter[id] = Arc170( meshes );
+					enemiesFighter[id] = Arc170( meshes, myLightEngine );
 				} else if (type == MILLFALC_TYPE) { /* millennium falcon */
-					enemiesFighter[id] = MillenniumFalcon( meshes );
+					enemiesFighter[id] = MillenniumFalcon( meshes, myLightEngine );
 				} else {
 					Outputln("Error! fighter type does not exists!");
 					return;
@@ -227,7 +299,7 @@ function OnEvent(eventID, wparam, lparam){
 			enemiesFighter[id].setAnimationFrame(wparam[9]);
 			enemiesFighter[id].setCurrentLife(wparam[10]);
 		} else
-		if (eventId == networkController.isLaserBeamEvent()) {
+		if (eventId == networkController.isLaserBeamEvent() && gameMode == GAME_MODE_PLAY) {
 			var player = wparam[0];
 			var ipos = [wparam[1], wparam[2], wparam[3]];
 			var epos = [wparam[4], wparam[5], wparam[6]];
@@ -237,19 +309,19 @@ function OnEvent(eventID, wparam, lparam){
 				enemiesFighter[player].addBeam(ipos, epos, serverTime, dmg);
 			}
 		} else
-		if (eventId == networkController.isEnemyExitEvent()) {
+		if (eventId == networkController.isEnemyExitEvent() && gameMode == GAME_MODE_PLAY) {
 			enemiesFighter[wparam] = void;
-			Outputln(Sprintf("Player %d is gone!",wparam));
+			myHud.appendMessage(Sprintf("Player %d is gone!",wparam), false);
 		} else
-		if (eventId == networkController.isAmbientDestroyEvent()) {
+		if (eventId == networkController.isAmbientDestroyEvent() && gameMode == GAME_MODE_PLAY) {
 			ambientSpaceship[wparam] = void;
 			Outputln(Sprintf("Ambient %d is gone!",wparam));
 		} else
-		if (eventId == networkController.isAmbientDataEvent()) {
+		if (eventId == networkController.isAmbientDataEvent() && gameMode == GAME_MODE_PLAY) {
 			var id = wparam[0];
 			var type = wparam[1];
 			if (ambientSpaceship[id] == void) {
-				if (type == ESCAPE_POD) { 
+				if (type == ESCAPE_POD) {
 					ambientSpaceship[id] = EscapePod( meshes );
 				} else if (type == EMPEROR_SHUTTLE) { 
 					ambientSpaceship[id] = EmperorShuttle( meshes );
@@ -259,15 +331,22 @@ function OnEvent(eventID, wparam, lparam){
 					Outputln("Error! Ambient type does not exists!");
 					return;
 				}
+				ambientSpaceship[id].setCenter([ wparam[2], wparam[3], wparam[4] ]);
+				ambientSpaceship[id].setRadius(wparam[5]);
+				ambientSpaceship[id].setOrbitPeriod(wparam[6]);
+				ambientSpaceship[id].setServerTime(wparam[7]);
+				// TODO: scrivere qualche frase migliore...
+				myHud.appendMessage("Avvistata navicella!", false);
+			} else if (networkController.isServer()) {
+				/* If we are server we don't receive the ambient packet, so an event is generated by the 
+				 * networker in the sendAmbientData and the data is: [ambientId, ambientType]
+				 */
+				// TODO: scrivere qualche frase migliore...
+				myHud.appendMessage("Avvistata navicella!", false);
 			}
-			ambientSpaceship[id].setCenter([ wparam[2], wparam[3], wparam[4] ]);
-			ambientSpaceship[id].setRadius(wparam[5]);
-			ambientSpaceship[id].setOrbitPeriod(wparam[6]);
-			ambientSpaceship[id].setServerTime(wparam[7]);
 		} else
-		if (eventId == networkController.isFighterDestroyedEvent()) {
+		if (eventId == networkController.isFighterDestroyedEvent() && gameMode == GAME_MODE_PLAY) {
 			// [dead_playerId, killer_playerId]
-			outputln(sprintf("Player %d has killed player %d", wparam[1], wparam[0]));
 			if (wparam[0] != networkController.getId()) {
 				enemiesFighter[ wparam[0] ].setDestroyed(true);
 			} else {
@@ -280,9 +359,10 @@ function OnEvent(eventID, wparam, lparam){
 		if (eventId == networkController.isIdEvent()) {
 			if (wparam != -2) {
 				ambientController.start();
-				Outputln(Sprintf("GET ID: %d", wparam));
+				myHud.appendMessage(Sprintf("You are player: %d", wparam), true);
 			} else {
 				//TODO: errore troppi giocatori
+				myHud.appendMessage(sprintf("Too many players!"), true);
 			}
 		}
 	}
@@ -331,4 +411,78 @@ function DrawGrid(col, size)
 	
 	/* polite restoration of previous OpenGL status */
 	glPopAttrib();
+}
+
+function DrawWorldBounds(){
+	glPushAttrib(GL_LIGHTING_BIT | GL_LINE_BIT | GL_CURRENT_BIT);
+	
+	glLineWidth(1);
+	glDisable(GL_LIGHTING);
+	glColor([0.5, 0.5, 0.5]);
+//	var max = BOUND_VOLUME_X;
+//	var min = -max;	
+	var step = 100.0;
+	
+	glBegin(GL_LINES);
+	for (var i = -BOUND_VOLUME_X; i <= BOUND_VOLUME_X; i += step)
+		{
+			glVertex(i, BOUND_VOLUME_Y, BOUND_VOLUME_Z);
+			glVertex(i, BOUND_VOLUME_Y, -BOUND_VOLUME_Z);
+			
+			glVertex(i, -BOUND_VOLUME_Y, BOUND_VOLUME_Z);
+			glVertex(i, -BOUND_VOLUME_Y, -BOUND_VOLUME_Z);
+			
+			glVertex(i, BOUND_VOLUME_Y, BOUND_VOLUME_Z);
+			glVertex(i, -BOUND_VOLUME_Y, BOUND_VOLUME_Z);
+			
+			glVertex(i, BOUND_VOLUME_Y, -BOUND_VOLUME_Z);
+			glVertex(i, -BOUND_VOLUME_Y, -BOUND_VOLUME_Z);
+		}
+	for (var i = -BOUND_VOLUME_Y; i <= BOUND_VOLUME_Y; i += step)
+		{
+			glVertex(BOUND_VOLUME_X,i,BOUND_VOLUME_Z);
+			glVertex(BOUND_VOLUME_X,i,-BOUND_VOLUME_Z);
+			
+			glVertex(-BOUND_VOLUME_X,i,BOUND_VOLUME_Z);
+			glVertex(-BOUND_VOLUME_X,i,-BOUND_VOLUME_Z);
+			
+			glVertex(BOUND_VOLUME_X,i,BOUND_VOLUME_Z);
+			glVertex(BOUND_VOLUME_X,i,BOUND_VOLUME_Z);
+			
+			glVertex(BOUND_VOLUME_X,i,BOUND_VOLUME_Z);
+			glVertex(-BOUND_VOLUME_X,i,BOUND_VOLUME_Z);
+			
+			glVertex(BOUND_VOLUME_X,i,-BOUND_VOLUME_Z);
+			glVertex(-BOUND_VOLUME_X,i,-BOUND_VOLUME_Z);
+		}
+		
+	for (var i = -BOUND_VOLUME_Z; i <= BOUND_VOLUME_Z; i += step)
+		{
+			glVertex(BOUND_VOLUME_X, BOUND_VOLUME_Y, i);
+			glVertex(BOUND_VOLUME_X, -BOUND_VOLUME_Y, i);
+			
+			glVertex(-BOUND_VOLUME_X, BOUND_VOLUME_Y, i);
+			glVertex(-BOUND_VOLUME_X, -BOUND_VOLUME_Y, i);
+			
+			glVertex(BOUND_VOLUME_X, BOUND_VOLUME_Y, i);
+			glVertex(-BOUND_VOLUME_X, BOUND_VOLUME_Y, i);
+			
+			glVertex(BOUND_VOLUME_X, -BOUND_VOLUME_Y, i);
+			glVertex(-BOUND_VOLUME_X, -BOUND_VOLUME_Y, i);
+		}
+	glEnd();
+	
+	/* polite restoration of previous OpenGL status */
+	glPopAttrib();
+}
+
+function respawn(fighter)
+{
+	//TODO: respawn da uno degli 8 vertici
+	var posx = rand(BOUND_VOLUME_X) * ((Rand(1)==0)?1:-1);
+	var posy = rand(BOUND_VOLUME_Y) * ((Rand(1)==0)?1:-1);
+	var posz = rand(BOUND_VOLUME_Z) * ((Rand(1)==0)?1:-1);
+	//fighter.SetPosition([posx, posy, posz]);
+	fighter.SetPosition([posx, 0, 0]);
+	//fighter.SetPosition([0, 0, 0]);
 }

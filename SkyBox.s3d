@@ -1,4 +1,4 @@
-#define SKY_BOX_SIZE	5000
+#define SKY_BOX_SIZE	FAR_PLANE
 #define N_TILES			6
 #define MODULATION_STEP 0.1
 

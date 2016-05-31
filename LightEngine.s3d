@@ -1,0 +1,307 @@
+#include <Light.s3d>
+
+#define ENVIRONMENT_LIGHTS	7
+#define VIRTUAL_LIGHTS		16
+#define CAMERA				0
+
+//#define RED_LIGHT			0
+//#define GREEN_LIGHT		1
+
+/*class LightEngine{
+	var virtualLightArray;
+	var LightArray;
+	var linkedObjects;
+	var LightIsBusy;
+	
+	LightEngine();
+	update();
+	requestLight(lightType);
+	linkObject(linkedObj, idx);
+	releaseLight(idx);
+	//setLightPosition(position, idx);
+}; 
+
+function LightEngine::LightEngine(){
+	LightArray = Array(ENVIRONMENT_LIGHTS);
+	LightIsBusy= Array(ENVIRONMENT_LIGHTS);
+	LinkedObjects = Array(ENVIRONMENT_LIGHTS);
+	
+	for(var i=0; i<ENVIRONMENT_LIGHTS; i++){
+		LightArray[i] = CVmLight();
+//		LightArray[i].Disable();
+		LightIsBusy[i] = false;
+	}
+}
+
+
+function LightEngine::requestLight(lightType){
+	var idx = -1;
+	for(var i = 0; i < ENVIRONMENT_LIGHTS; i++){
+		if(!LightIsBusy[i]){
+			//allocala:
+			if(lightType == RED_LIGHT){
+				LightArray[i].setAmbient(1,0,0);
+				LightArray[i].setDiffuse(1,0,0);
+ 				LightArray[i].setSpecular(1,0,0);
+ 				LightArray[i].setParameter(GL_SPOT_EXPONENT, 64);
+				LightArray[i].setParameter(GL_QUADRATIC_ATTENUATION, 2);
+			}else if(lightType == GREEN_LIGHT){
+				LightArray[i].setAmbient(0.0,1.0,0.0);
+				LightArray[i].setDiffuse(0.0,1.0,0.0);
+//				LightArray[i].setSpecular(0.0,1.0,0.0);
+ 				LightArray[i].setParameter(GL_SPOT_EXPONENT, 64);
+				LightArray[i].setParameter(GL_QUADRATIC_ATTENUATION, 2);
+			} else if(lightType == WHITE_LIGHT){
+				//LightArray[i].setAmbient(1.0,0.0,0.0);
+				LightArray[i].setDiffuse(1.0,1.0,1.0);
+				//LightArray[i].setSpecular(1.0,1.0,1.0);
+			}
+			idx = i;
+			LightIsBusy[idx] = true;
+			LightArray[idx].Enable();
+			//linkedObjects[i] = linkedObj;
+			
+			outputln(sprintf("light %d enabled", idx));
+			break;
+		}
+	}
+	return idx;
+}
+
+function LightEngine::releaseLight(idx){
+	if(idx>=0){
+		if(LightIsBusy[idx]){
+			LightArray[idx].Disable();
+			LightIsBusy[idx] = false;
+			linkedObjects[idx] = void;
+			outputln(sprintf("light %d disabled", idx));
+		}else{
+			outputln(sprintf("error in releasing light %d", idx));
+		}
+	}
+}
+
+//function LightEngine::setLightPosition(idx, position){
+//	if(idx >=0 ){
+//		if(LightIsBusy[idx]){
+//			LightArray[idx].setPosition(position);
+//		}
+//	}
+//}
+
+function LightEngine::linkObject(linkedObj, idx){
+	linkedObjects[idx] = linkedObj;
+}
+
+function LightEngine::update(){
+	var tmpPos;
+//	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_LIGHTING_BIT);
+	for(var i = 0; i < ENVIRONMENT_LIGHTS; i++){
+		if(LightIsBusy[i]){
+//			LightArray[i].Enable();
+			tmpPos = linkedObjects[i].getPosition();
+			LightArray[i].setPosition(tmpPos);
+//			LightArray[i].Enable();
+//			if(i>0)outputln(sprintf("Light %d in position %f,%f,%f", i, tmpPos.x, tmpPos.y, tmpPos.z));
+		}
+	}
+//	glPopAttrib();
+}*/
+
+class LightEngine{
+	var virtualLightArray;
+	var LightArray;
+	var linkedObjects;
+	var LightIsBusy;
+	var virtualLightsNum;
+	
+	LightEngine();
+	update();
+	requestLight(lightType);
+	requestCameraLight(cam);
+	linkObject(linkedObj, idx);
+	releaseLight(idx);
+	setGlParams(src, dst);
+	//setLightPosition(position, idx);
+}; 
+
+function LightEngine::LightEngine(){
+	LightArray = Array(ENVIRONMENT_LIGHTS);
+	virtualLightArray = Array(VIRTUAL_LIGHTS);
+	LightIsBusy= Array(ENVIRONMENT_LIGHTS);
+	LinkedObjects = Array(VIRTUAL_LIGHTS);
+	
+//	glDisable(GL_LIGHT0);
+	
+	virtualLightsNum = 0;
+	
+	for(var i=0; i<ENVIRONMENT_LIGHTS; i++){
+		LightArray[i] = CVmLight();
+		LightArray[i].Disable();
+		LightIsBusy[i] = false;
+	}
+}
+
+
+function LightEngine::requestLight(lightType){
+	var idx = -1;
+	for(var i = 1; i < VIRTUAL_LIGHTS; i++){
+		if(virtualLightArray[i] == void){
+			//allocala:
+			virtualLightArray[i] = Light();
+			virtualLightsNum++;
+			if(lightType == RED_LIGHT){
+				virtualLightArray[i].setAmbient([0.0,0,0]);
+				virtualLightArray[i].setDiffuse([0.0,0,0]);
+ 				virtualLightArray[i].setSpecular([1,0,0]);
+			}else if(lightType == GREEN_LIGHT){
+				virtualLightArray[i].setAmbient([0.0,0,0.0]);
+				virtualLightArray[i].setDiffuse([0.0,0,0.0]);
+				virtualLightArray[i].setSpecular([0.0,1.0,0.0]);
+			} else if(lightType == WHITE_LIGHT){
+				virtualLightArray[i].setAmbient([0.1,0.1,0.1]);
+				virtualLightArray[i].setDiffuse([1.0,1.0,1.0]);
+				virtualLightArray[i].setSpecular([1.0,1.0,1.0]);
+			}
+			idx = i;
+//			outputln(sprintf("light %d created", idx));
+			break;
+		}
+	}
+	return idx;
+}
+
+function LightEngine::requestCameraLight(cam){
+	if(virtualLightArray[CAMERA]==void){
+		virtualLightArray[CAMERA] = Light();
+		virtualLightArray[CAMERA].setAmbient([0.2,0.2,0.2]);  
+		virtualLightArray[CAMERA].setDiffuse([1.0,1.0,1.0]);
+		virtualLightArray[CAMERA].setSpecular([1.0,1.0,1.0]);
+		virtualLightsNum++;
+		linkedObjects[CAMERA] = cam;
+	}else{
+		outputln("error in creating camera light");
+	}
+}
+
+function LightEngine::releaseLight(idx){
+	if(idx>=0){
+		virtualLightArray[idx] = void;
+		linkedObjects[idx] = void;
+		virtualLightsNum--;
+//		outputln(sprintf("light %d destroyed", idx));
+	}
+}
+
+function LightEngine::linkObject(linkedObj, idx){
+	linkedObjects[idx] = linkedObj;
+}
+
+function LightEngine::update(){
+//	var tmpPos;
+	var alive = Array(virtualLightsNum);
+	var selected;
+	var activeNum;
+//	var i = 0;
+	var j = 0;
+	var cameraPos;
+	
+	for(var i = 0; i < VIRTUAL_LIGHTS; i++){
+		if(virtualLightArray[i]!=void){
+			virtualLightArray[i].setPosition(linkedObjects[i].getPosition());
+			alive[j++] = i;
+//			if(i>0)outputln(sprintf("Light %d in position %f,%f,%f", i, tmpPos.x, tmpPos.y, tmpPos.z));
+		}
+	}
+	
+	if(virtualLightsNum>ENVIRONMENT_LIGHTS){
+		//activate search		
+		var delta = virtualLightsNum -ENVIRONMENT_LIGHTS;
+		var distances = Vector(virtualLightsNum);
+		var maximums = Vector(delta);
+		selected = Array(ENVIRONMENT_LIGHTS);	
+		activeNum = ENVIRONMENT_LIGHTS;
+		cameraPos = linkedObjects[CAMERA].getPosition();
+		
+		for(var i = 0; i<virtualLightsNum; i++){
+			distances[i] = modulus(virtualLightArray[alive[i]].getPosition()-cameraPos);
+		}
+		
+		var tmpMax; 					//camera skipped
+		var tmpIdx;
+		for(var i=0; i<delta; i++){
+			tmpMax = 0.0;
+			tmpIdx = 0;
+			for(var k=0; k<virtualLightsNum; k++){
+				if(distances[k]>=tmpMax){
+					tmpIdx = k;
+					tmpMax = distances[k];
+//					outputln(sprintf("maximum = %f, index = %d, k = %d", tmpMax, tmpIdx, k));
+				}
+			}
+           	distances[tmpIdx] = -1.0;
+//          outputln(sprintf("final idx = %d, i=%d",tmpIdx, i));
+		}
+	
+		var k=0;
+		//asize(selected, ENVIRONMENT_LIGHTS);
+		for(var i=0; i<virtualLightsNum;i++){
+			if(distances[i]>=0)selected[k++] = alive[i];
+		}
+	}else{
+		selected = Array(virtualLightsNum);
+		activeNum = virtualLightsNum;
+		selected = alive;
+	}
+	
+	for(var i = 0; i<activeNum; i++){
+		setGlParams(selected[i], i);
+		LightArray[i].Enable();
+//		glEnable(GL_LIGHT1+i);
+		LightIsBusy[i] = true;
+//		outputln(sprintf("virtual light %d has light %d",selected[i], i));
+	}
+	for(var i=activeNum; i<ENVIRONMENT_LIGHTS; i++){
+//		glDisable(GL_LIGHT1+i);
+		LightArray[i].Disable();
+		LightIsBusy[i] = false;
+//		outputln(sprintf("light %d disabled", i));
+	}
+}
+
+function LightEngine::setGlParams(src, dst){
+//	var w=1;
+	var pos;
+//	var tmpLight;
+//	if(src==CAMERA){
+//		positional = 0;
+//		pos = linkedObjects[CAMERA].getDirection();
+//	}else{
+		pos = VirtualLightArray[src].getPosition();
+//	}
+	
+	LightArray[dst].setAmbient(VirtualLightArray[src].getAmbient());
+	LightArray[dst].setDiffuse(VirtualLightArray[src].getDiffuse());
+	LightArray[dst].setSpecular(VirtualLightArray[src].getSpecular());
+	LightArray[dst].setPosition(pos);
+	/*if(src!=CAMERA){
+		LightArray[dst].setParameter(GL_CONSTANT_ATTENUATION, 1);
+//		LightArray[dst].setParameter(GL_LINEAR_ATTENUATION, 5);
+//		LightArray[dst].setParameter(GL_QUADRATIC_ATTENUATION, 5);
+		LightArray[dst].setParameter(GL_SPOT_EXPONENT, 100);
+	}*/
+	/*switch(dst){
+		case 0: tmpLight = GL_LIGHT1;break;
+		case 1: tmpLight = GL_LIGHT2;break;
+		case 2: tmpLight = GL_LIGHT3;break;
+		case 3: tmpLight = GL_LIGHT4;break;
+		case 4: tmpLight = GL_LIGHT5;break;
+		case 5: tmpLight = GL_LIGHT6;break;
+		case 6: tmpLight = GL_LIGHT7;break;
+	}
+	
+	glLight(tmpLight, GL_AMBIENT, VirtualLightArray[src].getAmbient());
+	glLight(tmpLight, GL_DIFFUSE, VirtualLightArray[src].getDiffuse());
+	glLight(tmpLight, GL_SPECULAR, VirtualLightArray[src].getSpecular());
+	glLight(tmpLight, GL_POSITION, [pos.x,pos.y,pos.z,w]);*/
+}

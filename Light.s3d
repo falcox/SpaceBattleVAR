@@ -1,0 +1,70 @@
+class Light{
+	var position;
+	var ambient;
+	var diffuse;
+	var specular;
+	var enabled;
+//	var positional;
+	
+	Light();
+	Enable();
+	Disable();
+	setAmbient(a);
+	setDiffuse(d);
+	setSpecular(s);
+	setPosition(p);
+//	setPositionalDirectional(pd);
+	getAmbient();
+	getDiffuse();
+	getSpecular();
+	getPosition();
+//	getPositionalDirectional();
+};
+
+function Light::Light(){
+	position = Vector(3);
+	ambient = Vector(3);
+	diffuse = Vector(3);
+	specular = Vector(3);
+	enabled = false;
+//	positional = 1;
+}
+
+function Light::Enable(){
+	enabled = true;
+}
+
+function Light::Disable(){
+	enabled = false;
+}
+
+function Light::setAmbient(a){
+	ambient = a;
+}
+
+function Light::setDiffuse(d){
+	diffuse = d;
+}
+function Light::setSpecular(s){
+	specular = s;
+}
+
+function Light::setPosition(p){
+	position = p;
+}
+
+function Light::getAmbient(){
+	return ambient;
+}
+
+function Light::getDiffuse(){
+	return diffuse;
+}
+
+function Light::getSpecular(){
+	return specular;
+}
+
+function Light::getPosition(){
+	return position;
+}

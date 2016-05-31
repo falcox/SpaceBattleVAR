@@ -70,6 +70,7 @@ function MeshFactory::MeshFactory()
 	redMaterial.diffuse = [1,0,0,1];
 	redMaterial.emission = [1,0,0,1];
 	redMaterial.shininess = 128;
+	redMaterial.transparency = 0.9;
 	bulletMeshes[RED_BEAM].setMaterial(redMaterial);
 	
 	bulletMeshes[GREEN_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
@@ -78,6 +79,7 @@ function MeshFactory::MeshFactory()
 	greenMaterial.ambient = [0,1,0,1];
 	greenMaterial.diffuse = [0,1,0,1];
 	greenMaterial.emission = [0,1,0,1];
+	greenMaterial.transparency = 0.9;
 	greenMaterial.shininess = 128;
 	bulletMeshes[GREEN_BEAM].setMaterial(greenMaterial);
 	
