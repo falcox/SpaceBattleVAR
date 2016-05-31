@@ -113,9 +113,6 @@ function OnInit(params)
 	mySkyBox = SkyBox();
 	mySkyBox.init();
 	
-	myRadar = Radar(myFighter, ambientSpaceship, enemiesFighter);
-	
-	myHud = Hud(myFighter);
 	MMMp3.Load("galactic-empire.mp3");
 	MMMp3.SetVolume(0.2);
 	MMMp3.Play(true);
@@ -264,6 +261,8 @@ function OnTimer()
 				ambientSpaceship[1].setRadius(500);
 				ambientSpaceship[1].setOrbitPeriod(5000.0);
 				ambientSpaceship[1].setServerTime(GetTime());
+				myRadar = Radar(myFighter, ambientSpaceship, enemiesFighter);
+				myHud = Hud(myFighter);
 				respawn(myFighter);
 			break;
 		}
