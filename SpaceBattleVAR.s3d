@@ -73,6 +73,8 @@ function OnDownload()
 	FileDownload("images/spacebackgrounds.zip");
 	FileDownload("images/billboards.zip");
 	FileDownload("avi/explosion.zip");
+	FileDownload("sounds/sounds.zip");
+	FileDownload("sounds/music.zip");
 }
 
 function OnInit(params)
@@ -126,6 +128,11 @@ function OnInit(params)
 	enemiesFighter[0].setSpeed(0);
 	enemiesFighter[0].setAnimationFrame(0);
 	enemiesFighter[0].setCurrentLife(100);*/
+	
+	MMMp3.Load("galactic-empire.mp3");
+	MMMp3.SetVolume(0.2);
+	MMMp3.Play(true);
+	
 	
 	/*---Global XVR parameters---*/
 	SetFrameRate(FRAMERATE);	

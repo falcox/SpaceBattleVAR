@@ -42,6 +42,9 @@ class FighterJet {
 	var collided;
 	var destroyed;
 	var expl;
+	var fireSound;
+	var hitSound;
+	var explSound;
 	
 	init(meshes, lights, fType, beamType);
 	draw();
@@ -106,6 +109,9 @@ function FighterJet::init(meshes, lights, fType, beamType) {
 	expl = meshes.getAviResources(EXPLOSION);
 	lightFactory = lights;
 	direction = [0,0,0];
+	fireSound = CVmVRAWav("laser.wav");
+	hitSound = CVmVRAWav("hit.mp3");
+	explSound = CVmVRAWav("expl.wav");
 	
 	FighterObj = CVmObj(fighterMesh);
 	bbox = fighterMesh.getBoundingBox();
@@ -359,6 +365,8 @@ function FighterJet::fireBeam(offset){
 				var origin_time = GetTime();
 				var idx = lightFactory.requestLight(lightType);
 				currentBattery -= 0.2;
+				fireSound.Stop();
+				fireSound.Play();
     			beamArray[i] = LaserBeam(beamMesh, idx, initPos, finalPos, origin_time, MIN_DAMAGE);		//TODO: il danno deve essere "dinamico"
 				if(idx>=0) {
 					lightFactory.linkObject(beamArray[i].getObject(), idx);
@@ -426,7 +434,12 @@ function FighterJet::decreaseLife(delta, enemy_id_hit) {
 	if(currentLife <= 0 && destroyed == false){
 		currentLife = 0;
 		destroyed = true;
+		explSound.Stop();
+		explSound.Play();
 		network.sendFighterDestroyedData(network.GetId(), enemy_id_hit);
+	}else{
+		hitSound.Stop();
+		hitSound.Play();
 	}
 }
 
