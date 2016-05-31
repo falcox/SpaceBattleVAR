@@ -8,7 +8,7 @@
 #define MIN_SPEED	0
 #define MAX_SPEED	300
 #define SPEED_STEP	5
-#define MAX_LASER_RANGE 600
+#define MAX_LASER_RANGE 800
 #define MAX_BULLET_NUM	10
 #define MIN_DAMAGE		10
 
@@ -34,6 +34,7 @@ class FighterJet {
 	var roll;				/* Angle on Z axis */
 	var rollDelta, pitchDelta, yawDelta;		
 	var currentLife;		/* Life variable from 0 to 100 */
+	var currentBattery;
 	var velocity;
 	var currentFrame;
 	var bbox;
@@ -74,6 +75,8 @@ class FighterJet {
 	getAliveBeamsNum();
 	setCollidedBeam(index);
 	setCurrentLife(life);
+	getCurrentLife();
+	getCurrentBattery();
 	decreaseLife(delta, enemy_id_hit);
 	increaseLife(delta);
 	resetFighter();
@@ -89,7 +92,8 @@ function FighterJet::init(meshes, lights, fType, beamType) {
 	FighterPos = [0,0,0];
 	velocity = MIN_SPEED;
 	currentFrame = 0;
-	currentLife = 100;
+	currentLife = 100.0;
+	currentBattery = 100.0;
 	cameraMode = 0;
 	withCamera = false;
 	cameraModeOffset = {[0, 0], [0, 0]};
@@ -345,22 +349,25 @@ function FighterJet::fireBeam(offset){
 	var initPos;
 	var dir = FighterObj.getZaxis();
 	var finalPos; 
-	initPos= this.getPosition() + FighterObj.getXaxis() * offset[0]+ FighterObj.getYaxis()*offset[1] + dir*offset[2] ;	
-	dir = dir / modulus(dir);
-	finalPos = this.getPosition() + dir*MAX_LASER_RANGE;
+	if(currentBattery > 0){
+		initPos= this.getPosition() + FighterObj.getXaxis() * offset[0]+ FighterObj.getYaxis()*offset[1] + dir*offset[2] ;	
+		dir = dir / modulus(dir);
+		finalPos = this.getPosition() + dir*MAX_LASER_RANGE;
 	
-	for(var i = 0; i < MAX_BULLET_NUM; i++){
-		if(beamArray[i] == void){
-			var origin_time = GetTime();
-			var idx = lightFactory.requestLight(lightType);
-    		beamArray[i] = LaserBeam(beamMesh, idx, initPos, finalPos, origin_time, MIN_DAMAGE);		//TODO: il danno deve essere "dinamico"
-			if(idx>=0) {
-				lightFactory.linkObject(beamArray[i].getObject(), idx);
+		for(var i = 0; i < MAX_BULLET_NUM; i++){
+			if(beamArray[i] == void){
+				var origin_time = GetTime();
+				var idx = lightFactory.requestLight(lightType);
+				currentBattery -= 0.2;
+    			beamArray[i] = LaserBeam(beamMesh, idx, initPos, finalPos, origin_time, MIN_DAMAGE);		//TODO: il danno deve essere "dinamico"
+				if(idx>=0) {
+					lightFactory.linkObject(beamArray[i].getObject(), idx);
+				}
+				var data = {initPos.x, initPos.y, initPos.z, finalPos.x, finalPos.y, finalPos.z, origin_time, MIN_DAMAGE};
+	    		network.sendLaserBeamData(data, -1);
+	    		aliveBeams++;
+				break;
 			}
-			var data = {initPos.x, initPos.y, initPos.z, finalPos.x, finalPos.y, finalPos.z, origin_time, MIN_DAMAGE};
-    		network.sendLaserBeamData(data, -1);
-    		aliveBeams++;
-			break;
 		}
 	}
 }
@@ -434,6 +441,17 @@ function FighterJet::setCurrentLife(life)
 {
 	currentLife = life;
 }
+
+function FighterJet::getCurrentLife()
+{
+	return currentLife;
+}
+
+function FighterJet::getCurrentBattery()
+{
+	return currentBattery;
+}
+
 
 function FighterJet::resetFighter()
 {

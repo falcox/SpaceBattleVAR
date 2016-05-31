@@ -1,32 +1,43 @@
 #define RADAR_RADIUS	2000
-#define RADAR_POINTS	20
-#define RATIO_H			9.0
-#define RATIO_W			16.0
+#define RADAR_POINTS	16
 #define DOT_SIZE		0.1
 
 //#define ABSOLUTE_DETECTION
 
 class Radar{
-	var pointsArray;
-	var pointsNum;
+//	var pointsArray;
+	var ambientPoints;
+	var enemyPoints;
+	var ambientPointsNum;
+	var enemyPointsNum;
 	var radarTexture;
 	var dotTexture;
+	var myFighter;
+	var ambientArray;
+	var enemyArray;
 	
-	update(myFighter, ambientArray, enemyArray);
+	update();
 	draw();
 	getCamera();
 };
 
-function Radar::Radar(){
+function Radar::Radar(Fighter, ambient, enemy){
 	radarTexture = CVmTexture("radar.png");
 	dotTexture = CVmTexture("whitedot.png");
-	pointsNum = 0;
+	ambientPointsNum = 0;
+	enemyPointsNum = 0;
+	myFighter = fighter;
+	ambientArray = ambient;
+	enemyArray = enemy;
 	
-	pointsArray = Array(RADAR_POINTS);
+//	pointsArray = Array(RADAR_POINTS);
+	ambientPoints = Array(RADAR_POINTS);
+	enemyPoints = Array(RADAR_POINTS);
 }
 
-function Radar::update(myFighter, ambientArray, enemyArray){
+function Radar::update(){
 	var j = 0;
+	var k = 0;
 	var fighterPos;
 	var fighterZ;
 	var FighterY;
@@ -49,7 +60,7 @@ function Radar::update(myFighter, ambientArray, enemyArray){
 				projection[1] = (testDist*fighterZ)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[2] = abs(testDist*fighterY)/modulus(testDist);
 //				outputln(sprintf("alpha intensity: %f", projection.z));
-				pointsArray[j++] = projection;
+				enemyPoints[j++] = projection;
 //				outputln(sprintf("alpha stored: %f", pointsArray[j-1].z));
 			}
 		}
@@ -61,29 +72,33 @@ function Radar::update(myFighter, ambientArray, enemyArray){
 			testDist = testPos-fighterPos;
 			if(modulus(testDist)<=RADAR_RADIUS){
 				//pointsArray[j++] = testPos;
-#ifdef ABSOLUTE_DETECTION
-				/*--- ABSOLUTE DETECTION ---*/
+/* #ifdef ABSOLUTE_DETECTION
+				
 				projection[0] = -(testDist.x)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[1] = (testDist.z)*(RATIO_W/16)/RADAR_RADIUS;
 				pointsArray[j++] = projection;
-#else				
+#else	*/			
 				/*--- RELATIVE DETECTION ---*/
 				projection[0] = -(testDist*fighterX)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[1] = (testDist*fighterZ)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[2] = abs(testDist*fighterY)/modulus(testDist);
 //				outputln(sprintf("alpha intensity: %f", projection[2]));
-				pointsArray[j++] = projection;
+				ambientPoints[k++] = projection;
 //				outputln(sprintf("alpha stored: %f", pointsArray[j].z));
-#endif
+//#endif
 			}
 		}
 	}
 	
-	pointsNum = j;
+	enemyPointsNum = j;
+	ambientPointsNum = k;
 	
 	/*--- FLUSH ---*/
 	for(var i = j; i<RADAR_POINTS; i++){
-		pointsArray[i] = void;
+		enemyPoints[i] = void;
+	}
+	for(var i = k; i<RADAR_POINTS; i++){
+		ambientPoints[i] = void;
 	}
 }
 
@@ -120,13 +135,21 @@ function Radar::draw(){
 	setActiveTexture(dotTexture);
 	glBegin(GL_QUADS);
 		//glPointSize(150);
-		for(var i=0; i<pointsNum; i++){
-			glColor(0, 1.0, 0,1 - pointsArray[i].z);
-			glTexCoord(0, 1); glVertex(pointsArray[i].x-DOT_SIZE/2, pointsArray[i].y-DOT_SIZE/2);
-			glTexCoord(1, 1); glVertex(pointsArray[i].x+DOT_SIZE/2, pointsArray[i].y-DOT_SIZE/2);
-			glTexCoord(1, 0); glVertex(pointsArray[i].x+DOT_SIZE/2, pointsArray[i].y+DOT_SIZE/2);
-			glTexCoord(0, 0); glVertex(pointsArray[i].x-DOT_SIZE/2, pointsArray[i].y+DOT_SIZE/2);
-			//glVertex(pointsArray[i].x, pointsArray[i].y);
+		for(var i=0; i<ambientPointsNum; i++){
+			glColor(0, 1.0, 0,1 - ambientPoints[i].z);
+			glTexCoord(0, 1); glVertex(ambientPoints[i].x-DOT_SIZE/2, ambientPoints[i].y-DOT_SIZE/2);
+			glTexCoord(1, 1); glVertex(ambientPoints[i].x+DOT_SIZE/2, ambientPoints[i].y-DOT_SIZE/2);
+			glTexCoord(1, 0); glVertex(ambientPoints[i].x+DOT_SIZE/2, ambientPoints[i].y+DOT_SIZE/2);
+			glTexCoord(0, 0); glVertex(ambientPoints[i].x-DOT_SIZE/2, ambientPoints[i].y+DOT_SIZE/2);
+			//glVertex(ambientPoints[i].x, ambientPoints[i].y);
+		}
+		for(var i=0; i<enemyPointsNum; i++){
+			glColor(1, 0, 0,1 - enemyPoints[i].z);
+			glTexCoord(0, 1); glVertex(enemyPoints[i].x-DOT_SIZE/2, enemyPoints[i].y-DOT_SIZE/2);
+			glTexCoord(1, 1); glVertex(enemyPoints[i].x+DOT_SIZE/2, enemyPoints[i].y-DOT_SIZE/2);
+			glTexCoord(1, 0); glVertex(enemyPoints[i].x+DOT_SIZE/2, enemyPoints[i].y+DOT_SIZE/2);
+			glTexCoord(0, 0); glVertex(enemyPoints[i].x-DOT_SIZE/2, enemyPoints[i].y+DOT_SIZE/2);
+			//glVertex(enemyPoints[i].x, enemyPoints[i].y);
 		}
 	glEnd();
 	

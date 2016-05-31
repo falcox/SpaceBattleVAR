@@ -336,7 +336,7 @@ function Networker::sendAmbientData(ambientId, ambientData)
 		}
 	}
 	var data = {ambientId, ambientData[0]};
-	EventPost(ambientDataEvent, data, 1);
+//	EventPost(ambientDataEvent, data, 1);
 }
 
 function Networker::sendAmbientDataAck(ackIdMsg)
