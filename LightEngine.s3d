@@ -214,6 +214,8 @@ function LightEngine::update(){
 		}
 	}
 	
+	activeNum = j;
+	
 	if(virtualLightsNum>ENVIRONMENT_LIGHTS){
 		//activate search		
 		var delta = virtualLightsNum -ENVIRONMENT_LIGHTS;
@@ -284,12 +286,12 @@ function LightEngine::setGlParams(src, dst){
 	LightArray[dst].setDiffuse(VirtualLightArray[src].getDiffuse());
 	LightArray[dst].setSpecular(VirtualLightArray[src].getSpecular());
 	LightArray[dst].setPosition(pos);
-//	if(src!=CAMERA){
-//		LightArray[dst].setParameter(GL_CONSTANT_ATTENUATION, 1);
+	/*if(src!=CAMERA){
+		LightArray[dst].setParameter(GL_CONSTANT_ATTENUATION, 1);
 //		LightArray[dst].setParameter(GL_LINEAR_ATTENUATION, 5);
 //		LightArray[dst].setParameter(GL_QUADRATIC_ATTENUATION, 5);
-//		LightArray[dst].setParameter(GL_SPOT_EXPONENT, 100);
-//	}
+		LightArray[dst].setParameter(GL_SPOT_EXPONENT, 100);
+	}*/
 	/*switch(dst){
 		case 0: tmpLight = GL_LIGHT1;break;
 		case 1: tmpLight = GL_LIGHT2;break;

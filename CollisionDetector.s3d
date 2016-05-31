@@ -49,7 +49,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 		if (ambientArray[i] != void ) {
 			var shipObj = ambientArray[i].getObject();
 			if(myFighterObj.isCollidingBBox(shipObj)){
-				if(ambientArray[i].isDestroyable()){
+				if(ambientArray[i].isDestroyable()) {
 					ambientArray[i].setCollision(true);
 					network.sendAmbientDestroyData(i, -1);
 				} else {
@@ -69,7 +69,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 						var p = beam.getObject().getPosition();
 						if(shipObj.isColliding(p+cv[0], p+cv[1])){
 							beam.setCollided();
-							outputln("bullet collided");
+							//outputln("bullet collided");
 						}
 					}
 				}

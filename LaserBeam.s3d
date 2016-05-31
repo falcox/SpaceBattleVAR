@@ -81,8 +81,7 @@ function LaserBeam::update(){
 	displacement = direction*timeTickSecond*LASER_SPEED;
 	actualPos += displacement;
 	object.SetPosition(actualPos);
-//	CollVertex = [actualPos-direction*15, actualPos+direction*15];
-	
+		
 	/*--- check se distruggere il proiettile ---*/
 	if(modulus(actualPos - initPos) > posThreshold || collision == true){
 		killMe = true;

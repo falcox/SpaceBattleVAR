@@ -4,7 +4,7 @@
 #include <LaserBeam.s3d>
 
 #define FRAME_STEP 0.5
-#define ANGLE_STEP 	0.5
+#define ANGLE_STEP 	0.9
 #define MIN_SPEED	0
 #define MAX_SPEED	300
 #define SPEED_STEP	5
@@ -90,6 +90,9 @@ function FighterJet::init(meshes, lights, fType, beamType) {
 	yaw = 0;
 	roll = 0;
 	pitch = 0;
+	rollDelta = 0;
+	pitchDelta = 0; 
+	yawDelta = 0;
 	time = 0;
 	FighterType = fType;
 	FighterPos = [0,0,0];
@@ -107,11 +110,12 @@ function FighterJet::init(meshes, lights, fType, beamType) {
 	beamMesh = meshes.getBulletMeshes(beamType);
 	aliveBeams = 0;
 	expl = meshes.getAviResources(EXPLOSION);
+	expl.SetAviFrame(0);
 	lightFactory = lights;
 	direction = [0,0,0];
 	fireSound = CVmVRAWav("laser.wav");
-	hitSound = CVmVRAWav("hit.mp3");
-	explSound = CVmVRAWav("expl.wav");
+	hitSound = CVmVRAWav("hit.wav");
+	explSound = CVmVRAWav("explosion.wav");
 	
 	FighterObj = CVmObj(fighterMesh);
 	bbox = fighterMesh.getBoundingBox();
@@ -187,9 +191,9 @@ function FighterJet::decreaseSpeed()
 
 function FighterJet::setSpeed(speed)
 {
-	if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
+	//if (speed >= MIN_SPEED && speed <= MAX_SPEED) {
 		velocity = speed;
-	}
+	//}
 }
 
 function FighterJet::setAnimationFrame(frame_number)
@@ -199,6 +203,23 @@ function FighterJet::setAnimationFrame(frame_number)
 
 function FighterJet::setAngle(r, p, y)
 {
+	/*var rr = -r * GRAD_TO_RAD;
+	var pp = -p * GRAD_TO_RAD;
+	var yy = -y * GRAD_TO_RAD;
+	FighterObj.setRotationMatrix(	[cos(yy)*cos(rr), -cos(yy)*sin(rr), sin(yy), 0,
+									 (cos(pp)*sin(rr)+sin(pp)*sin(yy)*cos(rr)), (cos(pp)*cos(rr)-sin(pp)*sin(yy)*sin(rr)),(-sin(pp)*cos(yy)),0,
+									 (sin(pp)*sin(rr)-cos(pp)*sin(yy)*cos(rr)), (sin(pp)*cos(rr)+cos(pp)*sin(yy)*sin(rr)), (cos(pp)*cos(yy)),0,
+									 0,0,0,1
+	]);
+	rollDelta = 0;
+	pitchDelta = 0;
+	yawDelta = 0;
+	if (withCamera == false) {
+		outputln(sprintf("setAngle roll: %f, pitch: %f, yaw: %f", r,p,y));
+	}
+	roll = r;
+	pitch = p;
+	yaw = y;*/
 	rollDelta = r - roll;
 	pitchDelta = p - pitch;
 	yawDelta = y - yaw;
@@ -222,6 +243,7 @@ function FighterJet::addNetwork(net)
 }
 
 function FighterJet::draw() {
+	var ret = true;
 	/*---only for debug purpose---*/
 	FighterObj.DrawAxis();
 	FighterObj.DrawBoundingBox();
@@ -229,7 +251,7 @@ function FighterJet::draw() {
 	if (!destroyed) {
 		FighterObj.draw(VR_FRAMENUMBER, currentFrame);
 	} else if (expl.GetAviFrame() < expl.GetAviTotalFrame()-1) {
-		expl.SetSize(50.0, 50.0);
+		expl.SetSize(30.0, 30.0);
 		expl.SetPosition(FighterObj.GetPosition());
 		glColor(1.0, 1.0, 1.0, 1.0);
 		glEnable(GL_BLEND);
@@ -243,11 +265,11 @@ function FighterJet::draw() {
    		glDepthMask(GL_TRUE);
    		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	} else {
-		return false;
+		ret = false;
 	}
 	
 	this.drawBeams();
-	return true;
+	return ret;
 }
 
 function FighterJet::update() {
@@ -270,7 +292,6 @@ function FighterJet::update() {
 		pitchDelta = 0;
 		yawDelta = 0;
 		rollDelta = 0;
-		
 		/*---settaggio direzione e posizione--- */
 		if(collided){
 			outputln("collision!!");
@@ -475,6 +496,12 @@ function FighterJet::resetFighter()
 		beamArray[i] = void;
 	}
 	aliveBeams = 0;
+	rollDelta = 0;
+	roll = 0;
+	pitchDelta = 0;
+	pitch = 0;
+	yawDelta = 0;
+	yaw = 0;
 	FighterObj.SetRotationMatrix([	1, 0, 0, 0, 
 									0, 1, 0, 0, 
 									0, 0, 1, 0, 

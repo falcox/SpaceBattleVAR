@@ -80,12 +80,27 @@ function UserInput::userControlFighter(fighter)
 function UserInput::userControlGameMenu()
 {
 	/* TODO: usare una funzione per i comandi del menu di selezione */
-	static var changeFighterModel = false;
-	if(Keypressed("j")) {
-		changeFighterModel = true;
-	} else if (changeFighterModel == true) {
+	static var leftPressed = false;
+	static var rightPressed = false;
+	static var enterPressed = false;
+	if(Keypressed(VK_LEFT)) {
+		leftPressed = true;
+	} else if (leftPressed == true) {
+		leftPressed = false;
 		return 1;
-		changeFighterModel = false;
 	}
+	if(Keypressed(VK_RIGHT)) {
+		rightPressed = true;
+	} else if (rightPressed == true) {
+		rightPressed = false;
+		return 2;
+	}
+	if(Keypressed("p")) {
+		enterPressed = true;
+	} else if (enterPressed == true) {
+		enterPressed = false;
+		return 3;
+	}
+	
 	return 0;
 }
