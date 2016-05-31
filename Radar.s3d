@@ -12,30 +12,24 @@ class Radar{
 	var enemyPointsNum;
 	var radarTexture;
 	var dotTexture;
-	var myFighter;
-	var ambientArray;
-	var enemyArray;
 	
-	update();
+	update(myFighter, ambientArray, enemyArray);
 	draw();
 	getCamera();
 };
 
-function Radar::Radar(Fighter, ambient, enemy){
+function Radar::Radar(){
 	radarTexture = CVmTexture("radar.png");
 	dotTexture = CVmTexture("whitedot.png");
 	ambientPointsNum = 0;
 	enemyPointsNum = 0;
-	myFighter = fighter;
-	ambientArray = ambient;
-	enemyArray = enemy;
 	
 //	pointsArray = Array(RADAR_POINTS);
 	ambientPoints = Array(RADAR_POINTS);
 	enemyPoints = Array(RADAR_POINTS);
 }
 
-function Radar::update(){
+function Radar::update(myFighter, ambientArray, enemyArray){
 	var j = 0;
 	var k = 0;
 	var fighterPos;
@@ -56,7 +50,7 @@ function Radar::update(){
 			testDist = testPos-fighterPos;
 			if(modulus(testDist)<=RADAR_RADIUS){
 				//pointsArray[j++] = testPos;
-				projection[0] = (testDist*fighterX)*(RATIO_W/16)/RADAR_RADIUS;
+				projection[0] = -(testDist*fighterX)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[1] = (testDist*fighterZ)*(RATIO_W/16)/RADAR_RADIUS;
 				projection[2] = abs(testDist*fighterY)/modulus(testDist);
 //				outputln(sprintf("alpha intensity: %f", projection.z));

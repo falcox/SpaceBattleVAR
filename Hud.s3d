@@ -24,22 +24,20 @@ class Hud {
 //	var battContainerTexture;
 	var lifeHpTexture;
 	var batteryTexture;
-	var myFighter;
 	
 	Hud(fighter);
 	increaseDeathCounter(playerId);
 	increaseKillCounter(playerId);
 	appendMessage(message, fixed);
-	draw();
+	draw(myFighter);
 	resetHud();
 };
 
-function Hud::Hud(fighter)
+function Hud::Hud()
 {
 	deathNumber = 0;
 	killNumber = 0;
 	msgPool = Array(0);
-	myFighter = fighter;
 	time = GetTime();
 	tick = 0;
 	
@@ -50,7 +48,7 @@ function Hud::Hud(fighter)
 	batteryTexture = CVmTexture("lifebar-battery2.png");
 }
 
-function Hud::draw()
+function Hud::draw(myFighter)
 {
 //	static var time = GetTime();
 //	static var tick = 0;

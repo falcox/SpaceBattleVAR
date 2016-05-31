@@ -491,7 +491,8 @@ function FighterJet::resetFighter()
 {
 	expl.SetAviFrame(0);
 	destroyed = false;
-	currentLife = 100;
+	currentLife = 100.0;
+	currentBattery = 100.0;
 	for(var i = 0; i < MAX_BULLET_NUM; i++) {
 		beamArray[i] = void;
 	}

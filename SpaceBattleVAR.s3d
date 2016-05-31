@@ -112,10 +112,12 @@ function OnInit(params)
 	
 	mySkyBox = SkyBox();
 	mySkyBox.init();
+	myRadar = Radar(myFighter, ambientSpaceship, enemiesFighter);
+	myHud = Hud(myFighter);
 	
 	MMMp3.Load("galactic-empire.mp3");
 	MMMp3.SetVolume(0.2);
-	MMMp3.Play(true);
+	//MMMp3.Play(true);
 	
 	gameMode = GAME_MODE_MENU;
 	
@@ -160,7 +162,7 @@ function OnFrame()
 	
 	myRadar.draw();
 	
-	myHud.draw();
+	myHud.draw(myFighter);
 	
 	myLightEngine.update();
 	
@@ -196,7 +198,7 @@ function OnTimer()
 			}
 		}
 		mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
-		myRadar.update();
+		myRadar.update(myFighter, ambientSpaceship, enemiesFighter);
 		
 		collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
 		
@@ -262,7 +264,6 @@ function OnTimer()
 				ambientSpaceship[1].setOrbitPeriod(5000.0);
 				ambientSpaceship[1].setServerTime(GetTime());
 				myRadar = Radar(myFighter, ambientSpaceship, enemiesFighter);
-				myHud = Hud(myFighter);
 				respawn(myFighter);
 			break;
 		}
@@ -481,7 +482,8 @@ function respawn(fighter)
 	var posx = rand(BOUND_VOLUME_X) * ((Rand(1)==0)?1:-1);
 	var posy = rand(BOUND_VOLUME_Y) * ((Rand(1)==0)?1:-1);
 	var posz = rand(BOUND_VOLUME_Z) * ((Rand(1)==0)?1:-1);
+	
 	//fighter.SetPosition([posx, posy, posz]);
-	fighter.SetPosition([posx, 0, 0]);
+	fighter.SetPosition([200+Rand(100), 0, 0]);
 	//fighter.SetPosition([0, 0, 0]);
 }
