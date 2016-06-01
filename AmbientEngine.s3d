@@ -1,10 +1,13 @@
 #include <MeshFactory.s3d>
 
 #define INSERT_TIME_THRESHOLD	60
-#define MAX_DIE_NUM				2
-#define MAX_RAND_POSX			500
-#define MAX_RAND_POSY			1
-#define MAX_RAND_POSZ			500
+#define MAX_DIE_NUM				1
+#define MIN_RAND_POSX			1600
+#define MIN_RAND_POSY			1600
+#define MIN_RAND_POSZ			1600
+#define MAX_RAND_POSX			700
+#define MAX_RAND_POSY			700
+#define MAX_RAND_POSZ			700
 #define MAX_RAND_RADIUS			200
 #define MIN_RAND_RADIUS			50
 #define MAX_RAND_ORBIT			200
@@ -33,7 +36,6 @@ function AmbientEngine::AmbientEngine(net, mesh)
 
 function AmbientEngine::tick(ambientArray)
 {
-	var objType = -1;
 	/* Maybe every <tot> seconds roll a die to put an ambient object on the field */
 	static var time = GetTime();
 	var timeTickSecond = 0.001;
@@ -45,11 +47,10 @@ function AmbientEngine::tick(ambientArray)
 			for (var i = 0; i < ambientLen; i++) {
 				if (ambientArray[i] == void) {
 					/* For the position coordinates can be positive or negative randomly */
-					//var type = Rand(MAX_DIE_NUM);
-					var type = 1; /* Only for testing */
-					var posx = Rand(MAX_RAND_POSX) * ((Rand(1)==0)?1:-1);
-					var posy = Rand(MAX_RAND_POSY) * ((Rand(1)==0)?1:-1);
-					var posz = Rand(MAX_RAND_POSZ) * ((Rand(1)==0)?1:-1);
+					var type = Rand(MAX_DIE_NUM);
+					var posx = (MIN_RAND_POSX + Rand(MAX_RAND_POSX)) * ((Rand(1)==0)?1:-1);
+					var posy = (MIN_RAND_POSY + Rand(MAX_RAND_POSY)) * ((Rand(1)==0)?1:-1);
+					var posz = (MIN_RAND_POSZ + Rand(MAX_RAND_POSZ)) * ((Rand(1)==0)?1:-1);
 					var radius = MIN_RAND_RADIUS + Rand(MAX_RAND_RADIUS);
 					var orbitPeriod = MIN_RAND_ORBIT + Rand(MAX_RAND_ORBIT);
 					/* insert the ambient object */

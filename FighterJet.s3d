@@ -80,6 +80,7 @@ class FighterJet {
 	setCurrentLife(life);
 	getCurrentLife();
 	getCurrentBattery();
+	setCurrentBattery(battery);
 	decreaseLife(delta, enemy_id_hit);
 	increaseLife(delta);
 	resetFighter();
@@ -114,7 +115,7 @@ function FighterJet::init(meshes, lights, fType, beamType) {
 	lightFactory = lights;
 	direction = [0,0,0];
 	fireSound = CVmVRAWav("laser.wav");
-	hitSound = CVmVRAWav("hit.mp3");
+	hitSound = CVmVRAWav("hit.wav");
 	explSound = CVmVRAWav("explosion.wav");
 	
 	FighterObj = CVmObj(fighterMesh);
@@ -486,6 +487,10 @@ function FighterJet::getCurrentBattery()
 	return currentBattery;
 }
 
+function FighterJet::setCurrentBattery(battery)
+{
+	currentBattery = battery;
+}
 
 function FighterJet::resetFighter()
 {

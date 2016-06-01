@@ -11,8 +11,10 @@
 #define RATIO_H			9.0
 #define RATIO_W			16.0
 
-#define GAME_MODE_MENU	0
-#define GAME_MODE_PLAY	1
+#define GAME_MODE_MENU		0
+#define GAME_MODE_SELECTED	1
+#define GAME_MODE_WAIT_ID	2
+#define GAME_MODE_PLAY		3
 
 //#define DEBUGGING
 
@@ -210,7 +212,7 @@ function OnTimer()
 				}
 			}
 		}
-	} else {
+	} else if (gameMode == GAME_MODE_MENU) {
 		/* Network controller must work either in menu mode to fetch the id */
 		networkController.poll();
 		myFighter.setSpeed(0);
@@ -251,20 +253,32 @@ function OnTimer()
 				myFighter = changedFighter;
 			break;
 			case 3:
-				gameMode = GAME_MODE_PLAY;
-				/* Create main ambient object */
-				ambientSpaceship[0] = DeathStar( meshes );
-				ambientSpaceship[0].setCenter([2500, 2000, 2500]);
-				ambientSpaceship[0].setRadius(0);
-				ambientSpaceship[0].setOrbitPeriod(500.0);
-				ambientSpaceship[0].setServerTime(GetTime());
-				ambientSpaceship[1] = StarDestroyer( meshes );
-				ambientSpaceship[1].setCenter([0, 0, 0]);
-				ambientSpaceship[1].setRadius(500);
-				ambientSpaceship[1].setOrbitPeriod(5000.0);
-				ambientSpaceship[1].setServerTime(GetTime());
-				respawn(myFighter);
+				gameMode = GAME_MODE_SELECTED;
 			break;
+		}
+	} else if (gameMode == GAME_MODE_SELECTED) {
+		gameMode = GAME_MODE_WAIT_ID;
+		myHud.appendMessage("Fighter selected, waiting the server!", true);
+	} else if (gameMode == GAME_MODE_WAIT_ID) {
+		/* Network controller must work either in menu mode to fetch the id */
+		networkController.poll();
+		var id = networkController.getId();
+		if (id >= 0) {
+			gameMode = GAME_MODE_PLAY;
+			/* Create main ambient object */
+			ambientSpaceship[0] = DeathStar( meshes );
+			ambientSpaceship[0].setCenter([0, 0, 0]);
+			ambientSpaceship[0].setRadius(0);
+			ambientSpaceship[0].setOrbitPeriod(500.0);
+			ambientSpaceship[0].setServerTime(GetTime());
+			ambientSpaceship[1] = StarDestroyer( meshes );
+			ambientSpaceship[1].setCenter([2500, 0, 0]);
+			ambientSpaceship[1].setRadius(500);
+			ambientSpaceship[1].setOrbitPeriod(5000.0);
+			ambientSpaceship[1].setServerTime(GetTime());
+			respawn(myFighter);
+			myHud.resetHud();
+			myHud.appendMessage(Sprintf("You are player: %d", id), true);
 		}
 	}
 }
@@ -313,8 +327,28 @@ function OnEvent(eventID, wparam, lparam){
 			myHud.appendMessage(Sprintf("Player %d is gone!",wparam), false);
 		} else
 		if (eventId == networkController.isAmbientDestroyEvent() && gameMode == GAME_MODE_PLAY) {
-			ambientSpaceship[wparam] = void;
-			Outputln(Sprintf("Ambient %d is gone!",wparam));
+			//[ambientId, sender_playerId, ambientType]
+			if (networkController.isServer()) {
+				if (ambientSpaceship[ wparam[0] ] != void && ambientSpaceship[ wparam[0] ].getAmbientType() == wparam[2]) {
+					networkController.sendAmbientDestroyData(wparam[0], wparam[1], wparam[2]);
+					ambientSpaceship[ wparam[0] ] = void;
+				}
+			}
+			if (wparam[1] == networkController.getId()) {
+				/* The server sent me this packet with my id so I destroyed this ambient object, take reward */
+				switch(wparam[2]) {
+					case ESCAPE_POD:
+						myFighter.setCurrentLife(100.0);
+						// TODO: scrivere qualche frase migliore...
+						myHud.appendMessage("Ricevuta vita extra!", false);
+					break;
+					case EMPEROR_SHUTTLE:
+						myFighter.setCurrentBattery(100.0);
+						myHud.appendMessage("Ricevuta energia extra!", false);
+					break;
+				}
+				ambientSpaceship[ wparam[0] ] = void;
+			}
 		} else
 		if (eventId == networkController.isAmbientDataEvent() && gameMode == GAME_MODE_PLAY) {
 			var id = wparam[0];
@@ -358,9 +392,11 @@ function OnEvent(eventID, wparam, lparam){
 		if (eventId == networkController.isIdEvent()) {
 			if (wparam != -2) {
 				ambientController.start();
+				myHud.resetHud();
 				myHud.appendMessage(Sprintf("You are player: %d", wparam), true);
 			} else {
 				//TODO: errore troppi giocatori
+				myHud.resetHud();
 				myHud.appendMessage(sprintf("Too many players!"), true);
 			}
 		}
@@ -483,6 +519,6 @@ function respawn(fighter)
 	var posz = rand(BOUND_VOLUME_Z) * ((Rand(1)==0)?1:-1);
 	
 	//fighter.SetPosition([posx, posy, posz]);
-	fighter.SetPosition([200+Rand(100), 0, 0]);
+	fighter.SetPosition([1600+Rand(200), 0, 0]);
 	//fighter.SetPosition([0, 0, 0]);
 }

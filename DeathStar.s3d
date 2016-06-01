@@ -5,6 +5,7 @@ class DeathStar: AmbientObject {
 	
 	DeathStar(meshFactory);
 	isDestroyable();
+	getAmbientType();
 };
 
 function DeathStar::DeathStar(meshFactory){
@@ -14,4 +15,8 @@ function DeathStar::DeathStar(meshFactory){
 
 function DeathStar::isDestroyable() {
 	return false;
+}
+
+function DeathStar::getAmbientType() {
+	return DEATH_STAR;
 }

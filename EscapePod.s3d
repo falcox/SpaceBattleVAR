@@ -5,6 +5,7 @@ class EscapePod: AmbientObject {
 	
 	EscapePod(meshFactory);
 	isDestroyable();
+	getAmbientType();
 };
 
 function EscapePod::EscapePod(meshFactory){
@@ -13,4 +14,8 @@ function EscapePod::EscapePod(meshFactory){
 
 function EscapePod::isDestroyable() {
 	return true;
+}
+
+function EscapePod::getAmbientType() {
+	return ESCAPE_POD;
 }

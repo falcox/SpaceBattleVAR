@@ -51,7 +51,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 			if(myFighterObj.isCollidingBBox(shipObj)){
 				if(ambientArray[i].isDestroyable()) {
 					ambientArray[i].setCollision(true);
-					network.sendAmbientDestroyData(i, -1);
+					network.sendAmbientDestroyData(i, network.getId(), ambientArray[i].getAmbientType());
 				} else {
 					changed = changed || checkCollisionDeep(myFighter, shipObj);
 				}
@@ -61,7 +61,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 				if(beam.isCollidingBBox(shipObj)){
 					if(ambientArray[i].isDestroyable()){
 						ambientArray[i].setCollision(true);
-						network.sendAmbientDestroyData(i, -1);	
+						network.sendAmbientDestroyData(i, network.getId(), ambientArray[i].getAmbientType());
 						beam.setCollided();				
 					}
 					else{

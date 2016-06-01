@@ -43,11 +43,11 @@
  * 				ACK_ID_PDU:				{3, msgId, playerId_assigned}
  * 				KEEPALIVE_PDU:			{4, playerId}
  * 				
- * 				FIGHTER_PDU:			{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife}
+ * 				FIGHTER_PDU:			{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife, seqNumber}
  * 				AMBIENT_PDU:			{6, msgId, ambientId, ambientType, centerx, centery, centerz, radius, orbitPeriod, serverTime}
  * 				AMBIENT_PDU_ACK:		{7, msgId, playerId}
- * 				AMBIENT_DESTROYED		{8, msgId, ambientId}
- * 				AMBIENT_DESTROYED_ACK	{9, msgId, playerId}
+ * 				AMBIENT_DESTROYED		{8, msgId, ambientId, playerId, ambientType}
+ * 				AMBIENT_DESTROYED_ACK	{9, msgId, playerId, destroyResult}
  * 				LASERBEAM_PDU			{10, msgId, playerId, origin_playerId, iposx, iposy, iposz, eposx, eposy, eposz, originTime, damage}
  * 				LASERBEAM_PDU_ACK		{11, msgId, playerId}
  * 				FIGHTER_DESTROYED		{12, msgId, sender_playerId, dead_playerId, killer_playerId} 
@@ -100,7 +100,7 @@ class Networker {
 	isFighterDestroyedEvent();
 	sendFighterData(fighterData);
 	sendAmbientData(ambientId, ambientData);
-	sendAmbientDestroyData(ambientId, idExcluded);
+	sendAmbientDestroyData(ambientId, ambientType, idExcluded);
 	sendAmbientDestroyAck(destination, ackIdMsg);
 	sendLaserBeamData(laserData, idExcluded);
 	sendLaserBeamAck(destination, ackIdMsg);
@@ -265,9 +265,9 @@ function Networker::relayPlayerData(PDU)
 		/* Check if there is an entry, then if it is not me and if it is not the player that sent the PDU */
 		if (player_list[i] != void && i != playerId && i != PDU[1]) {
 			var playerpos = [player_list[i].posx, player_list[i].posy, player_list[i].posz];
-			//if (euclideanDistance(playerpos, pdupos) < DATA_SEND_THRESHOLD) {
+			if (euclideanDistance(playerpos, pdupos) < DATA_SEND_THRESHOLD) {
 				NetVarSendTo(player_list[i].playerIpAddress, 50023, PDU);
-			//}
+			}
 		}
 	}
 }
@@ -291,7 +291,6 @@ function Networker::sendFighterData(fighterData)
 	PDU[9] = fighterData[7];
 	PDU[10] = fighterData[8];
 	PDU[11] = fighterData[9];
-	
 	
 	var changed = false;
 	var lastPos = [lastPlayerDataSended[3], lastPlayerDataSended[4], lastPlayerDataSended[5]];
@@ -358,25 +357,29 @@ function Networker::sendAmbientDataAck(ackIdMsg)
 	NetVarSendTo(serverIp, 50023, PDU);
 }
 
-function Networker::sendAmbientDestroyData(ambientId, idExcluded)
+function Networker::sendAmbientDestroyData(ambientId, sender_playerId, ambientType)
 {
-	//AMBIENT_DESTROYED		{8, msgId, ambientId, playerId}
+	//AMBIENT_DESTROYED		{8, msgId, ambientId, sender_playerId, ambientType}
 	if (playerId == -1) {
 		return;
 	}
-	var PDU = vector(4);
+	var PDU = vector(5);
 	PDU[0] = AMBIENT_DESTROYED;
 	PDU[1] = 0;
 	PDU[2] = ambientId;
-	PDU[3] = playerId;
+	PDU[3] = sender_playerId;
+	PDU[4] = ambientType;
+	
 	/* If i am the server share information with clients, else send the information to the server */
 	if (server == true) {
 		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 			/* Check if there is an entry, then if it is not me then send the PDU */
-			if (player_list[i] != void && i != playerId && i != idExcluded) {
+			if (player_list[i] != void && i != playerId/* && i != idExcluded*/) {
 				resendWindow.add(i, player_list[i].playerIpAddress, PDU);
 			}
 		}
+		var data = {ambientId, sender_playerId, ambientType};
+		EventPost(ambientDestroyEvent, data, 1);
 	} else {
 		resendWindow.add(serverId, serverIp, PDU);
 	}
@@ -384,7 +387,7 @@ function Networker::sendAmbientDestroyData(ambientId, idExcluded)
 
 function Networker::sendAmbientDestroyAck(destination, ackIdMsg)
 {
-	//AMBIENT_DESTROYED_ACK	{8, msgId, playerId}
+	//AMBIENT_DESTROYED_ACK	{9, msgId, playerId}
 	var PDU = vector(3);
 	PDU[0] = AMBIENT_DESTROYED_ACK;
 	PDU[1] = ackIdMsg;
@@ -650,14 +653,14 @@ function Networker::poll()
 					}
 				} else
 				if (received_data[0] == AMBIENT_DESTROYED) {
+					//AMBIENT_DESTROYED		{8, msgId, ambientId, sender_playerId, ambientType}
 					/* If i am the server relay information to all client except the sender */
-					if (server == true) {
-						sendAmbientDestroyData(received_data[2], received_data[3]);
-					}
 					sendAmbientDestroyAck(sender, received_data[1]);
-					EventPost(ambientDestroyEvent, received_data[2], 1);
+					var data = {received_data[2], received_data[3], received_data[4]};
+					EventPost(ambientDestroyEvent, data, 1);
 				} else
 				if (received_data[0] == AMBIENT_DESTROYED_ACK) {
+					//AMBIENT_DESTROYED_ACK	{9, msgId, playerId}
 					resendWindow.ackReceived(received_data[2], received_data[1]);
 				} else
 				if (received_data[0] == LASERBEAM_PDU) {

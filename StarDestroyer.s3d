@@ -5,6 +5,7 @@ class StarDestroyer: AmbientObject {
 	
 	StarDestroyer(meshFactory);
 	isDestroyable();
+	getAmbientType();
 };
 
 function StarDestroyer::StarDestroyer(meshFactory){
@@ -14,4 +15,8 @@ function StarDestroyer::StarDestroyer(meshFactory){
 
 function StarDestroyer::isDestroyable() {
 	return false;
+}
+
+function StarDestroyer::getAmbientType() {
+	return STAR_DESTROYER;
 }
