@@ -178,7 +178,7 @@ function Networker::Networker()
 	server = false;
 	seqNumber = 0;
 	advServerChannel = NetCreateChannel(50023,"0.0.0.0",VR_NO_BLOCKING);
-	player_list = Array(ENEMIES_FIGHTER_NUM);
+	player_list = Array(ENEMIES_FIGHTER_NUM);		//PLAYERS_NUM = ENEMIES_FIGHTER_NUM +1
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		player_list[i] = void;
 	}

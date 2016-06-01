@@ -5,8 +5,8 @@
 
 #define FRAME_STEP 0.5
 #define ANGLE_STEP 	0.9
-#define MIN_SPEED	0
-#define MAX_SPEED	300
+#define MIN_SPEED	300
+#define MAX_SPEED	600
 #define SPEED_STEP	5
 #define MAX_LASER_RANGE 800
 #define MAX_BULLET_NUM	10
@@ -35,6 +35,7 @@ class FighterJet {
 	var rollDelta, pitchDelta, yawDelta;		
 	var currentLife;		/* Life variable from 0 to 100 */
 	var currentBattery;
+	var currentTurbo;
 	var velocity;
 	var currentFrame;
 	var bbox;
@@ -80,6 +81,7 @@ class FighterJet {
 	setCurrentLife(life);
 	getCurrentLife();
 	getCurrentBattery();
+	getCurrentTurbo();
 	decreaseLife(delta, enemy_id_hit);
 	increaseLife(delta);
 	resetFighter();
@@ -87,9 +89,9 @@ class FighterJet {
 
 function FighterJet::init(meshes, lights, fType, beamType) {
 	var fighterMesh = meshes.getFighterMeshes(fType);
-	yaw = 0;
-	roll = 0;
-	pitch = 0;
+	yaw = 0.0;
+	roll = 0.0;
+	pitch = 0.0;
 	rollDelta = 0;
 	pitchDelta = 0; 
 	yawDelta = 0;
@@ -100,6 +102,7 @@ function FighterJet::init(meshes, lights, fType, beamType) {
 	currentFrame = 0;
 	currentLife = 100.0;
 	currentBattery = 100.0;
+	currentTurbo = 100.0;
 	cameraMode = 0;
 	withCamera = false;
 	cameraModeOffset = {[0, 0], [0, 0]};
@@ -181,11 +184,18 @@ function FighterJet::setPosition(pos){
 
 function FighterJet::increaseSpeed()
 {
-	velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
+	if(currentTurbo>0){
+		currentTurbo -= 0.5;
+		velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
+	}else{
+		velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
+	}
+
 }
 
 function FighterJet::decreaseSpeed()
 {
+	if(currentTurbo<100) currentTurbo += 0.2;
 	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
 }
 
@@ -486,6 +496,10 @@ function FighterJet::getCurrentBattery()
 	return currentBattery;
 }
 
+function FighterJet::getCurrentTurbo()
+{
+	return currentTurbo;
+}
 
 function FighterJet::resetFighter()
 {

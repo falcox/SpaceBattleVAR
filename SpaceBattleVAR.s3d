@@ -41,7 +41,7 @@
 /* Set global scene parameters */
 SET SCENE_FOV  = 90;
 SET SCENE_NEAR = 0.5;
-SET SCENE_FAR  = 5000;
+SET SCENE_FAR  = 4000;
 
 var myFighter;
 var networkController =  void;
@@ -199,7 +199,7 @@ function OnTimer()
 				ambientSpaceship[i].update();
 			}
 		}
-		mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
+		mySkyBox.update(myFighter.getPosition(), myFighter.getAngles());
 		myRadar.update();
 		
 		collider.checkCollisionBBox(myFighter, enemiesFighter, ambientSpaceship);
@@ -217,7 +217,7 @@ function OnTimer()
 		networkController.poll();
 		myFighter.setSpeed(0);
 		myFighter.update();
-		mySkyBox.update(myFighter.getPosition(), myFighter.getAngles()[0]);
+		mySkyBox.update(myFighter.getPosition(), myFighter.getAngles());
 		var command = userInputController.userControlGameMenu();
 		var type;
 		var changedFighter;
@@ -331,7 +331,7 @@ function OnEvent(eventID, wparam, lparam){
 				} else if (type == STAR_DESTROYER) { 
 					ambientSpaceship[id] = StarDestroyer( meshes );
 				} else {
-					Outputln("Error! Ambient type does not exists!");
+					Outputln("Error! Ambient type does not exist!");
 					return;
 				}
 				ambientSpaceship[id].setCenter([ wparam[2], wparam[3], wparam[4] ]);

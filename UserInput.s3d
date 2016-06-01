@@ -1,8 +1,16 @@
 #define SHOOT_RATE	100
+#define MOUSE_STEP 	0.001
+#define DELTA_X_MAX	385
+#define DELTA_Y_MAX	220
+#define X_MAX 		1530
+#define Y_MAX		800
+#define ALPHA		0.5
 
 class UserInput {
 	var cameraModeAntiBounce;
 	var fireBeamAntiBounce;
+	var lastDX;
+	var lastDY;
 	
 	UserInput();
 	userControlFighter(fighter);
@@ -11,6 +19,8 @@ class UserInput {
 
 function UserInput::UserInput()
 {
+	lastDX = 0;
+	lastDY = 0;
 	cameraModeAntiBounce = false;
 	fireBeamAntiBounce = false;
 }
@@ -26,6 +36,13 @@ function UserInput::userControlFighter(fighter)
 {
 	static var time = GetTime();
 	static var fastShoot = 0;
+	var dx = Mouse.deltaX;
+	var dy = Mouse.deltaY;
+	var mx = Mouse.X;
+	var my = Mouse.Y;
+	var lButton = Mouse.ButtonL;
+	consoletext(0.01,0.01,sprintf("deltaX: %d, X: %d, deltaY: %d, Y: %d",dx,mx,dy,my));
+//	outputln(sprintf("deltaX: %d, X: %d, deltaY: %d, Y: %d",dx,mx,dy,my));
 	var y = 0, p = 0, r = 0;
 	var angleStep = fighter.getAngleStep();
 	fastShoot += GetTime() - time;
@@ -52,12 +69,35 @@ function UserInput::userControlFighter(fighter)
 	} else if(Keypressed(VK_END) || Keypressed("e")) {
 		y = -angleStep;
 	}
+	/*if(dx>0){
+		y -= ((ALPHA*dx+(1-ALPHA)*lastDX)-DELTA_X_MAX/2)*MOUSE_STEP;
+	}
+	if(dy>0){
+		p += ((ALPHA*dy+(1-ALPHA)*lastDY)-DELTA_Y_MAX/2)*MOUSE_STEP;
+	}
+	lastDX = dx;
+	lastDY = dy;*/
+	/*if(Mouse.X > 770){
+		y += angleStep;
+	} else if(Mouse.X < 766){
+		y -= angleStep;
+	}
+	if (Mouse.Y > 412){
+		p += angleStep;
+	} else if( Mouse.Y<408){
+		p -= angleStep;
+	}*/
+	
+	y -= ((ALPHA*mx+(1-ALPHA)*lastDX)-X_MAX/2)*MOUSE_STEP;
+	p += ((ALPHA*my+(1-ALPHA)*lastDY)-Y_MAX/2)*MOUSE_STEP;
+	lastDX = mx;
+	lastDY = my;
 	/*---Shoot---*/
-	if(Keypressed(VK_SPACE) && (fastShoot > SHOOT_RATE)) {
+	if(lButton && (fastShoot > SHOOT_RATE)) {
 		fastShoot = 0;
 		fighter.fireBeam();
 		//fireBeamAntiBounce = true;
-	} else if (!Keypressed(VK_SPACE)) {
+	} else if (!lButton) {
 		fastShoot = 0;
 	}
 	/* else if(fireBeamAntiBounce){
@@ -95,7 +135,7 @@ function UserInput::userControlGameMenu()
 		rightPressed = false;
 		return 2;
 	}
-	if(Keypressed("p")) {
+	if(Keypressed(VK_SPACE)) {
 		enterPressed = true;
 	} else if (enterPressed == true) {
 		enterPressed = false;

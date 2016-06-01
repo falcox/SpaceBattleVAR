@@ -2,6 +2,9 @@
 #include <MeshFactory.s3d>
 
 class Arc170: FighterJet {
+	var seqNumber;
+	var beamOffsets;
+	
 	Arc170(meshFactory, lights);
 	fireBeam();
 };
@@ -12,13 +15,14 @@ function Arc170::Arc170(meshFactory, lights)
 	//TODO: Fix camera offset
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
 	lightType = RED_LIGHT;
+	seqNumber = 0;
+	beamOffsets = Array(2);
+	beamOffsets = {[17.5,0,2],[-17.5,0,2]};
 }
 
 function Arc170::fireBeam(){
 	/* calcola la pos iniziale */
-	var BeamOffsets = [0,0,2];
-	
-	FighterJet::this.fireBeam(BeamOffsets);
-
+	FighterJet::this.fireBeam(BeamOffsets[seqNumber]);
+	seqNumber = (seqNumber+1)%2;
 }
 

@@ -6,6 +6,7 @@
 #define HEALTHBAR_H		(HEALTHBAR_W / 8)
 #define BATTERYBAR_W	3.0
 #define BATTERYBAR_H	(BATTERYBAR_W / 8)
+#define TURBOBAR_W		2.0
 
 class Message {
 	var msg;
@@ -24,6 +25,7 @@ class Hud {
 //	var battContainerTexture;
 	var lifeHpTexture;
 	var batteryTexture;
+	var turboTexture;
 	var myFighter;
 	
 	Hud(fighter);
@@ -48,6 +50,7 @@ function Hud::Hud(fighter)
 	lifeContainerTexture = CVmTexture("grey-lifebar-container.png");
 //	battContainerTexture = CVmTexture("grey-lifebar-container2.png");
 	batteryTexture = CVmTexture("lifebar-battery2.png");
+	turboTexture = CVmTexture("lifebar-turbo.png");
 }
 
 function Hud::draw()
@@ -77,6 +80,7 @@ function Hud::draw()
 	
 	var lifeStat = myFighter.getCurrentLife() / 100.0;
 	var battStat = myFighter.getCurrentBattery() / 100.0;
+	var turboStat = myFighter.getCurrentTurbo() / 100.0;
 	
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -124,7 +128,14 @@ function Hud::draw()
 		glTexCoord(0, 0); glVertex(0, 0);
 	glEnd();
 	
-	
+	SetActiveTexture(turboTexture);
+	glBegin(GL_QUADS);
+		glColor(1,1,1,1);
+		glTexCoord(0, 1); glVertex(0, -2*BATTERYBAR_H);
+		glTexCoord(turboStat, 1); glVertex(TURBOBAR_W*turboStat, -2*BATTERYBAR_H);
+		glTexCoord(turboStat, 0); glVertex(TURBOBAR_W*turboStat, -BATTERYBAR_H);
+		glTexCoord(0, 0); glVertex(0, -BATTERYBAR_H);
+	glEnd();
 
 	SetActiveTexture(lifeContainerTexture);
 	glBegin(GL_QUADS);
@@ -142,6 +153,12 @@ function Hud::draw()
 		glTexCoord(1, 1); glVertex(BATTERYBAR_W, -BATTERYBAR_H);
 		glTexCoord(1, 0); glVertex(BATTERYBAR_W, 0);
 		glTexCoord(0, 0); glVertex(0, 0);
+		
+		glColor(1,1,1,0.8);
+		glTexCoord(0, 1); glVertex(0, -2*BATTERYBAR_H);
+		glTexCoord(1, 1); glVertex(TURBOBAR_W, -2*BATTERYBAR_H);
+		glTexCoord(1, 0); glVertex(TURBOBAR_W, -BATTERYBAR_H);
+		glTexCoord(0, 0); glVertex(0, -BATTERYBAR_H);
 	glEnd();
 	
 	
