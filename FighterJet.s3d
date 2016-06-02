@@ -46,7 +46,7 @@ class FighterJet {
 	var hitSound;
 	var explSound;
 	
-	init(meshes, lights, fType, beamType);
+	init(resources, lights, fType, beamType);
 	draw();
 	setPosition(position);
 	setSpeed(speed);
@@ -86,8 +86,8 @@ class FighterJet {
 	resetFighter();
 };
 
-function FighterJet::init(meshes, lights, fType, beamType) {
-	var fighterMesh = meshes.getFighterMeshes(fType);
+function FighterJet::init(resources, lights, fType, beamType) {
+	var fighterMesh = resources.getFighterMeshes(fType);
 	yaw = 0;
 	roll = 0;
 	pitch = 0;
@@ -108,15 +108,15 @@ function FighterJet::init(meshes, lights, fType, beamType) {
 	destroyed = false;
 	collVertex = Array(6);
 	beamArray = Array(MAX_BULLET_NUM);
-	beamMesh = meshes.getBulletMeshes(beamType);
+	beamMesh = resources.getBulletMeshes(beamType);
 	aliveBeams = 0;
-	expl = meshes.getAviResources(EXPLOSION);
+	expl = resources.getAviResources(EXPLOSION);
 	expl.SetAviFrame(0);
 	lightFactory = lights;
 	direction = [0,0,0];
-	fireSound = CVmVRAWav("laser.wav");
-	hitSound = CVmVRAWav("hit.wav");
-	explSound = CVmVRAWav("explosion.wav");
+	fireSound = resources.getSoundResources(LASER_SOUND);
+	hitSound = resources.getSoundResources(HIT_SOUND);
+	explSound = resources.getSoundResources(EXPLOSION_SOUND);
 	
 	FighterObj = CVmObj(fighterMesh);
 	bbox = fighterMesh.getBoundingBox();

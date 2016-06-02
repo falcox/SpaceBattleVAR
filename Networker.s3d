@@ -343,8 +343,10 @@ function Networker::sendAmbientData(ambientId, ambientData)
 		}
 	}
 	//TODO fix!!!
-	var data = {ambientId, ambientData[0]};
-	//EventPost(ambientDataEvent, data, 1);
+	var data = {ambientId, ambientData[0], ambientData[1], ambientData[2], ambientData[3], ambientData[4],
+		ambientData[5], ambientData[6]
+	};
+	EventPost(ambientDataEvent, data, 1);
 }
 
 function Networker::sendAmbientDataAck(ackIdMsg)
@@ -369,7 +371,7 @@ function Networker::sendAmbientDestroyData(ambientId, sender_playerId, ambientTy
 	PDU[2] = ambientId;
 	PDU[3] = sender_playerId;
 	PDU[4] = ambientType;
-	
+
 	/* If i am the server share information with clients, else send the information to the server */
 	if (server == true) {
 		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
@@ -378,8 +380,10 @@ function Networker::sendAmbientDestroyData(ambientId, sender_playerId, ambientTy
 				resendWindow.add(i, player_list[i].playerIpAddress, PDU);
 			}
 		}
-		var data = {ambientId, sender_playerId, ambientType};
-		EventPost(ambientDestroyEvent, data, 1);
+		if (sender_playerId == playerId) {
+			var data = {ambientId, sender_playerId, ambientType};
+			EventPost(ambientDestroyEvent, data, 1);
+		}
 	} else {
 		resendWindow.add(serverId, serverIp, PDU);
 	}

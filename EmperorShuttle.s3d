@@ -1,15 +1,15 @@
 #include <AmbientObject.s3d>
-#include <MeshFactory.s3d>
+#include <ResourceFactory.s3d>
 
 class EmperorShuttle: AmbientObject {
 	
-	EmperorShuttle(meshFactory);
+	EmperorShuttle(resFactory);
 	isDestroyable();
 	getAmbientType();
 };
 
-function EmperorShuttle::EmperorShuttle(meshFactory){
-	AmbientObject::this.init( meshFactory.getAmbientMeshes(EMPEROR_SHUTTLE), EMPEROR_SHUTTLE );
+function EmperorShuttle::EmperorShuttle(resFactory){
+	AmbientObject::this.init( resFactory, EMPEROR_SHUTTLE );
 }
 
 function EmperorShuttle::isDestroyable() {

@@ -1,15 +1,15 @@
 #include <AmbientObject.s3d>
-#include <MeshFactory.s3d>
+#include <ResourceFactory.s3d>
 
 class StarDestroyer: AmbientObject {
 	
-	StarDestroyer(meshFactory);
+	StarDestroyer(resFactory);
 	isDestroyable();
 	getAmbientType();
 };
 
-function StarDestroyer::StarDestroyer(meshFactory){
-	AmbientObject::this.init( meshFactory.getAmbientMeshes(STAR_DESTROYER), STAR_DESTROYER );
+function StarDestroyer::StarDestroyer(resFactory){
+	AmbientObject::this.init( resFactory, STAR_DESTROYER );
 	//object.setScale(10);
 }
 

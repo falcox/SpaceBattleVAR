@@ -1,5 +1,5 @@
-#ifndef MESH_FACTORY
-#define MESH_FACTORY
+#ifndef RESOURCE_FACTORY
+#define RESOURCE_FACTORY
 
 #define RED_BEAM			0
 #define GREEN_BEAM			1
@@ -17,20 +17,24 @@
 
 #define EXPLOSION			0
 
-class MeshFactory {
+#define LASER_SOUND			0
+#define HIT_SOUND			1
+#define EXPLOSION_SOUND		2
+
+class ResourceFactory {
 	var fighterMeshes;
 	var ambientMeshes;
 	var bulletMeshes;
-	var aviResources;
 	
-	MeshFactory();
+	ResourceFactory();
 	getFighterMeshes(fighterType);
 	getAmbientMeshes(ambientType);
 	getBulletMeshes(bulletType);
 	getAviResources(type);
+	getSoundResources(type);
 };
 
-function MeshFactory::MeshFactory()
+function ResourceFactory::ResourceFactory()
 {
 	fighterMeshes = Array(5);
 	fighterMeshes[XWING_TYPE] = CVmNewMesh("Xwing.AAM");
@@ -83,28 +87,51 @@ function MeshFactory::MeshFactory()
 	greenMaterial.shininess = 128;
 	bulletMeshes[GREEN_BEAM].setMaterial(greenMaterial);
 	
-	aviResources = Array(1);
-	aviResources[EXPLOSION] = CVmBillboard("explosion.avi");
 }
 
-function MeshFactory::getFighterMeshes(fighterType)
+function ResourceFactory::getFighterMeshes(fighterType)
 {
 	return fighterMeshes[fighterType];
 }
 
-function MeshFactory::getAmbientMeshes(ambientType)
+function ResourceFactory::getAmbientMeshes(ambientType)
 {
 	return ambientMeshes[ambientType];
 }
 
-function MeshFactory::getBulletMeshes(bulletType)
+function ResourceFactory::getBulletMeshes(bulletType)
 {
 	return bulletMeshes[bulletType];
 }
 
-function MeshFactory::getAviResources(type)
+function ResourceFactory::getAviResources(type)
 {
-	return aviResources[type];
+	switch(type) {
+		case EXPLOSION:
+			return CVmBillboard("explosion.avi");
+		break;
+		default:
+			outputln("Error! Avi resource not allowed!");
+	}
+	return void;
+}
+
+function ResourceFactory::getSoundResources(type)
+{
+	switch(type) {
+		case LASER_SOUND:
+			return CVmVRAWav("laser.wav");
+		break;
+		case HIT_SOUND:
+			return CVmVRAWav("hit.wav");
+		break;
+		case EXPLOSION_SOUND:
+			return CVmVRAWav("explosion.wav");
+		break;
+		default:
+			outputln("Error! Sound resource not allowed!");
+	}
+	return void;
 }
 
 #endif

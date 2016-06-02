@@ -12,6 +12,8 @@ class AmbientObject {
 	var objType;
 	var collision;
 	var position;
+	var expl;
+	var explSound;
 	
 	var currentLife;		/* Life variable from 0 to 100 */
 	var velocity;
@@ -29,10 +31,11 @@ class AmbientObject {
 	getAmbientObjData();
 	getObject();
 	setCollision(bool);
-	isDestroyed();
+	isCollided();
 };
 
-function AmbientObject::init(mesh, type){
+function AmbientObject::init(resources, type) {
+	var mesh = resources.getAmbientMeshes(type);
 	objType = type;
 	angle = 0;
 	time = 0;
@@ -45,6 +48,9 @@ function AmbientObject::init(mesh, type){
 	pathRadius = 0;
 	orbitPeriod = 1;
 	serverTime = 0;
+	expl = resources.getAviResources(EXPLOSION);
+	expl.SetAviFrame(0);
+	explSound = resources.getSoundResources(EXPLOSION_SOUND);
 	
 	object = CVmObj(mesh);
 }
@@ -92,7 +98,28 @@ function AmbientObject::draw(){
 	object.DrawAxis();
 	object.DrawBoundingBox();
 	
-	object.draw(VR_FRAMENUMBER, currentFrame);
+	if (!collision) {
+		object.draw(VR_FRAMENUMBER, currentFrame);
+	} else if (expl.GetAviFrame() < expl.GetAviTotalFrame()-1) {
+		expl.SetSize(30.0, 30.0);
+		expl.SetPosition(position);
+		glColor(1.0, 1.0, 1.0, 1.0);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+   		glDepthMask(GL_FALSE);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		expl.Draw(VR_NOLOOP);
+		explSound.Play();
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glEnable(GL_DEPTH_TEST);
+   		glDepthMask(GL_TRUE);
+   		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		return false;
+	}
+	
+	return true;
 }
 
 function AmbientObject::update() {
@@ -134,7 +161,7 @@ function AmbientObject::setCollision(bool) {
 	collision = bool;
 }
 
-function AmbientObject::isDestroyed() {
+function AmbientObject::isCollided() {
 	return collision;
 }
 

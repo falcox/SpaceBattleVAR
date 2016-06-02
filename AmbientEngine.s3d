@@ -1,4 +1,4 @@
-#include <MeshFactory.s3d>
+#include <ResourceFactory.s3d>
 
 #define INSERT_TIME_THRESHOLD	60
 #define MAX_DIE_NUM				1
@@ -15,21 +15,21 @@
 
 class AmbientEngine {
 	var network;
-	var meshes;
+	var resources;
 	var startEngine;
 	var timeSecondElapsed;
 	
-	AmbientEngine(net);
+	AmbientEngine(net, res);
 	tick(ambientArray);
 	advertise(ambientArray);
 	start();
 	stop();
 };
 
-function AmbientEngine::AmbientEngine(net, mesh)
+function AmbientEngine::AmbientEngine(net, res)
 {
 	network = net;
-	meshes = mesh;
+	resources = res;
 	startEngine = false;
 	timeSecondElapsed = 0;
 }
@@ -55,11 +55,11 @@ function AmbientEngine::tick(ambientArray)
 					var orbitPeriod = MIN_RAND_ORBIT + Rand(MAX_RAND_ORBIT);
 					/* insert the ambient object */
 					if (type == ESCAPE_POD) { 
-						ambientArray[i] = EscapePod( meshes );
+						ambientArray[i] = EscapePod( resources );
 					} else if (type == EMPEROR_SHUTTLE) { 
-						ambientArray[i] = EmperorShuttle( meshes );
+						ambientArray[i] = EmperorShuttle( resources );
 					} else if (type == STAR_DESTROYER) { 
-						ambientArray[i] = StarDestroyer( meshes );
+						ambientArray[i] = StarDestroyer( resources );
 					}
 					ambientArray[i].setCenter([posx, posy, posz]);
 					ambientArray[i].setRadius(radius);
