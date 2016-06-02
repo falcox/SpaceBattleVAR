@@ -35,6 +35,9 @@
 /* DISTANCE_BETWEEN_PDU: threshold to decide when a PDU can be sended, 
  * based on last player position sended and actual position on PDU */
 #define DISTANCE_BETWEEN_PDU		10
+/* MINTIME_BETWEEN_PDU: threshold to decide when a PDU can be sended, 
+ * based on time elapsed between the last PDU sended and now */
+#define MINTIME_BETWEEN_PDU			5000
 
 
 /*
@@ -73,6 +76,7 @@ class Networker {
 	var player_list;
 	var player_number;
 	var lastPlayerDataSended;
+	var elapsedTimeDataSended;
 	var seqNumber;
 	
 	var resendWindow;
@@ -98,7 +102,7 @@ class Networker {
 	isAmbientDestroyEvent();
 	isLaserBeamEvent();
 	isFighterDestroyedEvent();
-	sendFighterData(fighterData);
+	sendFighterData(fighterData, force);
 	sendAmbientData(ambientId, ambientData);
 	sendAmbientDestroyData(ambientId, ambientType, idExcluded);
 	sendAmbientDestroyAck(destination, ackIdMsg);
@@ -184,7 +188,8 @@ function Networker::Networker()
 	}
 	player_number = 0;
 	keepaliveTimeElapsed = 0;
-	lastPlayerDataSended = vector(10);
+	lastPlayerDataSended = vector(13);
+	elapsedTimeDataSended = 0;
 	resendWindow = AckMsgWindow(ENEMIES_FIGHTER_NUM, RESEND_WAIT_MSEC);
 	idEvent = Event();
 	enemyDataEvent = Event();
@@ -272,7 +277,7 @@ function Networker::relayPlayerData(PDU)
 	}
 }
 
-function Networker::sendFighterData(fighterData)
+function Networker::sendFighterData(fighterData, force)
 {
 	if (playerId == -1) {
 		return;
@@ -304,7 +309,10 @@ function Networker::sendFighterData(fighterData)
 	if (euclideanDistance(lastPos, pduPos) > DISTANCE_BETWEEN_PDU) {
 		changed = true;
 	}
-	if (changed == true) {
+	if (elapsedTimeDataSended > MINTIME_BETWEEN_PDU) {
+		changed = true;
+	}
+	if ((changed == true) || (force == true)) {
 		PDU[12] = seqNumber;
 		//outputln(sprintf("mandato roll: %f, pitch: %f, yaw: %f", fighterData[4],fighterData[5],fighterData[6]));
 		if (server == true) {
@@ -314,6 +322,7 @@ function Networker::sendFighterData(fighterData)
 		}
 		lastPlayerDataSended = PDU;
 		keepaliveTimeElapsed = 0;
+		elapsedTimeDataSended = 0;
 		seqNumber++;
 	}
 }
@@ -522,6 +531,7 @@ function Networker::poll()
 
 	keepaliveTimeElapsed += tickMsec;
 	advTimeElapsed += tickMsec;
+	elapsedTimeDataSended += tickMsec;
 	
 	while(data_ready) {
 		var sender = "................";
@@ -555,6 +565,9 @@ function Networker::poll()
 						serverIp = sender;
 						sendReqId(playerId);
 					}
+					if (player_list[serverId] != void) {
+						player_list[serverId].keepaliveTime = KEEPALIVE_MSEC;
+					}
 					advTimeElapsed = 0;
 				} else 
 				/* ACK_ID_PDU handling code */
@@ -567,6 +580,9 @@ function Networker::poll()
 					} else {
 						playerId = received_data[2];
 						resendWindow.ackReceived(serverId, received_data[1]);
+						player_list[serverId] = player();
+						player_list[serverId].keepaliveTime = KEEPALIVE_MSEC;
+						player_list[serverId].lastSeqNumberReceived = -1;
 						EventPost(idEvent,playerId,1);
 						/* TODO generate an event  */
 					}
@@ -715,6 +731,7 @@ function Networker::poll()
 		serverId = playerId;
 		player_list[playerId] = player();
 		player_list[playerId].keepaliveTime = KEEPALIVE_MSEC;
+		player_list[playerId].lastSeqNumberReceived = -1;
 		sendBroadcastAdv();
 		EventPost(idEvent, playerId, 1);
 		Outputln("I'M THE SERVER!");
@@ -739,7 +756,7 @@ function Networker::poll()
 	/* decrease keepalive time of each player */
 	if (playerId != -1) {
 		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
-			if (player_list[i] != void && i != playerId && i != serverId) {
+			if (player_list[i] != void && i != playerId/* && i != serverId*/) {
 				player_list[i].keepaliveTime -= tickMsec;
 				if (player_list[i].keepaliveTime <= 0) {
 					playerLost(i);

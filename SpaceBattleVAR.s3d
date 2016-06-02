@@ -136,7 +136,6 @@ function OnFrame()
 #ifdef DEBUGGING
 	CameraMoveMouse();
 #endif
-	//DrawGrid([0.5, 0.5, 0.5], 10000);	
 	DrawWorldBounds();
 	/*---here we draw our fighter---*/
 	mySkyBox.draw();
@@ -185,7 +184,7 @@ function OnTimer()
 		userInputController.userControlFighter(myFighter);
 		if (networkController != void) {
 			networkController.poll();
-			networkController.sendFighterData(myFighter.getFighterData());
+			networkController.sendFighterData(myFighter.getFighterData(), false);
 		}
 	
 		ambientController.tick(ambientSpaceship);
@@ -285,6 +284,9 @@ function OnEvent(eventID, wparam, lparam){
 			if (enemiesFighter[id] == void) {
 				/* New player has joined the game! Share ambient object! */
 				ambientController.advertise(ambientSpaceship);
+				
+				networkController.sendFighterData(myFighter.getFighterData(), true);
+
 				if (type == XWING_TYPE) { /* xwing */
 					enemiesFighter[id] = Xwing( resources, myLightEngine );
 				} else if (type == TIE_TYPE) { /* tie */

@@ -61,7 +61,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 			for(var j = 0; j<aliveBeamsNum; j++){
 				var beam = myFighter.getBeam(AliveBeams[j]);
 				if(beam.isCollidingBBox(shipObj)){
-					if(ambientArray[i].isDestroyable()){
+					if(ambientArray[i].isDestroyable()) {
 						if (!ambientArray[i].isCollided()) {
 							ambientArray[i].setCollision(true);
 							network.sendAmbientDestroyData(i, network.getId(), ambientArray[i].getAmbientType());
