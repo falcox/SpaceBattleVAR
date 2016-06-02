@@ -270,9 +270,9 @@ function FighterJet::draw() {
 		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
 		glDisable(GL_DEPTH_TEST);
    		glDepthMask(GL_FALSE);
-//		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 		expl.Draw(VR_NOLOOP);
-//		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glEnable(GL_DEPTH_TEST);
    		glDepthMask(GL_TRUE);
    		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
