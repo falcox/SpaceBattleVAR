@@ -185,7 +185,7 @@ function FighterJet::setPosition(pos){
 function FighterJet::increaseSpeed()
 {
 	if(currentTurbo>0){
-		currentTurbo -= 0.5;
+		currentTurbo -= 1;
 		velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
 	}else{
 		velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
@@ -195,7 +195,9 @@ function FighterJet::increaseSpeed()
 
 function FighterJet::decreaseSpeed()
 {
-	if(currentTurbo<100) currentTurbo += 0.2;
+	if(currentTurbo<100) {
+		currentTurbo += 0.5;
+	}
 	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
 }
 
@@ -268,9 +270,9 @@ function FighterJet::draw() {
 		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
 		glDisable(GL_DEPTH_TEST);
    		glDepthMask(GL_FALSE);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+//		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 		expl.Draw(VR_NOLOOP);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+//		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glEnable(GL_DEPTH_TEST);
    		glDepthMask(GL_TRUE);
    		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -337,7 +339,17 @@ function FighterJet::update() {
 
 function FighterJet::setDestroyed(bool)
 {
-	destroyed = bool;
+	if(bool == true){
+		if(destroyed == false){
+			currentLife = 0;
+			destroyed = true;
+			explSound.Stop();
+			explSound.Play();
+		}
+	}
+	else{
+		destroyed = false;
+	}
 }
 
 function FighterJet::updatePosition(disp){
@@ -505,6 +517,7 @@ function FighterJet::resetFighter()
 {
 	expl.SetAviFrame(0);
 	destroyed = false;
+	collided = false;
 	currentLife = 100;
 	for(var i = 0; i < MAX_BULLET_NUM; i++) {
 		beamArray[i] = void;

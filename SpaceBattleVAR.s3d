@@ -1,13 +1,13 @@
 #define AMBIENT_SPACESHIP_NUM 10
-#define TIMER_MSEC_TICK 15
-#define FRAMERATE 60
+#define TIMER_MSEC_TICK 30
+#define FRAMERATE 30
 #define RED_LIGHT	0
 #define GREEN_LIGHT	1
 #define WHITE_LIGHT 2
 #define BOUND_VOLUME_X	5000
 #define BOUND_VOLUME_Y	2500
 #define BOUND_VOLUME_Z	5000
-#define FAR_PLANE		4000
+#define FAR_PLANE		10000
 #define RATIO_H			9.0
 #define RATIO_W			16.0
 
@@ -24,12 +24,14 @@
 #include <UserInput.s3d>
 #include <Xwing.s3d>
 #include <TieFighter.s3d>
+#include <TieInterceptor.s3d>
 #include <Ywing.s3d>
 #include <Arc170.s3d>
 #include <MillenniumFalcon.s3d>
 #include <EmperorShuttle.s3d>
 #include <StarDestroyer.s3d>
 #include <DeathStar.s3d>
+#include <Frigate.s3d>
 #include <EscapePod.s3d>
 #include <SkyBox.s3d>
 #include <Radar.s3d>
@@ -41,7 +43,7 @@
 /* Set global scene parameters */
 SET SCENE_FOV  = 90;
 SET SCENE_NEAR = 0.5;
-SET SCENE_FAR  = 4000;
+SET SCENE_FAR  = 10000;
 
 var myFighter;
 var networkController =  void;
@@ -50,12 +52,15 @@ var userInputController;
 var ambientController;
 var enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
 var ambientSpaceship = Array(AMBIENT_SPACESHIP_NUM);
+var spawningPoints = Array(ENEMIES_FIGHTER_NUM + 1);
 var meshes;
 var myLightEngine;
 var mySkyBox;
 var myRadar;
 var myHud;
 var gameMode;
+var easterEgg;
+var starting_time;
 
 
 /* Function declarations */
@@ -68,12 +73,14 @@ function OnDownload()
 {
 	FileDownload("3d_models/Xwing.zip");
 	FileDownload("3d_models/Tie_2.zip");
+	FileDownload("3d_models/TieInterceptor.zip");
 	FileDownload("3d_models/ywing.zip");
 	FileDownload("3d_models/arc170.zip");
 	FileDownload("3d_models/millennium_falcon.zip");
 	FileDownload("3d_models/emperor_shuttle.zip");
 	FileDownload("3d_models/EscapePod.zip");
 	FileDownload("3d_models/DeathStar4.zip");
+	FileDownload("3d_models/Frigate.zip");
 	FileDownload("3d_models/StarDestroyer3.zip");
 	FileDownload("images/spacebackgrounds.zip");
 	FileDownload("images/billboards.zip");
@@ -117,12 +124,12 @@ function OnInit(params)
 	myHud = Hud(myFighter);
 	
 	
-	/*MMMp3.Load("galactic-empire.mp3");
+	MMMp3.Load("the-battle-of-yavin.mp3");
 	MMMp3.SetVolume(0.2);
-	MMMp3.Play(true);*/
+	MMMp3.Play(true);
 	
 	gameMode = GAME_MODE_MENU;
-
+	easterEgg = 0;
 	/*---Global XVR parameters---*/
 	SetFrameRate(FRAMERATE);	
 	SetTimeStep(TIMER_MSEC_TICK);
@@ -136,37 +143,55 @@ function OnFrame()
 #ifdef DEBUGGING
 	CameraMoveMouse();
 #endif
-	//DrawGrid([0.5, 0.5, 0.5], 10000);	
-	DrawWorldBounds();
-	/*---here we draw our fighter---*/
-	mySkyBox.draw();
-	
-	if (myFighter.draw() == false) {
-		myFighter.resetFighter();
-		respawn(myFighter);
-	}
-	
-	/*---here we draw all enemies fighter---*/
-	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
-		if (enemiesFighter[i] != void) {
-			if (enemiesFighter[i].draw() == false) {
-				//enemiesFighter[i].resetFighter();
-				enemiesFighter[i] = void;
+
+	if(gameMode == GAME_MODE_MENU){
+		consoleFont("Star Jedi", 48);
+		consoleColor(1.0,1.0,0.0);
+		consoleText(0.35,0.6, sprintf("select your ship"));
+		
+		mySkyBox.draw();
+		myFighter.draw();
+		myLightEngine.update();
+	}else{
+		if(GetTime()-starting_time<3000){
+			consoleFont("Star Jedi", 48);
+			consoleColor(1.0,1.0,0.0);
+			consoleText(0.25,0.6, sprintf("may the force be with you!"));
+		}
+		
+		//DrawGrid([0.5, 0.5, 0.5], 10000);	
+		DrawWorldBounds();
+		/*---here we draw our fighter---*/
+		mySkyBox.draw();
+		
+		if (myFighter.draw() == false) {
+			myFighter.resetFighter();
+			respawn(myFighter);
+		}
+		
+		/*---here we draw all enemies fighter---*/
+		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
+			if (enemiesFighter[i] != void) {
+				if (enemiesFighter[i].draw() == false) {
+					//enemiesFighter[i].resetFighter();
+					enemiesFighter[i] = void;
+				}
 			}
 		}
-	}
-	/*---here we draw all ambient spaceships---*/
-	for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
-		if (ambientSpaceship[i] != void) {
-			ambientSpaceship[i].draw();
+		/*---here we draw all ambient spaceships---*/
+		for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
+			if (ambientSpaceship[i] != void) {
+				ambientSpaceship[i].draw();
+			}
 		}
+		
+		myRadar.draw();
+		
+		myHud.draw();
+		
+		myLightEngine.update();
 	}
-	
-	myRadar.draw();
-	
-	myHud.draw();
-	
-	myLightEngine.update();
+
 	
 	SceneEnd();
 
@@ -240,8 +265,8 @@ function OnTimer()
 					changedFighter = Ywing( meshes, myLightEngine );
 				} else if (type == ARC170_TYPE) { /* arc170 */
 					changedFighter = Arc170( meshes, myLightEngine );
-				} else if (type == MILLFALC_TYPE) { /* millennium falcon */
-					changedFighter = MillenniumFalcon( meshes, myLightEngine );
+				} else if (type == INTERCEPTOR_TYPE) { /* interceptor */
+					changedFighter = TieInterceptor( meshes, myLightEngine );
 				}
 				#ifdef DEBUGGING
 					changedFighter.useCamera(false);
@@ -251,23 +276,45 @@ function OnTimer()
 				changedFighter.setPosition(myFighter.getPosition());
 				changedFighter.addNetwork(networkController);
 				myFighter = changedFighter;
+				easterEgg = 0;
 			break;
 			case 3:
 				gameMode = GAME_MODE_PLAY;
+				/* EASTER EGG */
+				if(easterEgg==5){
+					myFighter.fighterType = 5;
+					myFighter = MillenniumFalcon( meshes, myLightEngine );
+					myFighter.useCamera(true);
+					myFighter.setPosition(myFighter.getPosition());
+					myFighter.addNetwork(networkController);
+					MMMp3.Stop();
+					MMMp3.Load("galactic-empire.mp3");
+					MMMp3.SetVolume(0.2);
+					MMMp3.Play(true);
+				}
 				/* Create main ambient object */
 				ambientSpaceship[0] = DeathStar( meshes );
-				ambientSpaceship[0].setCenter([2500, 2000, 2500]);
+				ambientSpaceship[0].setCenter([0, 0, 0]);
 				ambientSpaceship[0].setRadius(0);
-				ambientSpaceship[0].setOrbitPeriod(500.0);
+				ambientSpaceship[0].setOrbitPeriod(200.0);
 				ambientSpaceship[0].setServerTime(GetTime());
 				ambientSpaceship[1] = StarDestroyer( meshes );
-				ambientSpaceship[1].setCenter([0, 0, 0]);
+				ambientSpaceship[1].setCenter([2500, 2000, 2500]);
 				ambientSpaceship[1].setRadius(500);
 				ambientSpaceship[1].setOrbitPeriod(5000.0);
 				ambientSpaceship[1].setServerTime(GetTime());
+				ambientSpaceship[2] = Frigate( meshes );
+				ambientSpaceship[2].setCenter([-2500, -4000, -2500]);
+				ambientSpaceship[2].setRadius(250);
+				ambientSpaceship[2].setOrbitPeriod(300.0);
+				ambientSpaceship[2].setServerTime(GetTime());
 				myRadar = Radar(myFighter, ambientSpaceship, enemiesFighter);
 				myHud = Hud(myFighter);
+				starting_time = GetTime();
 				respawn(myFighter);
+			break;
+			case 4:
+				easterEgg++;
 			break;
 		}
 	}

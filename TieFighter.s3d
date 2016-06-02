@@ -16,7 +16,7 @@ function TieFighter::TieFighter(meshFactory, lights)
 
 function TieFighter::fireBeam(){
 	/* calcola la pos iniziale */
-	var BeamOffsets = [0,0,2];
+	var BeamOffsets = [0,0,3];
 	
 	FighterJet::this.fireBeam(BeamOffsets);
 

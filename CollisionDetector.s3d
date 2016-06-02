@@ -24,6 +24,7 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 		if (enemyArray[i] != void) {
 			if(myFighterObj.isCollidingBBox(enemyArray[i].getObject())){
 				myFighter.setCollision(true); 
+				myFighter.setDestroyed(true); 
 				changed = true;
 			}
 			for(var j = 0; j<aliveBeamsNum; j++){
@@ -86,6 +87,7 @@ function CollisionDetector::checkCollisionDeep(myFighter, shipObj) {
 	for(var j = 0; j < 6; j+=2) {
 		if(shipObj.isColliding(pos+myFighter.getCollVertex()[j+1],pos+myFighter.getCollVertex()[j])) {
 			myFighter.setCollision(true); 
+			myFighter.setDestroyed(true); 
 			//myFighter.setCollisionInfo(collisionInfo);
 			return true;
 		}

@@ -1,5 +1,5 @@
 #define SHOOT_RATE	100
-#define MOUSE_STEP 	0.001
+#define MOUSE_STEP 	0.005
 #define DELTA_X_MAX	385
 #define DELTA_Y_MAX	220
 #define X_MAX 		1530
@@ -41,7 +41,7 @@ function UserInput::userControlFighter(fighter)
 	var mx = Mouse.X;
 	var my = Mouse.Y;
 	var lButton = Mouse.ButtonL;
-	consoletext(0.01,0.01,sprintf("deltaX: %d, X: %d, deltaY: %d, Y: %d",dx,mx,dy,my));
+//	consoletext(0.01,0.01,sprintf("deltaX: %d, X: %d, deltaY: %d, Y: %d",dx,mx,dy,my));
 //	outputln(sprintf("deltaX: %d, X: %d, deltaY: %d, Y: %d",dx,mx,dy,my));
 	var y = 0, p = 0, r = 0;
 	var angleStep = fighter.getAngleStep();
@@ -122,6 +122,7 @@ function UserInput::userControlGameMenu()
 	/* TODO: usare una funzione per i comandi del menu di selezione */
 	static var leftPressed = false;
 	static var rightPressed = false;
+	static var downPressed = false;
 	static var enterPressed = false;
 	if(Keypressed(VK_LEFT)) {
 		leftPressed = true;
@@ -129,12 +130,14 @@ function UserInput::userControlGameMenu()
 		leftPressed = false;
 		return 1;
 	}
+	
 	if(Keypressed(VK_RIGHT)) {
 		rightPressed = true;
 	} else if (rightPressed == true) {
 		rightPressed = false;
 		return 2;
 	}
+	
 	if(Keypressed(VK_SPACE)) {
 		enterPressed = true;
 	} else if (enterPressed == true) {
@@ -142,5 +145,12 @@ function UserInput::userControlGameMenu()
 		return 3;
 	}
 	
+	if(Keypressed(VK_DOWN)) {
+		downPressed = true;
+	} else if (downPressed == true) {
+		downPressed = false;
+		return 4;
+	}
+
 	return 0;
 }

@@ -1,0 +1,23 @@
+#include <FighterJet.s3d>
+#include <MeshFactory.s3d>
+
+class TieInterceptor: FighterJet {
+	TieInterceptor(meshFactory, lights);
+	fireBeam();
+};
+
+function TieInterceptor::TieInterceptor(meshFactory, lights)
+{
+	FighterJet::this.init(meshFactory, lights, INTERCEPTOR_TYPE, GREEN_BEAM);
+	//TODO: Fix camera offset
+	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
+	lightType = GREEN_LIGHT;
+}
+
+function TieInterceptor::fireBeam(){
+	/* calcola la pos iniziale */
+	var BeamOffsets = [0,0,2];
+	
+	FighterJet::this.fireBeam(BeamOffsets);
+
+}
