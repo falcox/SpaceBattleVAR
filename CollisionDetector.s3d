@@ -22,9 +22,13 @@ function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArr
 	var enemyBeams;
 	for (var i = 0; i < enemyFighterNum; i++) {
 		if (enemyArray[i] != void) {
-			if(myFighterObj.isCollidingBBox(enemyArray[i].getObject())){
-				myFighter.setCollision(true); 
-				myFighter.setDestroyed(true); 
+			if(myFighterObj.isCollidingBBox(enemyArray[i].getObject())) {
+				if (!myFighter.isDestroyed()) {
+					myFighter.setCollision(true); 
+					myFighter.setDestroyed(true);
+					var data = {network.getId(), -1};
+					EventPost(network.fighterDestroyedEvent, data, 1);
+				}
 				changed = true;
 			}
 			for(var j = 0; j<aliveBeamsNum; j++){
@@ -90,8 +94,12 @@ function CollisionDetector::checkCollisionDeep(myFighter, shipObj) {
 	var pos = myFighter.getPosition();
 	for(var j = 0; j < 6; j+=2) {
 		if(shipObj.isColliding(pos+myFighter.getCollVertex()[j+1],pos+myFighter.getCollVertex()[j])) {
-			myFighter.setCollision(true); 
-			myFighter.setDestroyed(true); 
+			if (!myFighter.isDestroyed()) {
+				myFighter.setCollision(true); 
+				myFighter.setDestroyed(true);
+				var data = {network.getId(), -1};
+				EventPost(network.fighterDestroyedEvent, data, 1);
+			}
 			//myFighter.setCollisionInfo(collisionInfo);
 			return true;
 		}

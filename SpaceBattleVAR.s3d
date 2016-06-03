@@ -416,9 +416,11 @@ function OnEvent(eventID, wparam, lparam){
 				enemiesFighter[ wparam[0] ].setDestroyed(true);
 			} else {
 				myHud.increaseDeathCounter(wparam[1]);
+				myHud.setScreenMessage("You are death!", false);
 			}
 			if (wparam[1] == networkController.getId()) {
 				myHud.increaseKillCounter(wparam[0]);
+				myHud.setScreenMessage("Good kill!", false);
 			}
 		} else
 		if (eventId == networkController.isIdEvent()) {

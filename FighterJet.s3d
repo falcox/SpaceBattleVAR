@@ -66,6 +66,7 @@ class FighterJet {
 	getObject();
 	setCollision(bool);
 	setDestroyed(bool);
+	isDestroyed();
 	updateCollVertex(bbox);
 	getCollVertex();
 	getAngles();
@@ -351,6 +352,11 @@ function FighterJet::setDestroyed(bool)
 	else{
 		destroyed = false;
 	}
+}
+
+function FighterJet::isDestroyed()
+{
+	return destroyed;
 }
 
 function FighterJet::updatePosition(disp){
