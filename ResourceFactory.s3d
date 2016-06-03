@@ -8,12 +8,14 @@
 #define TIE_TYPE			1
 #define YWING_TYPE			2
 #define ARC170_TYPE			3
-#define MILLFALC_TYPE		4
+#define INTERCEPTOR_TYPE	4
+#define MILLFALC_TYPE		5
 
 #define ESCAPE_POD			0
 #define EMPEROR_SHUTTLE		1
 #define STAR_DESTROYER		2
 #define DEATH_STAR			3
+#define REBELLION_FRIGATE	4
 
 #define EXPLOSION			0
 
@@ -36,7 +38,7 @@ class ResourceFactory {
 
 function ResourceFactory::ResourceFactory()
 {
-	fighterMeshes = Array(5);
+	fighterMeshes = Array(6);
 	fighterMeshes[XWING_TYPE] = CVmNewMesh("Xwing.AAM");
 	fighterMeshes[XWING_TYPE].centerBoundingBox();
 	
@@ -49,6 +51,9 @@ function ResourceFactory::ResourceFactory()
 	fighterMeshes[ARC170_TYPE] = CVmNewMesh("arc170.AAM");
 	fighterMeshes[ARC170_TYPE].centerBoundingBox();
 	
+	fighterMeshes[INTERCEPTOR_TYPE] = CVmNewMesh("interceptor.AAM");
+	fighterMeshes[INTERCEPTOR_TYPE].centerBoundingBox();
+	
 	fighterMeshes[MILLFALC_TYPE] = CVmNewMesh("millennium_falcon.AAM");
 	fighterMeshes[MILLFALC_TYPE].centerBoundingBox();
 	
@@ -59,12 +64,14 @@ function ResourceFactory::ResourceFactory()
 	ambientMeshes[EMPEROR_SHUTTLE].centerBoundingBox();
 	ambientMeshes[EMPEROR_SHUTTLE].Scale(0.05);
 	ambientMeshes[STAR_DESTROYER] = CVmNewMesh("StarDestroyer.AAM");
-	ambientMeshes[STAR_DESTROYER].Scale(4);
+	ambientMeshes[STAR_DESTROYER].Scale(6);
 	ambientMeshes[STAR_DESTROYER].centerBoundingBox();
 	ambientMeshes[DEATH_STAR] = CVmNewMesh("DeathStar2.AAM");
 	ambientMeshes[DEATH_STAR].Scale(0.02);
 	ambientMeshes[DEATH_STAR].centerBoundingBox();
-	
+	ambientMeshes[REBELLION_FRIGATE] = CVmNewMesh("frigate.AAM");
+	ambientMeshes[REBELLION_FRIGATE].Scale(50);
+	ambientMeshes[REBELLION_FRIGATE].centerBoundingBox();
 	
 	bulletMeshes = Array(2);
 	bulletMeshes[RED_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);

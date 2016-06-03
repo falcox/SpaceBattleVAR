@@ -1,6 +1,6 @@
 #define SKY_BOX_SIZE	FAR_PLANE
-#define N_TILES			6
-#define MODULATION_STEP 0.1
+#define N_TILES			4
+//#define MODULATION_STEP 0.1
 
 class SkyBox{
 	var extSkyBoxMesh;
@@ -33,6 +33,13 @@ function SkyBox::init(){
 	extSkyBoxMesh.setMaterial(skyBoxMaterial);
 	extSkyBoxObj = CVmObj(extSkyBoxMesh);
 	
+//	extSkyBoxMesh = CVmNewMesh(VRP_BOX, 12, [-SKY_BOX_SIZE/10,-SKY_BOX_SIZE/10, -SKY_BOX_SIZE/10], [-SKY_BOX_SIZE/10,-SKY_BOX_SIZE/10, -SKY_BOX_SIZE/10]);
+	/*extSkyBoxMesh = CVmNewMesh(VRP_BOX);
+	extSkyBoxMesh.centerBoundingBox();
+	extSkyBoxMesh.scale(SKY_BOX_SIZE/4);
+	extSkyBoxMesh.setMaterial(skyBoxMaterial);
+	extSkyBoxObj = CVmObj(extSkyBoxMesh);*/
+	
 	/*intSkyBoxMesh = CVmNewMesh(VRP_SPHERE);
 	intSkyBoxMesh.centerBoundingBox();
 	intSkyBoxMesh.scale(SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4, SKY_BOX_SIZE*3/4);
@@ -45,7 +52,7 @@ function SkyBox::init(){
 	planetMaterial.setTexture(CVmTexture("endor_v3.png"));
 	//planetBillboard = CVmBillboard("yavin4.png", 200, 200);
 	planetObj.linkToBillboard(planetBillboard);
-	planetObj.setScale(500);
+	planetObj.setScale(400);
 	planetBillboard.setMaterial(planetMaterial);
 	//intSkyBoxObj = CVmObj(intSkyBoxMesh);
 	//intSkyBoxObj.linkToBillboard(planetBillboard);
@@ -75,16 +82,18 @@ function SkyBox::draw(){
 	glPopMatrix();
 }
 
-function SkyBox::update(pos, roll){
+function SkyBox::update(pos, angles){
 	extSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
 	//intSkyBoxObj.setPosition(pos.x, pos.y, pos.z);
 	planetObj.setPosition(pos.x, pos.y, pos.z+ SKY_BOX_SIZE*0.45);
-	planetObj.setRotation(-roll, [0,0,1]);
+	planetObj.setRotation(-angles[0], [0,0,1]);
+//	planetObj.Rotate(-angles[1], [1,0,0]);
+//	planetObj.Rotate(-angles[2], [0,1,0]);
 	
 	//starMaterial.modulateMaterials(0.5*sin(modulationTheta),0,0,1);
 	
 	//starMaterial.Ambient = [0.5+0.3*sin(modulationTheta),0,0,0];
 	starObj.setPosition(pos.x + SKY_BOX_SIZE*0.4, pos.y, pos.z);
-	starObj.setRotation(-roll, [1,0,0]);
+	starObj.setRotation(-angles[0], [1,0,0]);
 	
 }

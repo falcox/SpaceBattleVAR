@@ -1,11 +1,13 @@
-#define ROWSPAN 		0.03
-#define MSG_LIFETIME 	5000
-#define MSG_QUEUE_LEN	20
-#define AIM_SIZE		0.25
-#define HEALTHBAR_W		4.0
-#define HEALTHBAR_H		(HEALTHBAR_W / 8)
-#define BATTERYBAR_W	3.0
-#define BATTERYBAR_H	(BATTERYBAR_W / 8)
+#define ROWSPAN 			0.03
+#define MSG_LIFETIME 		5000
+#define SCREENMSG_LIFETIME 	3000
+#define MSG_QUEUE_LEN		20
+#define AIM_SIZE			0.25
+#define HEALTHBAR_W			4.0
+#define HEALTHBAR_H			(HEALTHBAR_W / 8)
+#define BATTERYBAR_W		3.0
+#define BATTERYBAR_H		(BATTERYBAR_W / 8)
+#define TURBOBAR_W			2.0
 
 class Message {
 	var msg;
@@ -17,6 +19,7 @@ class Hud {
 	var deathNumber;
 	var killNumber;
 	var msgPool;
+	var screenMsg;
 	var time;
 	var tick;
 	var aimTexture;
@@ -24,11 +27,15 @@ class Hud {
 //	var battContainerTexture;
 	var lifeHpTexture;
 	var batteryTexture;
+	var turboTexture;
+	var aimColor;
 	
 	Hud(fighter);
 	increaseDeathCounter(playerId);
 	increaseKillCounter(playerId);
-	appendMessage(message, fixed);
+	appendMessage(string, fixed);
+	setScreenMessage(string, fixed);
+	setHudByFighter(fighter);
 	draw(myFighter);
 	resetHud();
 };
@@ -38,6 +45,7 @@ function Hud::Hud()
 	deathNumber = 0;
 	killNumber = 0;
 	msgPool = Array(0);
+	screenMsg = void;
 	time = GetTime();
 	tick = 0;
 	
@@ -46,6 +54,8 @@ function Hud::Hud()
 	lifeContainerTexture = CVmTexture("grey-lifebar-container.png");
 //	battContainerTexture = CVmTexture("grey-lifebar-container2.png");
 	batteryTexture = CVmTexture("lifebar-battery2.png");
+	turboTexture = CVmTexture("lifebar-turbo.png");
+	aimColor = [1,0,0];
 }
 
 function Hud::draw(myFighter)
@@ -60,6 +70,7 @@ function Hud::draw(myFighter)
 	var queueLen = len(msgPool);
 	var deletedIndexArray = Array(0);
 	for (var i = 0; i < queueLen; i++) {
+		consoleFont("Star Jedi", 16);
 		ConsoleColor(1, 1, 1, 1);
 		ConsoleText (0.11, rowy, msgPool[i].msg);
 		rowy -= ROWSPAN;
@@ -73,8 +84,25 @@ function Hud::draw(myFighter)
 	}
 	glDisable(GL_BLEND);
 	
+	if (screenMsg != void) {
+		consoleFont("Star Jedi", 48);
+		consoleColor(1.0,1.0,0.0);
+		consoleText(0.35,0.6, screenMsg.msg);
+		if (screenMsg.fixed == false) {
+			screenMsg.lifetime -= tick;
+		}
+		if (screenMsg.lifetime <= 0) {
+			screenMsg = void;
+		}
+	}
+
+	consoleFont("Star Jedi", 16);
+	ConsoleColor(1, 1, 0, 1);
+	ConsoleText (0.075, 0.75, sprintf("kills: %d\ndeaths: %d", killNumber, deathNumber));
+	
 	var lifeStat = myFighter.getCurrentLife() / 100.0;
 	var battStat = myFighter.getCurrentBattery() / 100.0;
+	var turboStat = myFighter.getCurrentTurbo() / 100.0;
 	
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -92,7 +120,7 @@ function Hud::draw(myFighter)
 	SetActiveTexture(aimTexture);
 	glBegin(GL_QUADS);
 		//glNormal(0, 0, 1);
-		glColor(1.0, 0.0, 0, 0.5);
+		glColor(aimColor.x, aimColor.y, aimColor.z, 0.5);
 		glTexCoord(0, 1); glVertex(-AIM_SIZE, -AIM_SIZE, 1);
 		glTexCoord(1, 1); glVertex(AIM_SIZE, -AIM_SIZE, 1);
 		glTexCoord(1, 0); glVertex(AIM_SIZE, AIM_SIZE, 1);
@@ -122,7 +150,14 @@ function Hud::draw(myFighter)
 		glTexCoord(0, 0); glVertex(0, 0);
 	glEnd();
 	
-	
+	SetActiveTexture(turboTexture);
+	glBegin(GL_QUADS);
+		glColor(1,1,1,1);
+		glTexCoord(0, 1); glVertex(0, -2*BATTERYBAR_H);
+		glTexCoord(turboStat, 1); glVertex(TURBOBAR_W*turboStat, -2*BATTERYBAR_H);
+		glTexCoord(turboStat, 0); glVertex(TURBOBAR_W*turboStat, -BATTERYBAR_H);
+		glTexCoord(0, 0); glVertex(0, -BATTERYBAR_H);
+	glEnd();
 
 	SetActiveTexture(lifeContainerTexture);
 	glBegin(GL_QUADS);
@@ -140,6 +175,12 @@ function Hud::draw(myFighter)
 		glTexCoord(1, 1); glVertex(BATTERYBAR_W, -BATTERYBAR_H);
 		glTexCoord(1, 0); glVertex(BATTERYBAR_W, 0);
 		glTexCoord(0, 0); glVertex(0, 0);
+		
+		glColor(1,1,1,0.8);
+		glTexCoord(0, 1); glVertex(0, -2*BATTERYBAR_H);
+		glTexCoord(1, 1); glVertex(TURBOBAR_W, -2*BATTERYBAR_H);
+		glTexCoord(1, 0); glVertex(TURBOBAR_W, -BATTERYBAR_H);
+		glTexCoord(0, 0); glVertex(0, -BATTERYBAR_H);
 	glEnd();
 	
 	
@@ -165,9 +206,11 @@ function Hud::draw(myFighter)
 
 function Hud::resetHud()
 {
+	time = GetTime();
 	deathNumber = 0;
 	killNumber = 0;
 	msgPool = Array(0);
+	screenMsg = void;
 }
 
 function Hud::appendMessage(string, fixed)
@@ -193,6 +236,20 @@ function Hud::increaseKillCounter(playerId)
 	appendMessage(msg, false);
 }
 
-	
+function Hud::setHudByFighter(fighter) {
+	if(fighter.fighterType == 4 || fighter.fighterType == 1) {
+		aimColor = [0,1,0];	
+	} else {
+		aimColor = [1,0,0];
+	}
+}
+
+function Hud::setScreenMessage(string, fixed)
+{
+	screenMsg = Message();
+	screenMsg.msg = string;
+	screenMsg.lifetime = SCREENMSG_LIFETIME;
+	screenMsg.fixed = fixed;
+}
 	
 	

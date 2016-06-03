@@ -214,6 +214,8 @@ function LightEngine::update(){
 		}
 	}
 	
+	activeNum = j;
+	
 	if(virtualLightsNum>ENVIRONMENT_LIGHTS){
 		//activate search		
 		var delta = virtualLightsNum -ENVIRONMENT_LIGHTS;
