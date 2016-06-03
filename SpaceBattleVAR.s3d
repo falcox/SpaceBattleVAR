@@ -1,13 +1,15 @@
 #define AMBIENT_SPACESHIP_NUM 10
-#define TIMER_MSEC_TICK 15
-#define FRAMERATE 60
+/* #define TIMER_MSEC_TICK 15
+#define FRAMERATE 60*/
+#define TIMER_MSEC_TICK 30
+#define FRAMERATE 30
 #define RED_LIGHT	0
 #define GREEN_LIGHT	1
 #define WHITE_LIGHT 2
 #define BOUND_VOLUME_X	5000
-#define BOUND_VOLUME_Y	2500
+#define BOUND_VOLUME_Y	5000
 #define BOUND_VOLUME_Z	5000
-#define FAR_PLANE		4000
+#define FAR_PLANE		10000
 #define RATIO_H			9.0
 #define RATIO_W			16.0
 
@@ -45,7 +47,7 @@
 /* Set global scene parameters */
 SET SCENE_FOV  = 90;
 SET SCENE_NEAR = 0.5;
-SET SCENE_FAR  = 5000;
+SET SCENE_FAR  = 10000;
 
 var myFighter;
 var networkController =  void;
@@ -416,7 +418,7 @@ function OnEvent(eventID, wparam, lparam){
 				enemiesFighter[ wparam[0] ].setDestroyed(true);
 			} else {
 				myHud.increaseDeathCounter(wparam[1]);
-				myHud.setScreenMessage("You are death!", false);
+				myHud.setScreenMessage("You are dead!", false);
 			}
 			if (wparam[1] == networkController.getId()) {
 				myHud.increaseKillCounter(wparam[0]);
@@ -548,11 +550,11 @@ function DrawWorldBounds(){
 function respawn(fighter)
 {
 	//TODO: respawn da uno degli 8 vertici
-	var posx = rand(BOUND_VOLUME_X) * ((Rand(1)==0)?1:-1);
-	var posy = rand(BOUND_VOLUME_Y) * ((Rand(1)==0)?1:-1);
-	var posz = rand(BOUND_VOLUME_Z) * ((Rand(1)==0)?1:-1);
-	
-	//fighter.SetPosition([posx, posy, posz]);
-	fighter.SetPosition([1700+Rand(200), 0, 0]);
-	//fighter.SetPosition([0, 0, 0]);
+	var posx = (BOUND_VOLUME_X - 100 - Rand(200)) * ((Rand(1)==0)?1:-1);
+	var posy = (BOUND_VOLUME_Y - 100 - Rand(200)) * ((Rand(1)==0)?1:-1);
+	var posz = (BOUND_VOLUME_Z - 100 - Rand(200)) * ((Rand(1)==0)?1:-1);
+	var pos = [posx, posy, posz];
+	trace(pos);
+	fighter.SetPosition(pos);
+	//fighter.SetPosition([1700+Rand(200), 0, 0]);
 }

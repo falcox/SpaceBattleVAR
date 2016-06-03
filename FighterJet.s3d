@@ -186,8 +186,8 @@ function FighterJet::setPosition(pos){
 
 function FighterJet::increaseSpeed()
 {
-	if(currentTurbo>0){
-		currentTurbo -= 1;
+	if(currentTurbo > 0) {
+		currentTurbo -= 0.25;
 		velocity = (velocity+SPEED_STEP<MAX_SPEED)?velocity+SPEED_STEP:MAX_SPEED;
 	}else{
 		velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
@@ -197,7 +197,7 @@ function FighterJet::increaseSpeed()
 
 function FighterJet::decreaseSpeed()
 {
-	if(currentTurbo<100) {
+	if(currentTurbo < 100) {
 		currentTurbo += 0.5;
 	}
 	velocity = (velocity-SPEED_STEP>MIN_SPEED)?velocity-SPEED_STEP:MIN_SPEED;
