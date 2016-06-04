@@ -1,13 +1,23 @@
 #include <FighterJet.s3d>
-#include <MeshFactory.s3d>
+#include <ResourceFactory.s3d>
 
 class Ywing: FighterJet {
-	Ywing(meshFactory);
+	Ywing(resFactory, lights);
+	fireBeam();
 };
 
-function Ywing::Ywing(meshFactory)
+function Ywing::Ywing(resFactory, lights)
 {
-	FighterJet::this.init(meshFactory.getFighterMeshes(YWING_TYPE), YWING_TYPE);
+	FighterJet::this.init(resFactory, lights, YWING_TYPE, GREEN_BEAM);
 	//TODO: Fix camera offset
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
+	lightType = GREEN_LIGHT;
+}
+
+function Ywing::fireBeam(){
+	/* calcola la pos iniziale */
+	var BeamOffsets = [0,0,2];
+	
+	FighterJet::this.fireBeam(BeamOffsets);
+
 }

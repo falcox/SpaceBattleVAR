@@ -1,0 +1,22 @@
+#include <AmbientObject.s3d>
+#include <ResourceFactory.s3d>
+
+class StarDestroyer: AmbientObject {
+	
+	StarDestroyer(resFactory);
+	isDestroyable();
+	getAmbientType();
+};
+
+function StarDestroyer::StarDestroyer(resFactory){
+	AmbientObject::this.init( resFactory, STAR_DESTROYER );
+	//object.setScale(10);
+}
+
+function StarDestroyer::isDestroyable() {
+	return false;
+}
+
+function StarDestroyer::getAmbientType() {
+	return STAR_DESTROYER;
+}

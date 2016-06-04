@@ -2,12 +2,18 @@
 #define AMBIENT_OBJECT
 
 class AmbientObject {
-	var object;	
+	var object;
 	var pathCenter;
 	var pathRadius;
 	var orbitPeriod;
 	var serverTime;
+	var time;
+	var angle;
 	var objType;
+	var collision;
+	var position;
+	var expl;
+	var explSound;
 	
 	var currentLife;		/* Life variable from 0 to 100 */
 	var velocity;
@@ -21,27 +27,49 @@ class AmbientObject {
 	setServerTime(time);
 	setAnimationFrame(frame_number);
 	update();
+	getPosition();
 	getAmbientObjData();
+	getObject();
+	setCollision(bool);
+	isCollided();
 };
 
-function AmbientObject::init(mesh, type){
+function AmbientObject::init(resources, type) {
+	var mesh = resources.getAmbientMeshes(type);
 	objType = type;
+	angle = 0;
+	time = 0;
 	velocity = 0;
 	currentFrame = 0;
 	currentLife = 100;
+	collision = false;
+	position = [0,0,0];
+	pathCenter = [0, 0, 0];
+	pathRadius = 0;
+	orbitPeriod = 1;
+	serverTime = 0;
+	expl = resources.getAviResources(EXPLOSION);
+	expl.SetAviFrame(0);
+	explSound = resources.getSoundResources(EXPLOSION_SOUND);
 	
 	object = CVmObj(mesh);
 }
 
-function AmbientObject::setCenter(position){
-	pathCenter = position;
+function AmbientObject::setCenter(center){
+	pathCenter = center;
 }
 
 function AmbientObject::getAmbientObjData()
 {
-	var data = vector(2);
+	// ambientType, center, radius, orbitPeriod, serverTime
+	var data = vector(7);
 	data[0] = objType;
-	data[1] = currentLife;
+	data[1] = pathCenter.x;
+	data[2] = pathCenter.y;
+	data[3] = pathCenter.z;
+	data[4] = pathRadius;
+	data[5] = orbitPeriod;
+	data[6] = serverTime;
 	return data;
 }
 
@@ -70,20 +98,45 @@ function AmbientObject::draw(){
 	object.DrawAxis();
 	object.DrawBoundingBox();
 	
-	object.draw(VR_FRAMENUMBER, currentFrame);
+	if (!collision) {
+		object.draw(VR_FRAMENUMBER, currentFrame);
+	} else if (expl.GetAviFrame() < expl.GetAviTotalFrame()-1) {
+		expl.SetSize(30.0, 30.0);
+		expl.SetPosition(position);
+		glColor(1.0, 1.0, 1.0, 1.0);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+   		glDepthMask(GL_FALSE);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		expl.Draw(VR_NOLOOP);
+		explSound.Play();
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glEnable(GL_DEPTH_TEST);
+   		glDepthMask(GL_TRUE);
+   		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		return false;
+	}
+	
+	return true;
 }
 
 function AmbientObject::update() {
-	static var time = GetTime();
-	static var angle = 0;
 	var timeTickSecond = 0.001;
-	var position = [0, 0, 0];
+	//var position = [0, 0, 0];
+	if(time == 0){
+		time = GetTime();
+	}
 	time -= serverTime;
-	timeTickSecond *= (GetTime() - time);
+	timeTickSecond *= ((GetTime()-serverTime) - time);
 	
 	angle += (360.0/orbitPeriod)*timeTickSecond;
 	angle = angle % 360;
-	
+	var a = (360.0/orbitPeriod);
+	/*trace(a);
+	trace(timeTicksecond);
+	trace(angle);*/
 	/*---rotazione oggetto---*/
 	object.SetRotation(-angle, object.GetYaxis());
 	
@@ -94,6 +147,22 @@ function AmbientObject::update() {
 	object.SetPosition(position);
 	
 	time = GetTime();
+}
+
+function AmbientObject::getPosition() {
+	return position;
+}
+
+function AmbientObject::getObject() {
+	return object;
+}
+
+function AmbientObject::setCollision(bool) {
+	collision = bool;
+}
+
+function AmbientObject::isCollided() {
+	return collision;
 }
 
 #endif

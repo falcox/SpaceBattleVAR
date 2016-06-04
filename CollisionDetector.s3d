@@ -1,0 +1,108 @@
+class CollisionDetector{
+	var ambientSpaceshipNum;
+	var enemyFighterNum;
+	var network;
+	
+	CollisionDetector(aNum, eNum, net);
+	checkCollisionBBox(myFighter, enemyArray, ambientArray);
+	checkCollisionDeep(myFighter, shipObj);
+};
+
+function CollisionDetector::CollisionDetector(aNum, eNum, net) {
+	ambientSpaceshipNum = aNum;
+	enemyFighterNum = eNum;
+	network = net;
+}
+
+function CollisionDetector::checkCollisionBBox(myFighter, enemyArray, ambientArray){
+	var changed = false;
+	var myFighterObj = myFighter.getObject();
+	var aliveBeamsNum = myFighter.getAliveBeamsNum();
+	var aliveBeams = myFighter.getAliveBeams();						//array con gli indici dei bullet vivi
+	var enemyBeams;
+	for (var i = 0; i < enemyFighterNum; i++) {
+		if (enemyArray[i] != void) {
+			if(myFighterObj.isCollidingBBox(enemyArray[i].getObject())) {
+				if (!myFighter.isDestroyed()) {
+					myFighter.setCollision(true); 
+					myFighter.setDestroyed(true);
+					var data = {network.getId(), -1};
+					EventPost(network.fighterDestroyedEvent, data, 1);
+				}
+				changed = true;
+			}
+			for(var j = 0; j<aliveBeamsNum; j++){
+				var beam = myFighter.getBeam(AliveBeams[j]);
+				if(beam.isCollidingBBox(enemyArray[i].getObject())){
+					//TODO: gestisci la hit dei nemici (sarà il nemico a dirmi che l'ho preso, qui faccio sparire solo il proiettile)
+					beam.setCollided();
+					//outputln("Hit enemy!");
+				}
+			}
+			enemyBeams = enemyArray[i].getAliveBeams();
+			for(var j = 0; j<len(enemyBeams); j++) {
+				var beam = enemyArray[i].getBeam(enemyBeams[j]);
+				if(beam.isCollidingBBox(myFighterObj)) {
+					myFighter.decreaseLife(beam.getDamage(), i);
+					beam.setCollided();
+					outputln("I've been hit!");
+				}
+			}
+		}
+	}
+	for (var i = 0; i < ambientSpaceshipNum; i++) {
+		if (ambientArray[i] != void ) {
+			var shipObj = ambientArray[i].getObject();
+			if(myFighterObj.isCollidingBBox(shipObj)){
+				if(ambientArray[i].isDestroyable()) {
+					if (!ambientArray[i].isCollided()) {
+						ambientArray[i].setCollision(true);
+						network.sendAmbientDestroyData(i, network.getId(), ambientArray[i].getAmbientType());
+					}
+				} else {
+					changed = changed || checkCollisionDeep(myFighter, shipObj);
+				}
+			}
+			for(var j = 0; j<aliveBeamsNum; j++){
+				var beam = myFighter.getBeam(AliveBeams[j]);
+				if(beam.isCollidingBBox(shipObj)){
+					if(ambientArray[i].isDestroyable()) {
+						if (!ambientArray[i].isCollided()) {
+							ambientArray[i].setCollision(true);
+							network.sendAmbientDestroyData(i, network.getId(), ambientArray[i].getAmbientType());
+						}
+						beam.setCollided();
+					}
+					else{
+						var cv = beam.getCollVertex();
+						var p = beam.getObject().getPosition();
+						if(shipObj.isColliding(p+cv[0], p+cv[1])){
+							beam.setCollided();
+							//outputln("bullet collided");
+						}
+					}
+				}
+			}
+		}
+	}
+	if(!changed){
+		myFighter.setCollision(false);
+	}
+}
+
+function CollisionDetector::checkCollisionDeep(myFighter, shipObj) {
+	var pos = myFighter.getPosition();
+	for(var j = 0; j < 6; j+=2) {
+		if(shipObj.isColliding(pos+myFighter.getCollVertex()[j+1],pos+myFighter.getCollVertex()[j])) {
+			if (!myFighter.isDestroyed()) {
+				myFighter.setCollision(true); 
+				myFighter.setDestroyed(true);
+				var data = {network.getId(), -1};
+				EventPost(network.fighterDestroyedEvent, data, 1);
+			}
+			//myFighter.setCollisionInfo(collisionInfo);
+			return true;
+		}
+	}
+	return false;
+}

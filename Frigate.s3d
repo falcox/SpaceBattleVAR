@@ -1,0 +1,23 @@
+#include <AmbientObject.s3d>
+#include <ResourceFactory.s3d>
+
+class Frigate: AmbientObject {
+	
+	Frigate(resFactory);
+	isDestroyable();
+	getAmbientType();
+};
+
+function Frigate::Frigate(resFactory){
+	AmbientObject::this.init( resFactory, REBELLION_FRIGATE);
+	//object.setScale(10);
+}
+
+function Frigate::isDestroyable() {
+	return false;
+}
+
+function Frigate::getAmbientType() {
+	return REBELLION_FRIGATE;
+}
+

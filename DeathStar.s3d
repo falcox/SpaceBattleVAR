@@ -1,0 +1,22 @@
+#include <AmbientObject.s3d>
+#include <ResourceFactory.s3d>
+
+class DeathStar: AmbientObject {
+	
+	DeathStar(resFactory);
+	isDestroyable();
+	getAmbientType();
+};
+
+function DeathStar::DeathStar(resFactory){
+	AmbientObject::this.init( resFactory, DEATH_STAR);
+	//object.setScale(10);
+}
+
+function DeathStar::isDestroyable() {
+	return false;
+}
+
+function DeathStar::getAmbientType() {
+	return DEATH_STAR;
+}

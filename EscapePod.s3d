@@ -1,11 +1,21 @@
 #include <AmbientObject.s3d>
-#include <MeshFactory.s3d>
+#include <ResourceFactory.s3d>
 
 class EscapePod: AmbientObject {
 	
-	EscapePod(meshFactory);
+	EscapePod(resFactory);
+	isDestroyable();
+	getAmbientType();
 };
 
-function EscapePod::EscapePod(meshFactory){
-	AmbientObject::this.init( meshFactory.getAmbientMeshes(ESCAPE_POD), ESCAPE_POD );
+function EscapePod::EscapePod(resFactory){
+	AmbientObject::this.init( resFactory, ESCAPE_POD );
+}
+
+function EscapePod::isDestroyable() {
+	return true;
+}
+
+function EscapePod::getAmbientType() {
+	return ESCAPE_POD;
 }

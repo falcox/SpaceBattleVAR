@@ -1,0 +1,122 @@
+#ifndef LASER_BEAM
+#define LASER_BEAM
+
+#define LASER_SPEED		1200
+//#define LASER_SPEED		0
+
+class LaserBeam{
+	var object;
+	var lightIndex;
+	var initPos;
+	var actualPos;
+	var finalPos;
+	var shootTime;
+	var collision;
+	var direction;
+	var posThreshold;
+	var time;
+	var damage;
+	var CollVertex;
+	
+	LaserBeam(mesh, lightIdx, begin, end, originTime, dmg);
+	rotateToDirection(dir);
+	setCollided();
+	setRotationMatrix(matrix);
+	isCollidingBBox(obj);
+	getObject();
+	getDamage();
+	getLightIndex();
+	getCollVertex();
+	update();
+	draw();
+};
+
+function LaserBeam::LaserBeam(mesh, lightIdx, begin, end, originTime, dmg) {
+	object = CVmObj(mesh);
+	initPos = begin;
+	actualPos = begin;
+	finalPos = end;
+	shootTime = originTime;
+	direction = finalPos-initPos;
+	posThreshold = modulus(direction);
+	direction = direction / posThreshold; 
+	collision = false;
+	time = 0;
+	CollVertex = Array(2);
+	CollVertex[0] = -direction*15;
+	CollVertex[1] = direction*15;
+	//outputln("new bullet!");
+	damage = dmg;
+	LightIndex = lightIdx;
+}
+
+function LaserBeam::setRotationMatrix(matrix){
+	object.setRotationMatrix(matrix);
+}
+
+function LaserBeam::rotateToDirection(dir){
+	var r = object.getXaxis();
+	var u = dir ^ r;
+	r = u ^ dir;
+	r = r / modulus(r);
+	object.setRotationMatrix([r.x, r.y, r.z, 0, u.x, u.y, u.z, 0, dir.x, dir.y, dir.z, 0, 0, 0, 0, 1]);
+}
+
+function LaserBeam::setCollided(){
+	collision = true;
+}
+
+function LaserBeam::update(){
+	if(time == 0){
+		time = GetTime();
+	}
+	var killMe = false;
+	var timeTickSecond = 0.001;
+	var displacement;
+	time -= shootTime;
+	timeTickSecond *= ( (GetTime()-shootTime) - time);
+	
+	/*---settaggio direzione e posizione--- */
+	this.rotateToDirection(direction);
+	displacement = direction*timeTickSecond*LASER_SPEED;
+	actualPos += displacement;
+	object.SetPosition(actualPos);
+		
+	/*--- check se distruggere il proiettile ---*/
+	if(modulus(actualPos - initPos) > posThreshold || collision == true){
+		killMe = true;
+		//outputln("bullet needs to be killed");
+	}
+	
+	time = GetTime();
+	return killMe;
+}
+
+function LaserBeam::isCollidingBBox(obj){
+	return object.isCollidingBBox(obj);
+}
+
+function LaserBeam::draw() {   
+	object.draw();
+#ifdef DEBUGGING
+	object.drawAxis();
+#endif
+}
+
+function LaserBeam::getDamage() {
+	return damage;
+}
+
+function LaserBeam::getObject() {
+	return object;
+}
+
+function LaserBeam::getCollVertex(){
+	return CollVertex;
+}
+
+function LaserBeam::getLightIndex() {
+	return lightIndex;
+}
+
+#endif

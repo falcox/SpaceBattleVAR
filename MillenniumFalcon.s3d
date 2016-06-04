@@ -1,13 +1,23 @@
 #include <FighterJet.s3d>
-#include <MeshFactory.s3d>
+#include <ResourceFactory.s3d>
 
 class MillenniumFalcon: FighterJet {
-	MillenniumFalcon(meshFactory);
+	MillenniumFalcon(resFactory, lights);
+	fireBeam();
 };
 
-function MillenniumFalcon::MillenniumFalcon(meshFactory)
+function MillenniumFalcon::MillenniumFalcon(resFactory, lights)
 {
-	FighterJet::this.init(meshFactory.getFighterMeshes(MILLFALC_TYPE), MILLFALC_TYPE);
+	FighterJet::this.init(resFactory, lights, MILLFALC_TYPE, RED_BEAM);
 	//TODO: Fix camera offset
 	FighterJet::this.setCameraOffset({[10,-60], [2.8,-2.8]});
+	lightType = RED_LIGHT;
+}
+
+function MillenniumFalcon::fireBeam(){
+	/* calcola la pos iniziale */
+	var BeamOffsets = [0,0,2];
+	
+	FighterJet::this.fireBeam(BeamOffsets);
+
 }

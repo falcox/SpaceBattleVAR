@@ -1,0 +1,144 @@
+#ifndef RESOURCE_FACTORY
+#define RESOURCE_FACTORY
+
+#define RED_BEAM			0
+#define GREEN_BEAM			1
+
+#define XWING_TYPE			0
+#define TIE_TYPE			1
+#define YWING_TYPE			2
+#define ARC170_TYPE			3
+#define INTERCEPTOR_TYPE	4
+#define MILLFALC_TYPE		5
+
+#define ESCAPE_POD			0
+#define EMPEROR_SHUTTLE		1
+#define STAR_DESTROYER		2
+#define DEATH_STAR			3
+#define REBELLION_FRIGATE	4
+
+#define EXPLOSION			0
+
+#define LASER_SOUND			0
+#define HIT_SOUND			1
+#define EXPLOSION_SOUND		2
+
+class ResourceFactory {
+	var fighterMeshes;
+	var ambientMeshes;
+	var bulletMeshes;
+	
+	ResourceFactory();
+	getFighterMeshes(fighterType);
+	getAmbientMeshes(ambientType);
+	getBulletMeshes(bulletType);
+	getAviResources(type);
+	getSoundResources(type);
+};
+
+function ResourceFactory::ResourceFactory()
+{
+	fighterMeshes = Array(6);
+	fighterMeshes[XWING_TYPE] = CVmNewMesh("Xwing.AAM");
+	fighterMeshes[XWING_TYPE].centerBoundingBox();
+	
+	fighterMeshes[TIE_TYPE] = CVmNewMesh("Tie_2.AAM");
+	fighterMeshes[TIE_TYPE].centerBoundingBox();
+	
+	fighterMeshes[YWING_TYPE] = CVmNewMesh("ywing.AAM");
+	fighterMeshes[YWING_TYPE].centerBoundingBox();
+	
+	fighterMeshes[ARC170_TYPE] = CVmNewMesh("arc170.AAM");
+	fighterMeshes[ARC170_TYPE].centerBoundingBox();
+	
+	fighterMeshes[INTERCEPTOR_TYPE] = CVmNewMesh("interceptor.AAM");
+	fighterMeshes[INTERCEPTOR_TYPE].centerBoundingBox();
+	
+	fighterMeshes[MILLFALC_TYPE] = CVmNewMesh("millennium_falcon.AAM");
+	fighterMeshes[MILLFALC_TYPE].centerBoundingBox();
+	
+	ambientMeshes = Array(5);
+	ambientMeshes[ESCAPE_POD] = CVmNewMesh("escape_pod.AAM");
+	ambientMeshes[ESCAPE_POD].centerBoundingBox();
+	ambientMeshes[EMPEROR_SHUTTLE] = CVmNewMesh("emperor_shuttle.AAM");
+	ambientMeshes[EMPEROR_SHUTTLE].centerBoundingBox();
+	ambientMeshes[EMPEROR_SHUTTLE].Scale(0.05);
+	ambientMeshes[STAR_DESTROYER] = CVmNewMesh("StarDestroyer.AAM");
+	ambientMeshes[STAR_DESTROYER].Scale(6);
+	ambientMeshes[STAR_DESTROYER].centerBoundingBox();
+	ambientMeshes[DEATH_STAR] = CVmNewMesh("DeathStar2.AAM");
+	ambientMeshes[DEATH_STAR].Scale(0.02);
+	ambientMeshes[DEATH_STAR].centerBoundingBox();
+	ambientMeshes[REBELLION_FRIGATE] = CVmNewMesh("frigate.AAM");
+	ambientMeshes[REBELLION_FRIGATE].Scale(50);
+	ambientMeshes[REBELLION_FRIGATE].centerBoundingBox();
+	
+	bulletMeshes = Array(2);
+	bulletMeshes[RED_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
+	bulletMeshes[RED_BEAM].Rotate(90,[1,0,0]);
+	var redMaterial = CVmMaterial();
+	redMaterial.ambient = [1,0,0,1];
+	redMaterial.diffuse = [1,0,0,1];
+	redMaterial.emission = [1,0,0,1];
+	redMaterial.shininess = 128;
+	redMaterial.transparency = 0.9;
+	bulletMeshes[RED_BEAM].setMaterial(redMaterial);
+	
+	bulletMeshes[GREEN_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
+	bulletMeshes[GREEN_BEAM].Rotate(90,[1,0,0]);
+	var greenMaterial = CVmMaterial();
+	greenMaterial.ambient = [0,1,0,1];
+	greenMaterial.diffuse = [0,1,0,1];
+	greenMaterial.emission = [0,1,0,1];
+	greenMaterial.transparency = 0.9;
+	greenMaterial.shininess = 128;
+	bulletMeshes[GREEN_BEAM].setMaterial(greenMaterial);
+	
+}
+
+function ResourceFactory::getFighterMeshes(fighterType)
+{
+	return fighterMeshes[fighterType];
+}
+
+function ResourceFactory::getAmbientMeshes(ambientType)
+{
+	return ambientMeshes[ambientType];
+}
+
+function ResourceFactory::getBulletMeshes(bulletType)
+{
+	return bulletMeshes[bulletType];
+}
+
+function ResourceFactory::getAviResources(type)
+{
+	switch(type) {
+		case EXPLOSION:
+			return CVmBillboard("explosion.avi");
+		break;
+		default:
+			outputln("Error! Avi resource not allowed!");
+	}
+	return void;
+}
+
+function ResourceFactory::getSoundResources(type)
+{
+	switch(type) {
+		case LASER_SOUND:
+			return CVmVRAWav("laser.wav");
+		break;
+		case HIT_SOUND:
+			return CVmVRAWav("hit.wav");
+		break;
+		case EXPLOSION_SOUND:
+			return CVmVRAWav("explosion.wav");
+		break;
+		default:
+			outputln("Error! Sound resource not allowed!");
+	}
+	return void;
+}
+
+#endif
