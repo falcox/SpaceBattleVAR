@@ -30,7 +30,7 @@ function SkyBox::init(){
 	extSkyBoxMesh = CVmNewMesh(VRP_SPHERE);
 	extSkyBoxMesh.centerBoundingBox();
 	extSkyBoxMesh.scale(SKY_BOX_SIZE,SKY_BOX_SIZE,SKY_BOX_SIZE);
-	extSkyBoxMesh.setMaterial(skyBoxMaterial);
+	extSkyBoxMesh.forceMaterial(skyBoxMaterial);
 	extSkyBoxObj = CVmObj(extSkyBoxMesh);
 	
 //	extSkyBoxMesh = CVmNewMesh(VRP_BOX, 12, [-SKY_BOX_SIZE/10,-SKY_BOX_SIZE/10, -SKY_BOX_SIZE/10], [-SKY_BOX_SIZE/10,-SKY_BOX_SIZE/10, -SKY_BOX_SIZE/10]);
