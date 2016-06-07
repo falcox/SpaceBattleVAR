@@ -255,6 +255,7 @@ function Networker::sendKeepalive()
 	PDU[0] = KEEPALIVE_PDU;
 	PDU[1] = playerId;
 	NetVarSendTo(serverIp, 50023, PDU);
+	outputln("Keepalive sended!");
 }
 
 function Networker::relayPlayerData(PDU)
@@ -429,6 +430,8 @@ function Networker::sendLaserBeamData(laserData, idExcluded)
 	PDU[11] = laserData[7];
 	/* If i am the server share information with clients, else send the information to the server */
 	if (server == true) {
+		var ipos = [PDU[4],PDU[5],PDU[6]];
+		var epos = [PDU[7],PDU[8],PDU[9]];
 		if (idExcluded != -1) {
 			PDU[3] = idExcluded;
 		} else {
@@ -437,7 +440,11 @@ function Networker::sendLaserBeamData(laserData, idExcluded)
 		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 			/* Check if there is an entry, then if it is not me then send the PDU */
 			if (player_list[i] != void && i != playerId && i != idExcluded) {
-				resendWindow.add(i, player_list[i].playerIpAddress, PDU);
+				var playerpos = [player_list[i].posx, player_list[i].posy, player_list[i].posz];
+				/* If this laser init position and end position are "near" this player, send this packet to him */
+				if ( (euclideanDistance(playerpos, ipos) < DATA_SEND_THRESHOLD) || (euclideanDistance(playerpos, epos) < DATA_SEND_THRESHOLD) ) {
+					resendWindow.add(i, player_list[i].playerIpAddress, PDU);
+				}
 			}
 		}
 	} else {
@@ -626,7 +633,7 @@ function Networker::poll()
 				} else 
 				/* Data player packets handling code */
 				if (received_data[0] == FIGHTER_PDU) {
-					var checkSeqNum = false;
+					var checkSeqNum = true;
 					var id = received_data[1];
 					//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife, seqNumber}
 					var data = {id, received_data[2], received_data[3], received_data[4], received_data[5],
@@ -643,6 +650,7 @@ function Networker::poll()
 							relayPlayerData(received_data);
 						} else {
 							sendAckId(sender, 0, ACK_ID_ERROR);
+							checkSeqNum = false;
 						}
 					} else {
 						/* I'm a client, if I don't know this identificator I create a new record */
@@ -652,8 +660,10 @@ function Networker::poll()
 						}
 						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
 					}
-					if (handleSequenceNumber(id, received_data[12])) {
-						EventPost(enemyDataEvent, data, 1);
+					if (checkSeqNum == true) {
+						if (handleSequenceNumber(id, received_data[12])) {
+							EventPost(enemyDataEvent, data, 1);
+						}
 					}
 				} else
 				if (received_data[0] == AMBIENT_PDU) {

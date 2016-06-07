@@ -6,14 +6,14 @@
 #define FRAME_STEP 0.5
 #define ANGLE_STEP 	0.9
 #define MIN_SPEED	300
-#define MAX_SPEED	600
+#define MAX_SPEED	900
 #define SPEED_STEP	5
 #define MAX_LASER_RANGE 800
 #define MAX_BULLET_NUM	10
 #define MIN_DAMAGE		10
 
 class FighterJet {
-	var FighterObj;	
+	var FighterObj;
 	var FighterPos;
 	var FighterType;
 	var withCamera;
