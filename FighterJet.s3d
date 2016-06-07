@@ -4,11 +4,11 @@
 #include <LaserBeam.s3d>
 
 #define FRAME_STEP 0.5
-#define ANGLE_STEP 	0.9
-#define MIN_SPEED	300
+#define ANGLE_STEP 	1
+#define MIN_SPEED	0
 #define MAX_SPEED	900
-#define SPEED_STEP	5
-#define MAX_LASER_RANGE 800
+#define SPEED_STEP	50
+#define MAX_LASER_RANGE 1000
 #define MAX_BULLET_NUM	10
 #define MIN_DAMAGE		10
 
@@ -125,6 +125,7 @@ function FighterJet::init(resources, lights, fType, beamType) {
 	FighterObj = CVmObj(fighterMesh);
 	bbox = fighterMesh.getBoundingBox();
 	collVertex = updateCollVertex(bbox);
+
 }
 
 function FighterJet::useCamera(cam)
@@ -228,15 +229,24 @@ function FighterJet::setAngle(r, p, y)
 	rollDelta = 0;
 	pitchDelta = 0;
 	yawDelta = 0;
-	if (withCamera == false) {
-		outputln(sprintf("setAngle roll: %f, pitch: %f, yaw: %f", r,p,y));
-	}
 	roll = r;
 	pitch = p;
 	yaw = y;*/
+	
 	rollDelta = r - roll;
 	pitchDelta = p - pitch;
 	yawDelta = y - yaw;
+	/*rollDelta = 0;
+	pitchDelta = 0;
+	yawDelta = 0;
+	roll = r;
+	pitch = p;
+	yaw = y;
+	FighterObj.SetRotation(r, [0,0,1]);
+	FighterObj.Rotate(p, [1,0,0]);
+	FighterObj.Rotate(y, [0,1,0]);*/
+	//outputln(sprintf("rollDelta: %f, pitchDelta: %f, yawDelta: %f",rollDelta,pitchDelta,yawDelta));
+	//outputln(sprintf("roll: %f, pitch: %f, yaw: %f",roll,pitch,yaw));
 }
 
 function FighterJet::setRelativeAngle(r, p, y)
@@ -244,6 +254,7 @@ function FighterJet::setRelativeAngle(r, p, y)
 	rollDelta = r;
 	pitchDelta = p;
 	yawDelta = y;
+	//outputln(sprintf("rollDelta: %f, pitchDelta: %f, yawDelta: %f",rollDelta,pitchDelta,yawDelta));
 }
 
 function FighterJet::setCameraOffset(offsets)
@@ -303,9 +314,13 @@ function FighterJet::update() {
 		pitch = (pitch + pitchDelta) % 360;
 		yaw = (yaw + yawDelta) % 360;
 		roll = (roll + rollDelta) % 360;
+		
 		pitchDelta = 0;
 		yawDelta = 0;
 		rollDelta = 0;
+		/*if (withCamera == false) {
+			outputln(sprintf("roll: %f, pitch: %f, yaw: %f",roll,pitch,yaw));
+		}*/
 		/*---settaggio direzione e posizione--- */
 		if(collided){
 			outputln("collision!!");
@@ -534,7 +549,10 @@ function FighterJet::resetFighter()
 	currentBattery = 100.0;
 	currentTurbo = 100.0;
 	for(var i = 0; i < MAX_BULLET_NUM; i++) {
-		beamArray[i] = void;
+		if (beamArray[i] != void) {
+			LightFactory.releaseLight(beamArray[i].getLightIndex());
+			beamArray[i] = void;
+		}
 	}
 	aliveBeams = 0;
 	rollDelta = 0;
