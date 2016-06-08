@@ -5,8 +5,8 @@
 
 #define FRAME_STEP 0.5
 #define ANGLE_STEP 	1
-#define MIN_SPEED	0
-#define MAX_SPEED	900
+#define MIN_SPEED	200
+#define MAX_SPEED	600
 #define SPEED_STEP	50
 #define MAX_LASER_RANGE 1000
 #define MAX_BULLET_NUM	10
@@ -51,7 +51,7 @@ class FighterJet {
 	draw();
 	setPosition(position);
 	setSpeed(speed);
-	setAngle(r, p, y);
+	setRotationMatrix(matrix);
 	setRelativeAngle(r, p, y);
 	setAnimationFrame(frame_number);
 	setCameraOffset(offsets);
@@ -151,16 +151,24 @@ function FighterJet::getAngleStep()
 
 function FighterJet::getFighterData()
 {
-	var data = vector(9);
+	var mat = FighterObj.GetRotationMatrix();
+	var data = vector(15);
 	data[0] = fighterType;
 	data[1] = FighterPos.x;
 	data[2] = FighterPos.y;
 	data[3] = FighterPos.z;
-	data[4] = roll;
-	data[5] = pitch;
-	data[6] = yaw;
-	data[7] = velocity;
-	data[8] = currentFrame;
+	data[4] = mat[0];
+	data[5] = mat[1];
+	data[6] = mat[2];
+	data[7] = mat[4];
+	data[8] = mat[5];
+	data[9] = mat[6];
+	data[10] = mat[8];
+	data[11] = mat[9];
+	data[12] = mat[10];
+	data[13] = velocity;
+	data[14] = currentFrame;
+	data[15] = currentLife;
 	return data;
 }
 
@@ -216,37 +224,9 @@ function FighterJet::setAnimationFrame(frame_number)
 	currentFrame = frame_number;
 }
 
-function FighterJet::setAngle(r, p, y)
+function FighterJet::setRotationMatrix(matrix)
 {
-	/*var rr = -r * GRAD_TO_RAD;
-	var pp = -p * GRAD_TO_RAD;
-	var yy = -y * GRAD_TO_RAD;
-	FighterObj.setRotationMatrix(	[cos(yy)*cos(rr), -cos(yy)*sin(rr), sin(yy), 0,
-									 (cos(pp)*sin(rr)+sin(pp)*sin(yy)*cos(rr)), (cos(pp)*cos(rr)-sin(pp)*sin(yy)*sin(rr)),(-sin(pp)*cos(yy)),0,
-									 (sin(pp)*sin(rr)-cos(pp)*sin(yy)*cos(rr)), (sin(pp)*cos(rr)+cos(pp)*sin(yy)*sin(rr)), (cos(pp)*cos(yy)),0,
-									 0,0,0,1
-	]);
-	rollDelta = 0;
-	pitchDelta = 0;
-	yawDelta = 0;
-	roll = r;
-	pitch = p;
-	yaw = y;*/
-	
-	rollDelta = r - roll;
-	pitchDelta = p - pitch;
-	yawDelta = y - yaw;
-	/*rollDelta = 0;
-	pitchDelta = 0;
-	yawDelta = 0;
-	roll = r;
-	pitch = p;
-	yaw = y;
-	FighterObj.SetRotation(r, [0,0,1]);
-	FighterObj.Rotate(p, [1,0,0]);
-	FighterObj.Rotate(y, [0,1,0]);*/
-	//outputln(sprintf("rollDelta: %f, pitchDelta: %f, yawDelta: %f",rollDelta,pitchDelta,yawDelta));
-	//outputln(sprintf("roll: %f, pitch: %f, yaw: %f",roll,pitch,yaw));
+	FighterObj.SetRotationMatrix(matrix);
 }
 
 function FighterJet::setRelativeAngle(r, p, y)
@@ -416,30 +396,32 @@ function FighterJet::setCollision(bool){
 	collided = bool;
 }
 
-function FighterJet::fireBeam(offset){
-	var initPos;
-	var dir = FighterObj.getZaxis();
-	var finalPos; 
-	if(currentBattery > 0){
-		initPos= this.getPosition() + FighterObj.getXaxis() * offset[0]+ FighterObj.getYaxis()*offset[1] + dir*offset[2] ;	
-		dir = dir / modulus(dir);
-		finalPos = this.getPosition() + dir*MAX_LASER_RANGE;
-	
-		for(var i = 0; i < MAX_BULLET_NUM; i++){
-			if(beamArray[i] == void){
-				var origin_time = GetTime();
-				var idx = lightFactory.requestLight(lightType);
-				currentBattery -= 0.2;
-				fireSound.Stop();
-				fireSound.Play();
-    			beamArray[i] = LaserBeam(beamMesh, idx, initPos, finalPos, origin_time, MIN_DAMAGE);		//TODO: il danno deve essere "dinamico"
-				if(idx>=0) {
-					lightFactory.linkObject(beamArray[i].getObject(), idx);
+function FighterJet::fireBeam(offset) {
+	if (!destroyed) {
+		var initPos;
+		var dir = FighterObj.getZaxis();
+		var finalPos; 
+		if(currentBattery > 0){
+			initPos= this.getPosition() + FighterObj.getXaxis() * offset[0]+ FighterObj.getYaxis()*offset[1] + dir*offset[2] ;	
+			dir = dir / modulus(dir);
+			finalPos = this.getPosition() + dir*MAX_LASER_RANGE;
+		
+			for(var i = 0; i < MAX_BULLET_NUM; i++){
+				if(beamArray[i] == void){
+					var origin_time = GetTime();
+					var idx = lightFactory.requestLight(lightType);
+					currentBattery -= 0.2;
+					fireSound.Stop();
+					fireSound.Play();
+	    			beamArray[i] = LaserBeam(beamMesh, idx, initPos, finalPos, origin_time, MIN_DAMAGE);		//TODO: il danno deve essere "dinamico"
+					if(idx>=0) {
+						lightFactory.linkObject(beamArray[i].getObject(), idx);
+					}
+					var data = {initPos.x, initPos.y, initPos.z, finalPos.x, finalPos.y, finalPos.z, origin_time, MIN_DAMAGE};
+		    		network.sendLaserBeamData(data, -1);
+		    		aliveBeams++;
+					break;
 				}
-				var data = {initPos.x, initPos.y, initPos.z, finalPos.x, finalPos.y, finalPos.z, origin_time, MIN_DAMAGE};
-	    		network.sendLaserBeamData(data, -1);
-	    		aliveBeams++;
-				break;
 			}
 		}
 	}

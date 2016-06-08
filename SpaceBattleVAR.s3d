@@ -338,11 +338,12 @@ function OnEvent(eventID, wparam, lparam){
 					return;
 				}
 			}
+			var matrix = [wparam[5],wparam[6],wparam[7],0,wparam[8],wparam[9],wparam[10],0,wparam[11],wparam[12],wparam[13],0,0,0,0,1];
 			enemiesFighter[id].setPosition([wparam[2], wparam[3], wparam[4]]);
-			enemiesFighter[id].setAngle(wparam[5], wparam[6], wparam[7]);
-			enemiesFighter[id].setSpeed(wparam[8]);
-			enemiesFighter[id].setAnimationFrame(wparam[9]);
-			enemiesFighter[id].setCurrentLife(wparam[10]);
+			enemiesFighter[id].setRotationMatrix(matrix);
+			enemiesFighter[id].setSpeed(wparam[14]);
+			enemiesFighter[id].setAnimationFrame(wparam[15]);
+			enemiesFighter[id].setCurrentLife(wparam[16]);
 		} else
 		if (eventId == networkController.isLaserBeamEvent() && gameMode == GAME_MODE_PLAY) {
 			var player = wparam[0];

@@ -188,7 +188,7 @@ function Networker::Networker()
 	}
 	player_number = 0;
 	keepaliveTimeElapsed = 0;
-	lastPlayerDataSended = vector(13);
+	lastPlayerDataSended = vector(18);
 	elapsedTimeDataSended = 0;
 	resendWindow = AckMsgWindow(ENEMIES_FIGHTER_NUM, RESEND_WAIT_MSEC);
 	idEvent = Event();
@@ -283,8 +283,8 @@ function Networker::sendFighterData(fighterData, force)
 	if (playerId == -1) {
 		return;
 	}
-	//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife, seqNumber}
-	var PDU = vector(13);
+	//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, mat[0], mat[1], mat[2], mat[4], mat[5], mat[6], mat[8], mat[9], mat[10], velocity, framenumber, currentLife, seqNumber}
+	var PDU = vector(19);
 	PDU[0] = FIGHTER_PDU;
 	PDU[1] = playerId;
 	PDU[2] = fighterData[0];
@@ -297,11 +297,17 @@ function Networker::sendFighterData(fighterData, force)
 	PDU[9] = fighterData[7];
 	PDU[10] = fighterData[8];
 	PDU[11] = fighterData[9];
+	PDU[12] = fighterData[10];
+	PDU[13] = fighterData[11];
+	PDU[14] = fighterData[12];
+	PDU[15] = fighterData[13];
+	PDU[16] = fighterData[14];
+	PDU[17] = fighterData[15];
 	//trace(PDU);
 	var changed = false;
 	var lastPos = [lastPlayerDataSended[3], lastPlayerDataSended[4], lastPlayerDataSended[5]];
 	var pduPos = [PDU[3], PDU[4], PDU[5]];
-	for(var i = 6; i < 12; i++) {
+	for(var i = 6; i < 18; i++) {
 		if (!floatEqual(PDU[i], lastPlayerDataSended[i], 0.05)) {
 			changed = true;
 			//Outputln(Sprintf("PDU: %f != last: %f", PDU[i], lastPlayerDataSended[i]));
@@ -314,7 +320,7 @@ function Networker::sendFighterData(fighterData, force)
 		changed = true;
 	}
 	if ((changed == true) || (force == true)) {
-		PDU[12] = seqNumber;
+		PDU[18] = seqNumber;
 		//outputln(sprintf("mandato roll: %f, pitch: %f, yaw: %f", fighterData[4],fighterData[5],fighterData[6]));
 		if (server == true) {
 			relayPlayerData(PDU);
@@ -635,10 +641,11 @@ function Networker::poll()
 				if (received_data[0] == FIGHTER_PDU) {
 					var checkSeqNum = true;
 					var id = received_data[1];
-					//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife, seqNumber}
+					//FIGHTER_PDU:	{5, playerId, fighterType, posx, posy, posz, mat[0], mat[1], mat[2], mat[4], mat[5], mat[6], mat[8], mat[9], mat[10], velocity, framenumber, currentLife, seqNumber}
 					var data = {id, received_data[2], received_data[3], received_data[4], received_data[5],
 						received_data[6], received_data[7], received_data[8], received_data[9], received_data[10],
-						received_data[11]
+						received_data[11], received_data[12], received_data[13], received_data[14], received_data[15],
+						received_data[16], received_data[17]
 					};
 					if (server == true) {
 						/* I'm the server so I know who are players, if it is not in the list don't relay */
@@ -661,7 +668,7 @@ function Networker::poll()
 						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
 					}
 					if (checkSeqNum == true) {
-						if (handleSequenceNumber(id, received_data[12])) {
+						if (handleSequenceNumber(id, received_data[18])) {
 							EventPost(enemyDataEvent, data, 1);
 						}
 					}
