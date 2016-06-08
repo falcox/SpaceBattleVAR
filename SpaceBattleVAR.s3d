@@ -160,7 +160,7 @@ function OnFrame()
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		if (enemiesFighter[i] != void) {
 			if (enemiesFighter[i].draw() == false) {
-				enemiesFighter[i].resetFighter();
+				//enemiesFighter[i].resetFighter();
 				enemiesFighter[i] = void;
 			}
 		}

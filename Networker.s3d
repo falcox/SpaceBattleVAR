@@ -28,7 +28,7 @@
 #define ACK_ID_ERROR				-1
 #define KEEPALIVE_MSEC				10000
 #define KEEPALIVE_SEND_MSEC			3500
-#define RESEND_WAIT_MSEC			3500
+#define RESEND_WAIT_MSEC			2000
 /* DATA_SEND_THRESHOLD threshold to decide to whom a pdu will be sended, 
  * based on last player position sended and actual position on PDU */
 #define DATA_SEND_THRESHOLD			2000
@@ -46,7 +46,7 @@
  * 				ACK_ID_PDU:				{3, msgId, playerId_assigned}
  * 				KEEPALIVE_PDU:			{4, playerId}
  * 				
- * 				FIGHTER_PDU:			{5, playerId, fighterType, posx, posy, posz, roll, pitch, yaw, velocity, framenumber, currentLife, seqNumber}
+ * 				FIGHTER_PDU:			{5, playerId, fighterType, posx, posy, posz, mat[0], mat[1], mat[2], mat[4], mat[5], mat[6], mat[8], mat[9], mat[10], velocity, framenumber, currentLife, seqNumber}
  * 				AMBIENT_PDU:			{6, msgId, ambientId, ambientType, centerx, centery, centerz, radius, orbitPeriod, serverTime}
  * 				AMBIENT_PDU_ACK:		{7, msgId, playerId}
  * 				AMBIENT_DESTROYED		{8, msgId, ambientId, playerId, ambientType}
@@ -358,7 +358,6 @@ function Networker::sendAmbientData(ambientId, ambientData)
 			resendWindow.add(i, player_list[i].playerIpAddress, PDU);
 		}
 	}
-	//TODO fix!!!
 	var data = {ambientId, ambientData[0], ambientData[1], ambientData[2], ambientData[3], ambientData[4],
 		ambientData[5], ambientData[6]
 	};
