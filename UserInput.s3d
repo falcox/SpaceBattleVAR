@@ -2,7 +2,7 @@
 #define MOUSE_STEP 	0.005
 #define DELTA_X_MAX	385
 #define DELTA_Y_MAX	220
-#define X_MAX 		1530
+#define X_MAX 		1600
 #define Y_MAX		800
 #define ALPHA		0.5
 
@@ -40,7 +40,7 @@ function UserInput::userControlFighter(fighter)
 	var dy = Mouse.deltaY;
 	var mx = Mouse.X;
 	var my = Mouse.Y;
-	var lButton = Mouse.ButtonL;
+	var lButton = Mouse.ButtonL || Keypressed(VK_SPACE);
 //	consoletext(0.01,0.01,sprintf("deltaX: %d, X: %d, deltaY: %d, Y: %d",dx,mx,dy,my));
 //	outputln(sprintf("deltaX: %d, X: %d, deltaY: %d, Y: %d",dx,mx,dy,my));
 	var y = 0, p = 0, r = 0;

@@ -82,7 +82,7 @@ function ResourceFactory::ResourceFactory()
 	redMaterial.emission = [1,0,0,1];
 	redMaterial.shininess = 128;
 	redMaterial.transparency = 0.9;
-	bulletMeshes[RED_BEAM].setMaterial(redMaterial);
+	bulletMeshes[RED_BEAM].forceMaterial(redMaterial);
 	
 	bulletMeshes[GREEN_BEAM] = CVmNewMesh(VRP_CYLINDER, 10, 0.5, 30);
 	bulletMeshes[GREEN_BEAM].Rotate(90,[1,0,0]);
@@ -92,7 +92,7 @@ function ResourceFactory::ResourceFactory()
 	greenMaterial.emission = [0,1,0,1];
 	greenMaterial.transparency = 0.9;
 	greenMaterial.shininess = 128;
-	bulletMeshes[GREEN_BEAM].setMaterial(greenMaterial);
+	bulletMeshes[GREEN_BEAM].forceMaterial(greenMaterial);
 	
 }
 

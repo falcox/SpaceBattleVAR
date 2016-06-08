@@ -32,6 +32,9 @@ function AckMsgWindow::AckMsgWindow(slots, resend_wait_time)
 
 function AckMsgWindow::add(id, ip_address, msg)
 {
+	if (id < 0 || id >= msgSlots) {
+		return;
+	}
 	/* Create a message and add to the destination player queue, compute also a msg Id */
 	var msg_elem = conMessage();
 	ipAddress[id] = ip_address;
@@ -61,6 +64,9 @@ function AckMsgWindow::send()
 
 function AckMsgWindow::ackReceived(id, msgId)
 {
+	if (id < 0 || id >= msgSlots) {
+		return;
+	}
 	/* Remove the acked message from player queue */
 	var queue_size = len(messages[id]);
 	var deletedIndexMessage = Array(0);
@@ -79,10 +85,16 @@ function AckMsgWindow::ackReceived(id, msgId)
 
 function AckMsgWindow::emptyQueue(id)
 {
+	if (id < 0 || id >= msgSlots) {
+		return;
+	}
 	messages[id] = Array(0);
 }
 
 function AckMsgWindow::queueSize(id)
 {
+	if (id < 0 || id >= msgSlots) {
+		return;
+	}
 	return len(messages[id]);
 }

@@ -151,8 +151,9 @@ function OnFrame()
 	mySkyBox.draw();
 	
 	if (myFighter.draw() == false) {
-		myFighter.resetFighter();
 		respawn(myFighter);
+		//myFighter.resetFighter();
+		//respawn(myFighter);
 	}
 	
 	/*---here we draw all enemies fighter---*/
@@ -337,11 +338,12 @@ function OnEvent(eventID, wparam, lparam){
 					return;
 				}
 			}
+			var matrix = [wparam[5],wparam[6],wparam[7],0,wparam[8],wparam[9],wparam[10],0,wparam[11],wparam[12],wparam[13],0,0,0,0,1];
 			enemiesFighter[id].setPosition([wparam[2], wparam[3], wparam[4]]);
-			enemiesFighter[id].setAngle(wparam[5], wparam[6], wparam[7]);
-			enemiesFighter[id].setSpeed(wparam[8]);
-			enemiesFighter[id].setAnimationFrame(wparam[9]);
-			enemiesFighter[id].setCurrentLife(wparam[10]);
+			enemiesFighter[id].setRotationMatrix(matrix);
+			enemiesFighter[id].setSpeed(wparam[14]);
+			enemiesFighter[id].setAnimationFrame(wparam[15]);
+			enemiesFighter[id].setCurrentLife(wparam[16]);
 		} else
 		if (eventId == networkController.isLaserBeamEvent() && gameMode == GAME_MODE_PLAY) {
 			var player = wparam[0];
@@ -414,11 +416,17 @@ function OnEvent(eventID, wparam, lparam){
 		} else
 		if (eventId == networkController.isFighterDestroyedEvent() && gameMode == GAME_MODE_PLAY) {
 			// [dead_playerId, killer_playerId]
+			trace(wparam);
 			if (wparam[0] != networkController.getId()) {
 				enemiesFighter[ wparam[0] ].setDestroyed(true);
 			} else {
-				myHud.increaseDeathCounter(wparam[1]);
-				myHud.setScreenMessage("You are dead!", false);
+				if (wparam[1] != -1) {
+					myHud.increaseDeathCounter(wparam[1]);
+					myHud.setScreenMessage("You are dead!", false);
+				} else {
+					myHud.increaseDeathCounter(networkController.getId());
+					myHud.setScreenMessage("Smashed!", false);
+				}
 			}
 			if (wparam[1] == networkController.getId()) {
 				myHud.increaseKillCounter(wparam[0]);
@@ -550,11 +558,13 @@ function DrawWorldBounds(){
 function respawn(fighter)
 {
 	//TODO: respawn da uno degli 8 vertici
-	var posx = (BOUND_VOLUME_X - 100 - Rand(200)) * ((Rand(1)==0)?1:-1);
-	var posy = (BOUND_VOLUME_Y - 100 - Rand(200)) * ((Rand(1)==0)?1:-1);
-	var posz = (BOUND_VOLUME_Z - 100 - Rand(200)) * ((Rand(1)==0)?1:-1);
+	myFighter.resetFighter();
+	//enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
+	var posx = (BOUND_VOLUME_X - 100 - Rand(800)) * ((Rand(1)==0)?1:-1);
+	var posy = (BOUND_VOLUME_Y - 100 - Rand(800)) * ((Rand(1)==0)?1:-1);
+	var posz = (BOUND_VOLUME_Z - 100 - Rand(800)) * ((Rand(1)==0)?1:-1);
 	var pos = [posx, posy, posz];
-	trace(pos);
+	//trace(pos);
 	fighter.SetPosition(pos);
 	//fighter.SetPosition([1700+Rand(200), 0, 0]);
 }

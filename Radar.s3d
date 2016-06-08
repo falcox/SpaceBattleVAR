@@ -1,4 +1,4 @@
-#define RADAR_RADIUS	2000
+#define RADAR_RADIUS	5000
 #define RADAR_POINTS	16
 #define DOT_SIZE		0.1
 
