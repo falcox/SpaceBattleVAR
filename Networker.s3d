@@ -555,6 +555,7 @@ function Networker::poll()
 				/* SERVER_ADV_PDU handling code */
 				if(received_data[0] == SERVER_ADV_PDU) {
 					serverId = received_data[1];
+					/* If we have no Id and no packet was sended to the server then make registration */
 					if (playerId == -1 && resendWindow.queueSize( serverId ) == 0) {
 						/* we have no Id so request one from server */
 						serverIp = sender;
