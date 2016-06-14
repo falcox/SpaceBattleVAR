@@ -61,6 +61,7 @@ class player {
 	var playerIpAddress;
 	var keepaliveTime;
 	var lastSeqNumberReceived;
+	var errorSeqNumber;
 	var posx;
 	var posy;
 	var posz;
@@ -271,9 +272,9 @@ function Networker::relayPlayerData(PDU)
 		/* Check if there is an entry, then if it is not me and if it is not the player that sent the PDU */
 		if (player_list[i] != void && i != playerId && i != PDU[1]) {
 			var playerpos = [player_list[i].posx, player_list[i].posy, player_list[i].posz];
-			//if (euclideanDistance(playerpos, pdupos) < DATA_SEND_THRESHOLD) {
+			if (euclideanDistance(playerpos, pdupos) < DATA_SEND_THRESHOLD) {
 				NetVarSendTo(player_list[i].playerIpAddress, 50023, PDU);
-			//}
+			}
 		}
 	}
 }
@@ -525,11 +526,15 @@ function Networker::handleSequenceNumber(player_id, receivedSeqNumber)
 	}
 	var lastSeqNum = player_list[player_id].lastSeqNumberReceived;
 	/* Accept the packet only if the sequence number is greater than the last received sequence number
-	 * or if we are near the overflow border and the receiver seq number is less than 100
+	 * or if we are near the overflow border and the errors encountered are greater than 100, maybe the counter
+	 * has overflowed
 	 */
-	if ( (receivedSeqNumber > lastSeqNum) || ( (lastSeqNum > 2147483547) && (receivedSeqNumber < 100) ) ) {
+	if ( (receivedSeqNumber > lastSeqNum) || ( (lastSeqNum > 2147483547) && (player_list[player_id].errorSeqNumber > 100) ) ) {
 		player_list[player_id].lastSeqNumberReceived = receivedSeqNumber;
+		player_list[player_id].errorSeqNumber = 0;
 		return true;
+	} else {
+		player_list[player_id].errorSeqNumber++;
 	}
 	return false;
 }
@@ -596,6 +601,7 @@ function Networker::poll()
 						player_list[serverId] = player();
 						player_list[serverId].keepaliveTime = KEEPALIVE_MSEC;
 						player_list[serverId].lastSeqNumberReceived = -1;
+						player_list[serverId].errorSeqNumber = 0;
 						EventPost(idEvent,playerId,1);
 						/* TODO generate an event  */
 					}
@@ -615,6 +621,7 @@ function Networker::poll()
 								player_list[i].playerIpAddress = sender;
 								player_list[i].keepaliveTime = KEEPALIVE_MSEC;
 								player_list[i].lastSeqNumberReceived = -1;
+								player_list[i].errorSeqNumber = 0;
 								player_list[i].posx = 0;
 								player_list[i].posy = 0;
 								player_list[i].posz = 0;
@@ -664,6 +671,7 @@ function Networker::poll()
 						if (player_list[id] == void) {
 							player_list[id] = Player();
 							player_list[id].lastSeqNumberReceived = -1;
+							player_list[id].errorSeqNumber = 0;
 						}
 						player_list[id].keepaliveTime = KEEPALIVE_MSEC;
 					}
@@ -749,6 +757,7 @@ function Networker::poll()
 		player_list[playerId] = player();
 		player_list[playerId].keepaliveTime = KEEPALIVE_MSEC;
 		player_list[playerId].lastSeqNumberReceived = -1;
+		player_list[playerId].errorSeqNumber = 0;
 		sendBroadcastAdv();
 		EventPost(idEvent, playerId, 1);
 		Outputln("I'M THE SERVER!");

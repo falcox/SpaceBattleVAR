@@ -65,7 +65,7 @@ function AmbientEngine::tick(ambientArray)
 					ambientArray[i].setOrbitPeriod(orbitPeriod);
 					ambientArray[i].setServerTime(GetTime());
 					network.sendAmbientData(i, ambientArray[i].getAmbientObjData());
-					Outputln(Sprintf("Created new ambient object! [%d,%d,%d]", posx, posy, posz));
+					//Outputln(Sprintf("Created new ambient object! [%d,%d,%d]", posx, posy, posz));
 					break;
 				}
 			}

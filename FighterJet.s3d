@@ -548,8 +548,9 @@ function FighterJet::resetFighter()
 									0, 0, 1, 0, 
 									0, 0, 0, 1
 	]);
-	setSpeed(MIN_SPEED);
+	setSpeed(0);
 	setAnimationFrame(0);
+	SetPosition([POSITION_OUT_OF_FIELD, POSITION_OUT_OF_FIELD, POSITION_OUT_OF_FIELD]);
 }
 
 
