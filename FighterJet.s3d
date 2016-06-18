@@ -250,8 +250,8 @@ function FighterJet::addNetwork(net)
 function FighterJet::draw() {
 	var ret = true;
 	/*---only for debug purpose---*/
-	FighterObj.DrawAxis();
-	FighterObj.DrawBoundingBox();
+	//FighterObj.DrawAxis();
+	//FighterObj.DrawBoundingBox();
 	
 	if (!destroyed) {
 		FighterObj.draw(VR_FRAMENUMBER, currentFrame);
@@ -548,8 +548,9 @@ function FighterJet::resetFighter()
 									0, 0, 1, 0, 
 									0, 0, 0, 1
 	]);
-	setSpeed(MIN_SPEED);
+	setSpeed(0);
 	setAnimationFrame(0);
+	SetPosition([POSITION_OUT_OF_FIELD, POSITION_OUT_OF_FIELD, POSITION_OUT_OF_FIELD]);
 }
 
 

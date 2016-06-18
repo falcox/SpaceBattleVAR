@@ -6,12 +6,13 @@
 #define RED_LIGHT	0
 #define GREEN_LIGHT	1
 #define WHITE_LIGHT 2
-#define BOUND_VOLUME_X	5000
-#define BOUND_VOLUME_Y	5000
-#define BOUND_VOLUME_Z	5000
-#define FAR_PLANE		10000
-#define RATIO_H			9.0
-#define RATIO_W			16.0
+#define BOUND_VOLUME_X			5000
+#define BOUND_VOLUME_Y			5000
+#define BOUND_VOLUME_Z			5000
+#define POSITION_OUT_OF_FIELD	BOUND_VOLUME_Z + FAR_PLANE
+#define FAR_PLANE				10000
+#define RATIO_H					9.0
+#define RATIO_W					16.0
 
 #define GAME_MODE_MENU		0
 #define GAME_MODE_SELECTED	1
@@ -160,8 +161,8 @@ function OnFrame()
 	for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 		if (enemiesFighter[i] != void) {
 			if (enemiesFighter[i].draw() == false) {
-				//enemiesFighter[i].resetFighter();
-				enemiesFighter[i] = void;
+				enemiesFighter[i].resetFighter();
+				//enemiesFighter[i] = void;
 			}
 		}
 	}
@@ -204,6 +205,11 @@ function OnTimer()
 		for (var i = 0; i < ENEMIES_FIGHTER_NUM; i++) {
 			if (enemiesFighter[i] != void) {
 				enemiesFighter[i].update();
+				/* If the enemy fighter is too far, let it disappear, until we receive some data packet for this player */
+				if (euclideanDistance(myFighter.GetPosition(), enemiesFighter[i].GetPosition()) > DATA_SEND_THRESHOLD) {
+					enemiesFighter[i].SetPosition([POSITION_OUT_OF_FIELD, POSITION_OUT_OF_FIELD, POSITION_OUT_OF_FIELD]);
+					enemiesFighter[i].SetSpeed(0);
+				}
 			}
 		}
 		for (var i = 0; i < AMBIENT_SPACESHIP_NUM; i++) {
@@ -292,14 +298,14 @@ function OnTimer()
 			ambientSpaceship[0].setOrbitPeriod(500.0);
 			ambientSpaceship[0].setServerTime(GetTime());
 			ambientSpaceship[1] = StarDestroyer( resources );
-			ambientSpaceship[1].setCenter([2500, 0, 0]);
-			ambientSpaceship[1].setRadius(500);
-			ambientSpaceship[1].setOrbitPeriod(5000.0);
+			ambientSpaceship[1].setCenter([0, 2500, 0]);
+			ambientSpaceship[1].setRadius(3000);
+			ambientSpaceship[1].setOrbitPeriod(3000.0);
 			ambientSpaceship[1].setServerTime(GetTime());
 			ambientSpaceship[2] = Frigate( resources );
-			ambientSpaceship[2].setCenter([-2500, -4000, -2500]);
-			ambientSpaceship[2].setRadius(250);
-			ambientSpaceship[2].setOrbitPeriod(300.0);
+			ambientSpaceship[2].setCenter([0, -2500, 0]);
+			ambientSpaceship[2].setRadius(3000);
+			ambientSpaceship[2].setOrbitPeriod(6000.0);
 			ambientSpaceship[2].setServerTime(GetTime());
 			respawn(myFighter);
 			myHud.resetHud();
@@ -416,11 +422,12 @@ function OnEvent(eventID, wparam, lparam){
 		} else
 		if (eventId == networkController.isFighterDestroyedEvent() && gameMode == GAME_MODE_PLAY) {
 			// [dead_playerId, killer_playerId]
-			trace(wparam);
 			if (wparam[0] != networkController.getId()) {
-				enemiesFighter[ wparam[0] ].setDestroyed(true);
+				if (enemiesFighter[ wparam[0] ] != void) {
+					enemiesFighter[ wparam[0] ].setDestroyed(true);
+				}
 			} else {
-				if (wparam[1] != -1) {
+				if (wparam[1] != wparam[0]) {
 					myHud.increaseDeathCounter(wparam[1]);
 					myHud.setScreenMessage("You are dead!", false);
 				} else {
@@ -428,7 +435,7 @@ function OnEvent(eventID, wparam, lparam){
 					myHud.setScreenMessage("Smashed!", false);
 				}
 			}
-			if (wparam[1] == networkController.getId()) {
+			if ((wparam[1] == networkController.getId()) && (wparam[1] != wparam[0])) {
 				myHud.increaseKillCounter(wparam[0]);
 				myHud.setScreenMessage("Good kill!", false);
 			}
@@ -560,9 +567,9 @@ function respawn(fighter)
 	//TODO: respawn da uno degli 8 vertici
 	myFighter.resetFighter();
 	//enemiesFighter = Array(ENEMIES_FIGHTER_NUM);
-	var posx = (BOUND_VOLUME_X - 100 - Rand(800)) * ((Rand(1)==0)?1:-1);
-	var posy = (BOUND_VOLUME_Y - 100 - Rand(800)) * ((Rand(1)==0)?1:-1);
-	var posz = (BOUND_VOLUME_Z - 100 - Rand(800)) * ((Rand(1)==0)?1:-1);
+	var posx = (BOUND_VOLUME_X - 300 - Rand(800)) * ((Rand(1)==0)?1:-1);
+	var posy = (BOUND_VOLUME_Y - 300 - Rand(800)) * ((Rand(1)==0)?1:-1);
+	var posz = (BOUND_VOLUME_Z - 300 - Rand(800)) * ((Rand(1)==0)?1:-1);
 	var pos = [posx, posy, posz];
 	//trace(pos);
 	fighter.SetPosition(pos);

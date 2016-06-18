@@ -179,8 +179,6 @@ function LightEngine::requestCameraLight(cam){
 		virtualLightArray[CAMERA].setSpecular([1.0,1.0,1.0]);
 		virtualLightsNum++;
 		linkedObjects[CAMERA] = cam;
-	}else{
-		outputln("error in creating camera light");
 	}
 }
 

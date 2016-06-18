@@ -42,6 +42,7 @@ function AmbientEngine::tick(ambientArray)
 	timeTickSecond *= ( GetTime() - time);
 	if (startEngine && network.isServer()) {
 		timeSecondElapsed += timeTickSecond;
+		/* If INSERT_TIME_THRESHOLD second is elapsed insert a new ambient object */
 		if (timeSecondElapsed > INSERT_TIME_THRESHOLD) {
 			var ambientLen = len(ambientArray);
 			for (var i = 0; i < ambientLen; i++) {
@@ -58,15 +59,13 @@ function AmbientEngine::tick(ambientArray)
 						ambientArray[i] = EscapePod( resources );
 					} else if (type == EMPEROR_SHUTTLE) { 
 						ambientArray[i] = EmperorShuttle( resources );
-					} else if (type == STAR_DESTROYER) { 
-						ambientArray[i] = StarDestroyer( resources );
 					}
 					ambientArray[i].setCenter([posx, posy, posz]);
 					ambientArray[i].setRadius(radius);
 					ambientArray[i].setOrbitPeriod(orbitPeriod);
 					ambientArray[i].setServerTime(GetTime());
 					network.sendAmbientData(i, ambientArray[i].getAmbientObjData());
-					Outputln(Sprintf("Created new ambient object! [%d,%d,%d]", posx, posy, posz));
+					//Outputln(Sprintf("Created new ambient object! [%d,%d,%d]", posx, posy, posz));
 					break;
 				}
 			}
