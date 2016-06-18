@@ -298,14 +298,14 @@ function OnTimer()
 			ambientSpaceship[0].setOrbitPeriod(500.0);
 			ambientSpaceship[0].setServerTime(GetTime());
 			ambientSpaceship[1] = StarDestroyer( resources );
-			ambientSpaceship[1].setCenter([2500, 0, 0]);
-			ambientSpaceship[1].setRadius(500);
-			ambientSpaceship[1].setOrbitPeriod(5000.0);
+			ambientSpaceship[1].setCenter([0, 2500, 0]);
+			ambientSpaceship[1].setRadius(3000);
+			ambientSpaceship[1].setOrbitPeriod(3000.0);
 			ambientSpaceship[1].setServerTime(GetTime());
 			ambientSpaceship[2] = Frigate( resources );
-			ambientSpaceship[2].setCenter([-2500, -4000, -2500]);
-			ambientSpaceship[2].setRadius(250);
-			ambientSpaceship[2].setOrbitPeriod(300.0);
+			ambientSpaceship[2].setCenter([0, -2500, 0]);
+			ambientSpaceship[2].setRadius(3000);
+			ambientSpaceship[2].setOrbitPeriod(6000.0);
 			ambientSpaceship[2].setServerTime(GetTime());
 			respawn(myFighter);
 			myHud.resetHud();
@@ -422,11 +422,12 @@ function OnEvent(eventID, wparam, lparam){
 		} else
 		if (eventId == networkController.isFighterDestroyedEvent() && gameMode == GAME_MODE_PLAY) {
 			// [dead_playerId, killer_playerId]
-			trace(wparam);
 			if (wparam[0] != networkController.getId()) {
-				enemiesFighter[ wparam[0] ].setDestroyed(true);
+				if (enemiesFighter[ wparam[0] ] != void) {
+					enemiesFighter[ wparam[0] ].setDestroyed(true);
+				}
 			} else {
-				if (wparam[1] != -1) {
+				if (wparam[1] != wparam[0]) {
 					myHud.increaseDeathCounter(wparam[1]);
 					myHud.setScreenMessage("You are dead!", false);
 				} else {
@@ -434,7 +435,7 @@ function OnEvent(eventID, wparam, lparam){
 					myHud.setScreenMessage("Smashed!", false);
 				}
 			}
-			if (wparam[1] == networkController.getId()) {
+			if ((wparam[1] == networkController.getId()) && (wparam[1] != wparam[0])) {
 				myHud.increaseKillCounter(wparam[0]);
 				myHud.setScreenMessage("Good kill!", false);
 			}

@@ -57,6 +57,7 @@ function AmbientObject::init(resources, type) {
 
 function AmbientObject::setCenter(center){
 	pathCenter = center;
+	position = center;
 }
 
 function AmbientObject::getAmbientObjData()
@@ -95,8 +96,8 @@ function AmbientObject::setAnimationFrame(frame_number)
 
 function AmbientObject::draw(){
 	/*---only for debug purpose---*/
-	object.DrawAxis();
-	object.DrawBoundingBox();
+	//object.DrawAxis();
+	//object.DrawBoundingBox();
 	
 	if (!collision) {
 		object.draw(VR_FRAMENUMBER, currentFrame);

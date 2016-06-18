@@ -250,8 +250,8 @@ function FighterJet::addNetwork(net)
 function FighterJet::draw() {
 	var ret = true;
 	/*---only for debug purpose---*/
-	FighterObj.DrawAxis();
-	FighterObj.DrawBoundingBox();
+	//FighterObj.DrawAxis();
+	//FighterObj.DrawBoundingBox();
 	
 	if (!destroyed) {
 		FighterObj.draw(VR_FRAMENUMBER, currentFrame);
